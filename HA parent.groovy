@@ -19,10 +19,10 @@ HA integration
 * for the specific language governing permissions and limitations under the License.
 *
 * Version Control:
-*
-* 2021-02-06 Dan Ogorchock      Added basic support for simple "Light" devices from Home Assistant using Hubitat Generic Component Dimmer driver
-* 2021-02-06 tomw               Added handling for some binary_sensor subtypes based on device_class
-* 2021-02-06 Dan Ogorchock      Bug Fixes 
+* 0.1.0 2021-02-05 Yves Mercier       Orinal version
+* 0.1.1 2021-02-06 Dan Ogorchock      Added basic support for simple "Light" devices from Home Assistant using Hubitat Generic Component Dimmer driver
+* 0.1.2 2021-02-06 tomw               Added handling for some binary_sensor subtypes based on device_class
+* 0.1.3 2021-02-06 Dan Ogorchock      Bug Fixes 
 *
 * Thank you(s):
 */

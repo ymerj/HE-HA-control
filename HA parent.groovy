@@ -22,6 +22,7 @@ HA integration
 *
 * 2021-02-06 Dan Ogorchock      Added basic support for simple "Light" devices from Home Assistant using Hubitat Generic Component Dimmer driver
 * 2021-02-06 tomw               Added handling for some binary_sensor subtypes based on device_class
+* 2021-02-06 Dan Ogorchock      Bug Fixes 
 *
 * Thank you(s):
 */
@@ -95,11 +96,14 @@ def parse(String description) {
         response = new groovy.json.JsonSlurper().parseText(description)
         if (response.type != "event") return
         
-        entity = response.event.data.entity_id
-        domain = entity.tokenize(".")[0]
-        subdomain = response.event.data.new_state.attributes.device_class
-        friendly = response.event.data.new_state.attributes.friendly_name
-        etat = response.event.data.new_state.state
+        def entity = response?.event?.data.entity_id
+        def domain = entity?.tokenize(".")[0]
+        def subdomain = response?.event?.data?.attributes?.device_class
+        if (!subdomain) subdomain = response?.event?.data?.new_state?.attributes?.device_class
+        def friendly = response?.event?.data?.new_state?.attributes?.friendly_name
+        def etat = response?.event?.data?.new_state?.state
+        
+        if (logEnable) log.debug "parse: domain: ${domain}, subdomain: ${subdomain}, entity: ${entity}, etat: ${etat}, friendly: ${friendly}"
         
         switch (domain) {
             case "switch":
@@ -113,7 +117,7 @@ def parse(String description) {
                 onOffDim(domain, entity, friendly, etat, level)
                 break
             default:
-                sendChildEvent(domain, subdomain, entity, friendly, etat)
+                if (subdomain) sendChildEvent(domain, subdomain, entity, friendly, etat)
         }
         return
     }  
@@ -150,9 +154,13 @@ def sendChildEvent(domain, subdomain, entity, friendly, etat)
     {
         case "binary_sensor":
             mapping = translateBinarySensorTypes(subdomain)
+            break
     }
-    
-    ch.parse([[name: mapping[subdomain]?.attributes?.name ?: subdomain, value: mapping[subdomain]?.attributes?.states?.etat ?: etat, descriptionText:"${ch.label} updated"]])    
+    if (mapping) {
+        def name =  mapping?.attributes?.name ?: subdomain
+        def value = mapping?.attributes?.states?."${etat}"?: "${etat}"
+        ch.parse([[name: name, value: value, descriptionText:"${ch.label} updated"]])    
+    }
 }
 
 def createChild(domain, subdomain, entity, friendly)
@@ -171,7 +179,7 @@ def createChild(domain, subdomain, entity, friendly)
                 deviceType = "Generic Component Dimmer"
                 break
             case "binary_sensor":
-                deviceType = translateBinarySensorTypes(subdomain)?.type
+                deviceType = translateBinarySensorTypes(subdomain).type
                 break
             
             default:
@@ -196,7 +204,6 @@ def translateBinarySensorTypes(device_class)
             presence: [type: "Generic Component Presence Sensor", attributes: [name: "presence", states: [on: "present", off: "not present"]]],
             window: [type: "Generic Component Contact Sensor", attributes: [name: "contact", states: [on: "closed", off: "open"]]]
         ]
-    
     return mapping[device_class]
 }
 

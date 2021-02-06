@@ -20,6 +20,9 @@ HA integration
 *
 * Version Control:
 *
+* 2021-02-06 Dan Ogorchock      Added basic support for simple "Light" devices from Home Assistant using Hubitat Generic Component Dimmer driver
+* 2021-02-06 tomw               Added handling for some binary_sensor subtypes based on device_class
+*
 * Thank you(s):
 */
 
@@ -73,30 +76,44 @@ def initialize() {
     }
 }
 
+def uninstalled() {
+    closeConnection()
+}
+
 def webSocketStatus(String status){
     if ((status == "status: open") || (status == "status: closing")) log.info("websocket ${status}")
     else {
         log.warn("WebSocket ${status}, trying to reconnect")
-        runIn(10, initialise)
+        runIn(10, initialize)
     }
 }
 
 def parse(String description) {
     if (logEnable) log.debug("parsed: $description")
-    def reponse = null;
+    def response = null;
     try{
-        reponse = new groovy.json.JsonSlurper().parseText(description)
-        if (reponse.type != "event") return
+        response = new groovy.json.JsonSlurper().parseText(description)
+        if (response.type != "event") return
         
-        entity = reponse.event.data.entity_id
+        entity = response.event.data.entity_id
         domain = entity.tokenize(".")[0]
-        friendly = reponse.event.data.new_state.attributes.friendly_name
-        etat = reponse.event.data.new_state.state
+        subdomain = response.event.data.attributes.device_class
+        friendly = response.event.data.new_state.attributes.friendly_name
+        etat = response.event.data.new_state.state
         
         switch (domain) {
             case "switch":
                 onOff(domain, entity, friendly, etat)
                 break
+            case "light":
+                def level = response?.event?.data?.new_state?.attributes?.brightness
+                if (level) {
+                    level = level.toInteger()
+                }
+                onOffDim(domain, entity, friendly, etat, level)
+                break
+            default:
+                sendChildEvent(domain, subdomain, entity, friendly, etat)
         }
         return
     }  
@@ -107,25 +124,80 @@ def parse(String description) {
 }
 
 def onOff(domain, entity, friendly, etat) {
-    if (etat == "on") childSwitchOn(domain, entity, friendly)
-    if (etat == "off") childSwitchOff(domain, entity, friendly)
+    if ((etat == "on") || (etat == "off")) {
+        def ch = createChild(domain, null, entity, friendly)
+        ch.parse([[name: "switch", value: etat, descriptionText:"${ch.label} was turned ${etat}"]])
+    }
 }
 
-def childSwitchOn(domain, entity, friendly){
-    def ch = createChild(domain, entity, friendly)
-    ch.parse([[name:"switch", value:"on", descriptionText:"${ch.label} was turned on"]])
+def onOffDim(domain, entity, friendly, etat, level) {
+    
+    onOff(domain, entity, friendly, etat)
+    
+    if (level) {
+        def ch = createChild(domain, null, entity, friendly)
+        level = (level * 100 / 255)
+        level = Math.round(level) 
+        ch.parse([[name:"level", value: level, descriptionText:"${ch.label} level set to ${level}"]])
+    }
 }
 
-def childSwitchOff(domain, entity, friendly){
-    def ch = createChild(domain, entity, friendly)
-    ch.parse([[name:"switch", value:"off", descriptionText:"${ch.label} was turned off"]])
+def sendChildEvent(domain, subdomain, entity, friendly, etat)
+{
+    def ch = createChild(domain, subdomain, entity, friendly)
+    def mapping
+    switch(domain)
+    {
+        case "binary_sensor":
+            mapping = translateBinarySensorTypes(subdomain)
+    }
+    
+    ch.parse([[name: mapping[subdomain]?.attributes?.name ?: subdomain, value: mapping[subdomain]?.attributes?.states?.etat ?: etat, descriptionText:"${ch.label} updated"]])    
 }
 
-def createChild(domain, entity, friendly){
+def createChild(domain, subdomain, entity, friendly)
+{
     String thisId = device.id
     def ch = getChildDevice("${thisId}-${entity}")
-    if (!ch) {ch = addChildDevice("hubitat", "Generic Component Switch", "${thisId}-${entity}", [name: "${entity}", label: "${friendly}", isComponent: false])}
+    if (!ch)
+    {
+        def deviceType
+        switch(domain)
+        {
+            case "switch":
+                deviceType = "Generic Component Switch"
+                break
+            case "light":
+                deviceType = "Generic Component Dimmer"
+                break
+            case "binary_sensor":
+                deviceType = translateBinarySensorTypes(subdomain)?.type
+                break
+            
+            default:
+                return null
+        }
+        
+        ch = addChildDevice("hubitat", deviceType, "${thisId}-${entity}", [name: "${entity}", label: "${friendly}", isComponent: false])
+    }
+    
     return ch
+}
+
+def translateBinarySensorTypes(device_class)
+{
+    def mapping =
+        [
+            door: [type: "Generic Component Contact Sensor", attributes: [name: "contact", states: [on: "closed", off: "open"]]],
+            garage_door: [type: "Generic Component Contact Sensor", attributes: [name: "contact", states: [on: "closed", off: "open"]]],
+            moisture: [type: "Generic Component Water Sensor", attributes: [name: "water", states: [on: "wet", off: "dry"]]],
+            motion: [type: "Generic Component Motion Sensor", attributes: [name: "motion", states: [on: "active", off: "inactive"]]],
+            opening: [type: "Generic Component Contact Sensor", attributes: [name: "contact", states: [on: "closed", off: "open"]]],
+            presence: [type: "Generic Component Presence Sensor", attributes: [name: "presence", states: [on: "present", off: "not present"]]],
+            window: [type: "Generic Component Contact Sensor", attributes: [name: "contact", states: [on: "closed", off: "open"]]]
+        ]
+    
+    return mapping[device_class]
 }
 
 def removeChild(entity){
@@ -139,7 +211,12 @@ def componentOn(ch){
     state.id = state.id + 1
     entity = ch.name
     domain = entity.tokenize(".")[0]
-    messOn = JsonOutput.toJson([id: state.id, type: "call_service", domain: "${domain}", service: "turn_on", service_data: [entity_id: "${entity}"]])
+    if (!ch.currentValue("level")) {
+        messOn = JsonOutput.toJson([id: state.id, type: "call_service", domain: "${domain}", service: "turn_on", service_data: [entity_id: "${entity}"]])
+    }
+    else {
+        messOn = JsonOutput.toJson([id: state.id, type: "call_service", domain: "${domain}", service: "turn_on", service_data: [entity_id: "${entity}", brightness_pct: "${ch.currentValue("level")}"]])        
+    }
     if (logEnable) log.debug("messOn = ${messOn}")
     interfaces.webSocket.sendMessage("${messOn}")
 }
@@ -152,6 +229,18 @@ def componentOff(ch){
     messOff = JsonOutput.toJson([id: state.id, type: "call_service", domain: "${domain}", service: "turn_off", service_data: [entity_id: "${entity}"]])
     if (logEnable) log.debug("messOff = ${messOff}")
     interfaces.webSocket.sendMessage("${messOff}")
+}
+
+def componentSetLevel(ch, level, transition=1){
+    if (logEnable) log.info("received setLevel request from ${ch.label}")
+    if (level > 100) level = 100
+    if (level < 0) level = 0
+    state.id = state.id + 1
+    entity = ch.name
+    domain = entity.tokenize(".")[0]
+    messLevel = JsonOutput.toJson([id: state.id, type: "call_service", domain: "${domain}", service: "turn_on", service_data: [entity_id: "${entity}", brightness_pct: "${level}", transition: "${transition}"]])
+    if (logEnable) log.debug("messLevel = ${messLevel}")
+    interfaces.webSocket.sendMessage("${messLevel}")
 }
 
 def componentRefresh(ch){

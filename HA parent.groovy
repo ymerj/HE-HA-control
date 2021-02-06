@@ -97,7 +97,7 @@ def parse(String description) {
         
         entity = response.event.data.entity_id
         domain = entity.tokenize(".")[0]
-        subdomain = response.event.data.attributes.device_class
+        subdomain = response.event.data.new_state.attributes.device_class
         friendly = response.event.data.new_state.attributes.friendly_name
         etat = response.event.data.new_state.state
         

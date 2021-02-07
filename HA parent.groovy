@@ -25,6 +25,8 @@ HA integration
 * 0.1.3 2021-02-06 Dan Ogorchock      Bug Fixes 
 * 0.1.4 2021-02-06 ymerj              Added version number and import URL
 * 0.1.5 2021-02-06 Dan Ogorchock      Added support for Temperature and Humidity Sensors
+* 0.1.6 2021-02-06 Dan Ogorchock      Corrected open/closed for HA door events
+* 0.1.7 2021-02-07 Dan Ogorchock      Corrected open/closed for HA window, garage_door, and opening per @smarthomeprimer
 *
 * Thank you(s):
 */
@@ -223,12 +225,12 @@ def translateBinarySensorTypes(device_class)
     def mapping =
         [
             door: [type: "Generic Component Contact Sensor", attributes: [name: "contact", states: [on: "open", off: "closed"]]],
-            garage_door: [type: "Generic Component Contact Sensor", attributes: [name: "contact", states: [on: "closed", off: "open"]]],
+            garage_door: [type: "Generic Component Contact Sensor", attributes: [name: "contact", states: [on: "open", off: "closed"]]],
             moisture: [type: "Generic Component Water Sensor", attributes: [name: "water", states: [on: "wet", off: "dry"]]],
             motion: [type: "Generic Component Motion Sensor", attributes: [name: "motion", states: [on: "active", off: "inactive"]]],
-            opening: [type: "Generic Component Contact Sensor", attributes: [name: "contact", states: [on: "closed", off: "open"]]],
+            opening: [type: "Generic Component Contact Sensor", attributes: [name: "contact", states: [on: "open", off: "closed"]]],
             presence: [type: "Generic Component Presence Sensor", attributes: [name: "presence", states: [on: "present", off: "not present"]]],
-            window: [type: "Generic Component Contact Sensor", attributes: [name: "contact", states: [on: "closed", off: "open"]]]
+            window: [type: "Generic Component Contact Sensor", attributes: [name: "contact", states: [on: "open", off: "closed"]]]
         ]
     return mapping[device_class]
 }

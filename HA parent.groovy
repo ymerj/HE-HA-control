@@ -222,7 +222,7 @@ def translateBinarySensorTypes(device_class)
 {
     def mapping =
         [
-            door: [type: "Generic Component Contact Sensor", attributes: [name: "contact", states: [on: "closed", off: "open"]]],
+            door: [type: "Generic Component Contact Sensor", attributes: [name: "contact", states: [on: "open", off: "closed"]]],
             garage_door: [type: "Generic Component Contact Sensor", attributes: [name: "contact", states: [on: "closed", off: "open"]]],
             moisture: [type: "Generic Component Water Sensor", attributes: [name: "water", states: [on: "wet", off: "dry"]]],
             motion: [type: "Generic Component Motion Sensor", attributes: [name: "motion", states: [on: "active", off: "inactive"]]],

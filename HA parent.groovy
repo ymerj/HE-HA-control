@@ -106,8 +106,8 @@ def parse(String description) {
         response = new groovy.json.JsonSlurper().parseText(description)
         if (response.type != "event") return
         
-        def entity = response?.event?.data.entity_id
-        def domain = entity?.tokenize(".")[0]
+        def entity = response?.event?.data?.entity_id
+        def domain = entity?.tokenize(".")?.getAt(0)
         def subdomain = response?.event?.data?.new_state?.attributes?.device_class
         def friendly = response?.event?.data?.new_state?.attributes?.friendly_name
         def etat = response?.event?.data?.new_state?.state
@@ -162,16 +162,23 @@ def sendChildEvent(domain, subdomain, entity, friendly, etat)
         log.info "Child not created for domain: ${domain}, subdomain: ${subdomain}, entity: ${entity}"
         return
     }
+    
     def mapping
+    def value
+    
     switch(domain)
     {
         case "binary_sensor":
             mapping = translateBinarySensorTypes(subdomain)
+            value = mapping?.attributes?.states?."${etat}" ?: "${etat}"
+            break
+        case "sensor":
+            mapping = translateSensorTypes(subdomain, etat)
+            value = mapping?.attributes?.value ?: "${etat}"
             break
     }
     if ((mapping) || (domain != "binary_sensor")) {
-        def name =  mapping?.attributes?.name ?: subdomain
-        def value = mapping?.attributes?.states?."${etat}"?: "${etat}"
+        def name =  mapping?.attributes?.name ?: subdomain        
         //log.info "name: ${name}, value: ${value}"
         ch.parse([[name: name, value: value, descriptionText:"${ch.label} updated"]])    
     }
@@ -196,17 +203,7 @@ def createChild(domain, subdomain, entity, friendly)
                 deviceType = translateBinarySensorTypes(subdomain).type
                 break
             case "sensor":
-                switch(subdomain)
-                {
-                    case "humidity":
-                        deviceType = "Generic Component Humidity Sensor"
-                        break            
-                    case "temperature":
-                        deviceType = "Generic Component Temperature Sensor"
-                        break
-                    default:
-                        return null
-                }
+                deviceType = translateSensorTypes(device_class, null)
             break
             default:
                 return null
@@ -229,6 +226,17 @@ def translateBinarySensorTypes(device_class)
             opening: [type: "Generic Component Contact Sensor", attributes: [name: "contact", states: [on: "open", off: "closed"]]],
             presence: [type: "Generic Component Presence Sensor", attributes: [name: "presence", states: [on: "present", off: "not present"]]],
             window: [type: "Generic Component Contact Sensor", attributes: [name: "contact", states: [on: "open", off: "closed"]]]
+        ]
+    return mapping[device_class]
+}
+
+def translateSensorTypes(device_class, etat = null)
+{
+    def mapping =
+        [
+            humidity: [type: "Generic Component Humidity Sensor", attributes: [name: "humidity", value: etat?.toFloat()?.toString()]],
+            temperature: [type: "Generic Component Temperature Sensor", attributes: [name: "temperature", value: etat?.toFloat()?.toString()]],
+            voltage: [type: "Generic Component Voltage Sensor", attributes: [name: "voltage", value: etat?.toFloat()?.toString()]]
         ]
     return mapping[device_class]
 }

@@ -204,7 +204,7 @@ def createChild(domain, subdomain, entity, friendly)
                 deviceType = translateBinarySensorTypes(subdomain).type
                 break
             case "sensor":
-                deviceType = translateSensorTypes(device_class, null)
+                deviceType = translateSensorTypes(device_class, null).type
             break
             default:
                 return null

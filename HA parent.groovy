@@ -29,7 +29,7 @@ HA integration
 * 0.1.7 2021-02-07 Dan Ogorchock      Corrected open/closed for HA window, garage_door, and opening per @smarthomeprimer
 * 0.1.8 2021-02-07 Dan Ogorchock      Removed temperature and humidity workaround for missing device_class on some HA sensors.  
                                       This can be corrected on the HA side via the Customize entity feature to add the missing device_class.
-* 0.1.9 2021-02-06 tomw               More generic handling for "sensor" device_class subdomains.  Added Voltage device_class to "sensor".
+* 0.1.9 2021-02-06 tomw               More generic handling for "sensor" device_class subdomains.  Added voltage device_class to "sensor".
 *
 * Thank you(s):
 */

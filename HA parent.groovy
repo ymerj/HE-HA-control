@@ -1,5 +1,5 @@
 /*
-HA integration
+* Home Assistant to Hubitat Integration
 *
 * Description:
 * Allow control of HA devices.
@@ -19,16 +19,18 @@ HA integration
 * for the specific language governing permissions and limitations under the License.
 *
 * Version Control:
-* 0.1.0 2021-02-05 Yves Mercier       Orinal version
-* 0.1.1 2021-02-06 Dan Ogorchock      Added basic support for simple "Light" devices from Home Assistant using Hubitat Generic Component Dimmer driver
-* 0.1.2 2021-02-06 tomw               Added handling for some binary_sensor subtypes based on device_class
-* 0.1.3 2021-02-06 Dan Ogorchock      Bug Fixes 
-* 0.1.4 2021-02-06 ymerj              Added version number and import URL
-* 0.1.5 2021-02-06 Dan Ogorchock      Added support for Temperature and Humidity Sensors
-* 0.1.6 2021-02-06 Dan Ogorchock      Corrected open/closed for HA door events
-* 0.1.7 2021-02-07 Dan Ogorchock      Corrected open/closed for HA window, garage_door, and opening per @smarthomeprimer
-* 0.1.8 2021-02-07 Dan Ogorchock      Removed temperature and humidity workaround for missing device_class on some HA sensors.  
-                                      This can be corrected on the HA side via the Customize entity feature to add the missing device_class.
+* 0.1.0  2021-02-05 Yves Mercier       Orinal version
+* 0.1.1  2021-02-06 Dan Ogorchock      Added basic support for simple "Light" devices from Home Assistant using Hubitat Generic Component Dimmer driver
+* 0.1.2  2021-02-06 tomw               Added handling for some binary_sensor subtypes based on device_class
+* 0.1.3  2021-02-06 Dan Ogorchock      Bug Fixes 
+* 0.1.4  2021-02-06 ymerj              Added version number and import URL
+* 0.1.5  2021-02-06 Dan Ogorchock      Added support for Temperature and Humidity Sensors
+* 0.1.6  2021-02-06 Dan Ogorchock      Corrected open/closed for HA door events
+* 0.1.7  2021-02-07 Dan Ogorchock      Corrected open/closed for HA window, garage_door, and opening per @smarthomeprimer
+* 0.1.8  2021-02-07 Dan Ogorchock      Removed temperature and humidity workaround for missing device_class on some HA sensors.  
+*                                      This can be corrected on the HA side via the Customize entity feature to add the missing device_class.
+* 0.1.9  2021-02-07 tomw               More generic handling for "sensor" device_classes.  Added voltage device_class to "sensor".
+* 0.1.10 2021-02-07 Dan Ogorchock      Refactored the translation from HA to HE to simplify the overall design      
 *
 * Thank you(s):
 */
@@ -100,33 +102,43 @@ def webSocketStatus(String status){
 }
 
 def parse(String description) {
-    if (logEnable) log.debug("parsed: $description")
+    if (logEnable) log.debug("parse(): description = ${description}")
     def response = null;
     try{
         response = new groovy.json.JsonSlurper().parseText(description)
         if (response.type != "event") return
         
-        def entity = response?.event?.data.entity_id
-        def domain = entity?.tokenize(".")[0]
-        def subdomain = response?.event?.data?.new_state?.attributes?.device_class
+        def entity = response?.event?.data?.entity_id
+        def domain = entity?.tokenize(".")?.getAt(0)
+        def device_class = response?.event?.data?.new_state?.attributes?.device_class
         def friendly = response?.event?.data?.new_state?.attributes?.friendly_name
         def etat = response?.event?.data?.new_state?.state
+        def mapping = null
         
-        if (logEnable) log.debug "parse: domain: ${domain}, subdomain: ${subdomain}, entity: ${entity}, etat: ${etat}, friendly: ${friendly}"
+        if (logEnable) log.debug "parse: domain: ${domain}, device_class: ${device_class}, entity: ${entity}, etat: ${etat}, friendly: ${friendly}"
         
         switch (domain) {
             case "switch":
-                onOff(domain, entity, friendly, etat)
+                mapping = translateDevices(domain, etat)
+                if (mapping) updateChildDevice(mapping, entity, friendly)
                 break
             case "light":
+                mapping = translateDevices(domain, etat)
+                if (mapping) updateChildDevice(mapping, entity, friendly)
+
                 def level = response?.event?.data?.new_state?.attributes?.brightness
                 if (level) {
                     level = level.toInteger()
                 }
-                onOffDim(domain, entity, friendly, etat, level)
+                updateLevel(entity, friendly, level)
+                break
+            case "binary_sensor":
+            case "sensor":
+                mapping = translateDevices(device_class, etat)
+                if (mapping) updateChildDevice(mapping, entity, friendly)                
                 break
             default:
-                if (subdomain) sendChildEvent(domain, subdomain, entity, friendly, etat)
+                if (logEnable) log.info "No mapping exists for domain: ${domain}}, device_class: ${device_class}.  Please contact devs to have this added."
         }
         return
     }  
@@ -136,101 +148,43 @@ def parse(String description) {
     }
 }
 
-def onOff(domain, entity, friendly, etat) {
-    if ((etat == "on") || (etat == "off")) {
-        def ch = createChild(domain, null, entity, friendly)
-        ch.parse([[name: "switch", value: etat, descriptionText:"${ch.label} was turned ${etat}"]])
-    }
-}
-
-def onOffDim(domain, entity, friendly, etat, level) {
-    
-    onOff(domain, entity, friendly, etat)
-    
-    if (level) {
-        def ch = createChild(domain, null, entity, friendly)
-        level = (level * 100 / 255)
-        level = Math.round(level) 
-        ch.parse([[name:"level", value: level, descriptionText:"${ch.label} level set to ${level}"]])
-    }
-}
-
-def sendChildEvent(domain, subdomain, entity, friendly, etat)
-{
-    def ch = createChild(domain, subdomain, entity, friendly)
-    if (!ch) {
-        log.info "Child not created for domain: ${domain}, subdomain: ${subdomain}, entity: ${entity}"
-        return
-    }
-    def mapping
-    switch(domain)
-    {
-        case "binary_sensor":
-            mapping = translateBinarySensorTypes(subdomain)
-            break
-    }
-    if ((mapping) || (domain != "binary_sensor")) {
-        def name =  mapping?.attributes?.name ?: subdomain
-        def value = mapping?.attributes?.states?."${etat}"?: "${etat}"
-        //log.info "name: ${name}, value: ${value}"
-        ch.parse([[name: name, value: value, descriptionText:"${ch.label} updated"]])    
-    }
-}
-
-def createChild(domain, subdomain, entity, friendly)
-{
-    String thisId = device.id
-    def ch = getChildDevice("${thisId}-${entity}")
-    if (!ch)
-    {
-        def deviceType
-        switch(domain)
-        {
-            case "switch":
-                deviceType = "Generic Component Switch"
-                break
-            case "light":
-                deviceType = "Generic Component Dimmer"
-                break
-            case "binary_sensor":
-                deviceType = translateBinarySensorTypes(subdomain).type
-                break
-            case "sensor":
-                switch(subdomain)
-                {
-                    case "humidity":
-                        deviceType = "Generic Component Humidity Sensor"
-                        break            
-                    case "temperature":
-                        deviceType = "Generic Component Temperature Sensor"
-                        break
-                    default:
-                        return null
-                }
-            break
-            default:
-                return null
-        }
-
-        ch = addChildDevice("hubitat", deviceType, "${thisId}-${entity}", [name: "${entity}", label: "${friendly}", isComponent: false])
-    }
-    
-    return ch
-}
-
-def translateBinarySensorTypes(device_class)
+def translateDevices(device_class, entityNewValue)
 {
     def mapping =
         [
-            door: [type: "Generic Component Contact Sensor", attributes: [name: "contact", states: [on: "open", off: "closed"]]],
-            garage_door: [type: "Generic Component Contact Sensor", attributes: [name: "contact", states: [on: "open", off: "closed"]]],
-            moisture: [type: "Generic Component Water Sensor", attributes: [name: "water", states: [on: "wet", off: "dry"]]],
-            motion: [type: "Generic Component Motion Sensor", attributes: [name: "motion", states: [on: "active", off: "inactive"]]],
-            opening: [type: "Generic Component Contact Sensor", attributes: [name: "contact", states: [on: "open", off: "closed"]]],
-            presence: [type: "Generic Component Presence Sensor", attributes: [name: "presence", states: [on: "present", off: "not present"]]],
-            window: [type: "Generic Component Contact Sensor", attributes: [name: "contact", states: [on: "open", off: "closed"]]]
+            switch: [type: "Generic Component Switch",                  event: [name: "switch",      value: entityNewValue]],
+            light: [type: "Generic Component Dimmer",                   event: [name: "switch",      value: entityNewValue]],
+            humidity: [type: "Generic Component Humidity Sensor",       event: [name: "humidity",    value: entityNewValue]],
+            temperature: [type: "Generic Component Temperature Sensor", event: [name: "temperature", value: entityNewValue]],
+            voltage: [type: "Generic Component Voltage Sensor",         event: [name: "voltage",     value: entityNewValue]],
+            door: [type: "Generic Component Contact Sensor",            event: [name: "contact",     value: entityNewValue == "on" ? "open":"closed"]],
+            garage_door: [type: "Generic Component Contact Sensor",     event: [name: "contact",     value: entityNewValue == "on" ? "open":"closed"]],
+            moisture: [type: "Generic Component Water Sensor",          event: [name: "water",       value: entityNewValue == "on" ? "wet":"dry"]],
+            motion: [type: "Generic Component Motion Sensor",           event: [name: "motion",      value: entityNewValue == "on" ? """active""":"""inactive"""]],
+            opening: [type: "Generic Component Contact Sensor",         event: [name: "contact",     value: entityNewValue == "on" ? "open":"closed"]],
+            presence: [type: "Generic Component Presence Sensor",       event: [name: "presence",    value: entityNewValue == "on" ? "present":"not present"]],
+            window: [type: "Generic Component Contact Sensor",          event: [name: "contact",     value: entityNewValue == "on" ? "open":"closed"]]
         ]
+
     return mapping[device_class]
+}
+
+def updateChildDevice(mapping, entity, friendly) {
+    def ch = createChild(mapping.type, entity, friendly)
+    if (!ch) {
+        log.warn "Child type: ${mapping.type} not created for entity: ${entity}"
+        return
+    }
+    else {
+        ch.parse([[name: mapping.event.name, value: mapping.event.value, descriptionText:"${ch.label} updated to ${mapping.event.value}"]])
+    }
+}
+
+def createChild(deviceType, entity, friendly)
+{
+    def ch = getChildDevice("${device.id}-${entity}")
+    if (!ch) ch = addChildDevice("hubitat", deviceType, "${device.id}-${entity}", [name: "${entity}", label: "${friendly}", isComponent: false])
+    return ch
 }
 
 def removeChild(entity){
@@ -238,7 +192,16 @@ def removeChild(entity){
     def ch = getChildDevice("${thisId}-${entity}")
     if (ch) {deleteChildDevice("${thisId}-${entity}")}
 }
-    
+
+def updateLevel(entity, friendly, level) {
+    if (level) {
+        def ch = createChild("Generic Component Dimmer", entity, friendly)
+        level = (level * 100 / 255)
+        level = Math.round(level) 
+        ch.parse([[name:"level", value: level, descriptionText:"${ch.label} level set to ${level}"]])
+    }
+}
+
 def componentOn(ch){
     if (logEnable) log.info("received on request from ${ch.label}")
     state.id = state.id + 1

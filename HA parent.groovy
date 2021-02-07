@@ -27,7 +27,7 @@ HA integration
 * 0.1.5 2021-02-06 Dan Ogorchock      Added support for Temperature and Humidity Sensors
 * 0.1.6 2021-02-06 Dan Ogorchock      Corrected open/closed for HA door events
 * 0.1.7 2021-02-07 Dan Ogorchock      Corrected open/closed for HA window, garage_door, and opening per @smarthomeprimer
-* 0.1.7 2021-02-07 Dan Ogorchock      Removed temperature and humidity workaround for missing device_class on some HA sensors.  
+* 0.1.8 2021-02-07 Dan Ogorchock      Removed temperature and humidity workaround for missing device_class on some HA sensors.  
                                       This can be corrected on the HA side via the Customize entity feature to add the missing device_class.
 *
 * Thank you(s):

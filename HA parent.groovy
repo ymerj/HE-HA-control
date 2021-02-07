@@ -24,6 +24,7 @@ HA integration
 * 0.1.2 2021-02-06 tomw               Added handling for some binary_sensor subtypes based on device_class
 * 0.1.3 2021-02-06 Dan Ogorchock      Bug Fixes 
 * 0.1.4 2021-02-06 ymerj              Added version number and import URL
+* 0.1.5 2021-02-06 Dan Ogorchock      Added support for Temperature and Humidity Sensors
 *
 * Thank you(s):
 */
@@ -37,7 +38,8 @@ metadata {
 
 //        command "createChild", [[ name: "entity", type: "STRING", description: "HomeAssistant Entity ID" ]]
 //        command "removeChild", [[ name: "entity", type: "STRING", description: "HomeAssistant Entity ID" ]]
-//        command "closeConnection"
+//        command "closeConnection"        
+//        command "deleteAllChildDevices"
     }
 
     preferences {
@@ -79,7 +81,10 @@ def initialize() {
 }
 
 def uninstalled() {
+    log.info("uninstalled...")
     closeConnection()
+    unschedule()
+    deleteAllChildDevices()
 }
 
 def webSocketStatus(String status){
@@ -99,8 +104,11 @@ def parse(String description) {
         
         def entity = response?.event?.data.entity_id
         def domain = entity?.tokenize(".")[0]
-        def subdomain = response?.event?.data?.attributes?.device_class
-        if (!subdomain) subdomain = response?.event?.data?.new_state?.attributes?.device_class
+        def subdomain = response?.event?.data?.new_state?.attributes?.device_class
+        if (!subdomain) {
+            if (entity.toLowerCase().contains("temperature")) subdomain = "temperature"
+            if (entity.toLowerCase().contains("humidity")) subdomain = "humidity"
+        }
         def friendly = response?.event?.data?.new_state?.attributes?.friendly_name
         def etat = response?.event?.data?.new_state?.state
         
@@ -150,6 +158,10 @@ def onOffDim(domain, entity, friendly, etat, level) {
 def sendChildEvent(domain, subdomain, entity, friendly, etat)
 {
     def ch = createChild(domain, subdomain, entity, friendly)
+    if (!ch) {
+        log.info "Child not created for domain: ${domain}, subdomain: ${subdomain}, entity: ${entity}"
+        return
+    }
     def mapping
     switch(domain)
     {
@@ -157,9 +169,10 @@ def sendChildEvent(domain, subdomain, entity, friendly, etat)
             mapping = translateBinarySensorTypes(subdomain)
             break
     }
-    if (mapping) {
+    if ((mapping) || (domain != "binary_sensor")) {
         def name =  mapping?.attributes?.name ?: subdomain
         def value = mapping?.attributes?.states?."${etat}"?: "${etat}"
+        //log.info "name: ${name}, value: ${value}"
         ch.parse([[name: name, value: value, descriptionText:"${ch.label} updated"]])    
     }
 }
@@ -182,11 +195,23 @@ def createChild(domain, subdomain, entity, friendly)
             case "binary_sensor":
                 deviceType = translateBinarySensorTypes(subdomain).type
                 break
-            
+            case "sensor":
+                switch(subdomain)
+                {
+                    case "humidity":
+                        deviceType = "Generic Component Humidity Sensor"
+                        break            
+                    case "temperature":
+                        deviceType = "Generic Component Temperature Sensor"
+                        break
+                    default:
+                        return null
+                }
+            break
             default:
                 return null
         }
-        
+
         ch = addChildDevice("hubitat", deviceType, "${thisId}-${entity}", [name: "${entity}", label: "${friendly}", isComponent: false])
     }
     
@@ -259,4 +284,11 @@ def closeConnection() {
     if (logEnable) log.debug("Closing connection...")
     interfaces.webSocket.sendMessage('{"id":2,"type":"unsubscribe_events","subscription":1}')
     interfaces.webSocket.close()
+}
+
+def deleteAllChildDevices() {
+    log.info "Uninstalling all Child Devices"
+    getChildDevices().each {
+          deleteChildDevice(it.deviceNetworkId)
+       }
 }

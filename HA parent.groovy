@@ -23,6 +23,7 @@ HA integration
 * 0.1.1 2021-02-06 Dan Ogorchock      Added basic support for simple "Light" devices from Home Assistant using Hubitat Generic Component Dimmer driver
 * 0.1.2 2021-02-06 tomw               Added handling for some binary_sensor subtypes based on device_class
 * 0.1.3 2021-02-06 Dan Ogorchock      Bug Fixes 
+* 0.1.4 2021-02-06 ymerj              Added version number and import URL
 *
 * Thank you(s):
 */
@@ -31,7 +32,7 @@ import groovy.json.JsonSlurper
 import groovy.json.JsonOutput
 
 metadata {
-    definition (name: "HomeAssistant Hub Parent", namespace: "ymerj", author: "Yves Mercier") {
+    definition (name: "HomeAssistant Hub Parent", namespace: "ymerj", author: "Yves Mercier", importUrl: "https://raw.githubusercontent.com/ymerj/HE-HA-control/main/HA%20parent.groovy") {
         capability "Initialize"
 
 //        command "createChild", [[ name: "entity", type: "STRING", description: "HomeAssistant Entity ID" ]]

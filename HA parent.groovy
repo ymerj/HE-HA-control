@@ -207,15 +207,6 @@ def removeChild(entity){
     if (ch) {deleteChildDevice("${thisId}-${entity}")}
 }
 
-def updateLevel(entity, friendly, level) {
-    if (level) {
-        def ch = createChild("Generic Component Dimmer", entity, friendly)
-        level = (level * 100 / 255)
-        level = Math.round(level) 
-        ch.parse([[name:"level", value: level, descriptionText:"${ch.label} level set to ${level}"]])
-    }
-}
-
 def componentOn(ch){
     if (logEnable) log.info("received on request from ${ch.label}")
     state.id = state.id + 1

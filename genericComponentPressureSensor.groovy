@@ -18,14 +18,44 @@ limitations under the License.
 
 Change history:
 
-0.1.13 - @tomw - initial version
+0.1.13- @tomw - initial version
 
 */
 
 metadata
 {
-    definition(name: "Generic Component Pressure Sensor", namespace: "community", author: "tomw", importUrl: "https://raw.githubusercontent.com/ymerj/HE-HA-control/main/genericComponentPressureSensor.groovy")
+    definition(name: "Generic Component Pressure Sensor", namespace: "community", author: "community", importUrl: "")
     {
         capability "PressureMeasurement"
+        capability "Refresh"
     }
+    preferences {
+        input name: "txtEnable", type: "bool", title: "Enable descriptionText logging", defaultValue: true
+    }
+}
+
+void updated() {
+    log.info "Updated..."
+    log.warn "description logging is: ${txtEnable == true}"
+}
+
+void installed() {
+    log.info "Installed..."
+    device.updateSetting("txtEnable",[type:"bool",value:true])
+    refresh()
+}
+
+void parse(String description) { log.warn "parse(String description) not implemented" }
+
+void parse(List<Map> description) {
+    description.each {
+        if (it.name in ["pressure"]) {
+            if (txtEnable) log.info it.descriptionText
+            sendEvent(it)
+        }
+    }
+}
+
+void refresh() {
+    parent?.componentRefresh(this.device)
 }

@@ -32,6 +32,8 @@
 * 0.1.9  2021-02-07 tomw               More generic handling for "sensor" device_classes.  Added voltage device_class to "sensor".
 * 0.1.10 2021-02-07 Dan Ogorchock      Refactored the translation from HA to HE to simplify the overall design
 * 0.1.11 2021-02-07 Dan Ogorchock      Completed refactoring of Dimmer Switch support
+* 0.1.12 2021-02-08 Dan Ogorchock      Fixed typo in log.info statement
+* 0.1.13 2021-02-08 tomw               Added "community" namespace support for component drivers.  Added Pressure and Illuminance.
 *
 * Thank you(s):
 */

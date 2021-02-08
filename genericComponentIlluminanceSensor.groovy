@@ -29,6 +29,9 @@ metadata
         capability "IlluminanceMeasurement"
         capability "Refresh"
     }
+    preferences {
+        input name: "txtEnable", type: "bool", title: "Enable descriptionText logging", defaultValue: true
+    }
 }
 
 void updated() {

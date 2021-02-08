@@ -30,7 +30,8 @@
 * 0.1.8  2021-02-07 Dan Ogorchock      Removed temperature and humidity workaround for missing device_class on some HA sensors.  
 *                                      This can be corrected on the HA side via the Customize entity feature to add the missing device_class.
 * 0.1.9  2021-02-07 tomw               More generic handling for "sensor" device_classes.  Added voltage device_class to "sensor".
-* 0.1.10 2021-02-07 Dan Ogorchock      Refactored the translation from HA to HE to simplify the overall design      
+* 0.1.10 2021-02-07 Dan Ogorchock      Refactored the translation from HA to HE to simplify the overall design
+* 0.1.11 2021-02-07 tomw               Streamline code path for multi-attribute updates
 *
 * Thank you(s):
 */
@@ -123,14 +124,13 @@ def parse(String description) {
                 if (mapping) updateChildDevice(mapping, entity, friendly)
                 break
             case "light":
-                mapping = translateDevices(domain, etat)
-                if (mapping) updateChildDevice(mapping, entity, friendly)
-
-                def level = response?.event?.data?.new_state?.attributes?.brightness
-                if (level) {
-                    level = level.toInteger()
+                if(etat && response?.event?.data?.new_state?.attributes?.brightness)
+                {
+                    level = response.event.data.new_state.attributes.brightness
+                    level = Math.round(level.toInteger() * 100 / 255)
+                    events = [[name: "switch", value: etat], [name: "level", value: level]]
+                    updateChildDevice(translateDevices(domain, events), entity, friendly)
                 }
-                updateLevel(entity, friendly, level)
                 break
             case "binary_sensor":
             case "sensor":
@@ -152,18 +152,29 @@ def translateDevices(device_class, entityNewValue)
 {
     def mapping =
         [
-            switch: [type: "Generic Component Switch",                  event: [name: "switch",      value: entityNewValue]],
-            light: [type: "Generic Component Dimmer",                   event: [name: "switch",      value: entityNewValue]],
-            humidity: [type: "Generic Component Humidity Sensor",       event: [name: "humidity",    value: entityNewValue]],
-            temperature: [type: "Generic Component Temperature Sensor", event: [name: "temperature", value: entityNewValue]],
-            voltage: [type: "Generic Component Voltage Sensor",         event: [name: "voltage",     value: entityNewValue]],
-            door: [type: "Generic Component Contact Sensor",            event: [name: "contact",     value: entityNewValue == "on" ? "open":"closed"]],
-            garage_door: [type: "Generic Component Contact Sensor",     event: [name: "contact",     value: entityNewValue == "on" ? "open":"closed"]],
-            moisture: [type: "Generic Component Water Sensor",          event: [name: "water",       value: entityNewValue == "on" ? "wet":"dry"]],
-            motion: [type: "Generic Component Motion Sensor",           event: [name: "motion",      value: entityNewValue == "on" ? """active""":"""inactive"""]],
-            opening: [type: "Generic Component Contact Sensor",         event: [name: "contact",     value: entityNewValue == "on" ? "open":"closed"]],
-            presence: [type: "Generic Component Presence Sensor",       event: [name: "presence",    value: entityNewValue == "on" ? "present":"not present"]],
-            window: [type: "Generic Component Contact Sensor",          event: [name: "contact",     value: entityNewValue == "on" ? "open":"closed"]]
+            switch: [type: "Generic Component Switch",                  event: [[name: "switch",      value: entityNewValue]]],
+            humidity: [type: "Generic Component Humidity Sensor",       event: [[name: "humidity",    value: entityNewValue]]],
+            temperature: [type: "Generic Component Temperature Sensor", event: [[name: "temperature", value: entityNewValue]]],
+            voltage: [type: "Generic Component Voltage Sensor",         event: [[name: "voltage",     value: entityNewValue]]],
+            door: [type: "Generic Component Contact Sensor",            event: [[name: "contact",     value: entityNewValue == "on" ? "open":"closed"]]],
+            garage_door: [type: "Generic Component Contact Sensor",     event: [[name: "contact",     value: entityNewValue == "on" ? "open":"closed"]]],
+            moisture: [type: "Generic Component Water Sensor",          event: [[name: "water",       value: entityNewValue == "on" ? "wet":"dry"]]],
+            motion: [type: "Generic Component Motion Sensor",           event: [[name: "motion",      value: entityNewValue == "on" ? """active""":"""inactive"""]]],
+            opening: [type: "Generic Component Contact Sensor",         event: [[name: "contact",     value: entityNewValue == "on" ? "open":"closed"]]],
+            presence: [type: "Generic Component Presence Sensor",       event: [[name: "presence",    value: entityNewValue == "on" ? "present":"not present"]]],
+            window: [type: "Generic Component Contact Sensor",          event: [[name: "contact",     value: entityNewValue == "on" ? "open":"closed"]]]
+        ]
+
+    return mapping[device_class]
+}
+
+def translateDevices(domain, Map events)
+{
+    // specialized version for multi-attribute devices (e.g. light/dimmer)
+    
+    def mapping =
+        [
+            light: [type: "Generic Component Dimmer", event: events]
         ]
 
     return mapping[device_class]
@@ -176,7 +187,10 @@ def updateChildDevice(mapping, entity, friendly) {
         return
     }
     else {
-        ch.parse([[name: mapping.event.name, value: mapping.event.value, descriptionText:"${ch.label} updated to ${mapping.event.value}"]])
+        for(event in mapping.event)
+        {
+            ch.parse([[name: mapping.event.name, value: mapping.event.value, descriptionText:"${ch.label} updated to ${mapping.event.value}"]])
+        }
     }
 }
 

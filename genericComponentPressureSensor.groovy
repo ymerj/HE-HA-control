@@ -24,7 +24,7 @@ Change history:
 
 metadata
 {
-    definition(name: "Generic Component Pressure Sensor", namespace: "community", author: "community", importUrl: "")
+    definition(name: "Generic Component Pressure Sensor", namespace: "community", author: "community", importUrl: "https://raw.githubusercontent.com/ymerj/HE-HA-control/main/genericComponentPressureSensor.groovy")
     {
         capability "PressureMeasurement"
         capability "Refresh"

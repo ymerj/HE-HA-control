@@ -1,0 +1,34 @@
+{
+  "packageName": "HE-HA-control",
+  "author": "ymerj",
+  "version": "0.1.13",
+  "minimumHEVersion": "2.1.9",
+  "dateReleased": "2021-01-31",
+  "drivers": [
+    {
+      "id": "040f7172-390a-46b2-8220-672e16aa0ae6",
+      "name": "HomeAssistant Hub Parent",
+      "namespace": "ymerj",
+      "location": "https://raw.githubusercontent.com/ymerj/HE-HA-control/main/HA%20parent.groovy",
+      "required": true
+    },
+    {
+      "id": "bb9dba8b-bd6e-4ede-9097-dc72777d3e46",
+      "name": "Generic Component Illuminance Sensor",
+      "namespace": "community",
+      "location": "https://raw.githubusercontent.com/ymerj/HE-HA-control/main/genericComponentIlluminanceSensor.groovy",
+      "required": false
+    },
+    {
+      "id": "5c5d7872-f132-483c-a976-d40b4be79590",
+      "name": "Generic Component Pressure Sensor",
+      "namespace": "community",
+      "location": "https://raw.githubusercontent.com/ymerj/HE-HA-control/main/genericComponentPressureSensor.groovy",
+      "required": false
+    }    
+  ],
+  "licenseFile": "https://raw.githubusercontent.com/ymerj/HE-HA-control/main/LICENSE",
+  "releaseNotes": "",
+  "documentationLink": "",
+  "communityLink": "https://community.hubitat.com/t/a-word-about-ha-he-integration/63754"
+}

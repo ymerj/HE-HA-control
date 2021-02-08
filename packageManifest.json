@@ -13,14 +13,14 @@
       "required": true
     },
     {
-      "id": "040f7172-390a-46b2-8220-672e16aa0ae6",
+      "id": "bb9dba8b-bd6e-4ede-9097-dc72777d3e46",
       "name": "Generic Component Illuminance Sensor",
       "namespace": "community",
       "location": "https://raw.githubusercontent.com/ymerj/HE-HA-control/main/genericComponentIlluminanceSensor.groovy",
       "required": false
     },
     {
-      "id": "040f7172-390a-46b2-8220-672e16aa0ae6",
+      "id": "5c5d7872-f132-483c-a976-d40b4be79590",
       "name": "Generic Component Pressure Sensor",
       "namespace": "community",
       "location": "https://raw.githubusercontent.com/ymerj/HE-HA-control/main/genericComponentPressureSensor.groovy",

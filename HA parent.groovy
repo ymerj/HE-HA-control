@@ -32,6 +32,7 @@
 * 0.1.9  2021-02-07 tomw               More generic handling for "sensor" device_classes.  Added voltage device_class to "sensor".
 * 0.1.10 2021-02-07 Dan Ogorchock      Refactored the translation from HA to HE to simplify the overall design
 * 0.1.11 2021-02-07 Dan Ogorchock      Completed refactoring of Dimmer Switch support
+* 0.1.12 2021-02-08 Dan Ogorchock      Fixed typo in log.info statement
 *
 * Thank you(s):
 */
@@ -138,7 +139,7 @@ def parse(String description) {
                 if (mapping) updateChildDevice(mapping, entity, friendly)                
                 break
             default:
-                if (logEnable) log.info "No mapping exists for domain: ${domain}}, device_class: ${device_class}.  Please contact devs to have this added."
+                if (logEnable) log.info "No mapping exists for domain: ${domain}, device_class: ${device_class}.  Please contact devs to have this added."
         }
         return
     }  

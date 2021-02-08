@@ -138,7 +138,7 @@ def parse(String description) {
                 if (mapping) updateChildDevice(mapping, entity, friendly)                
                 break
             default:
-                if (logEnable) log.info "No mapping exists for domain: ${domain}}, device_class: ${device_class}.  Please contact devs to have this added."
+                if (logEnable) log.info "No mapping exists for domain: ${domain}, device_class: ${device_class}.  Please contact devs to have this added."
         }
         return
     }  

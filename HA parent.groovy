@@ -152,17 +152,19 @@ def translateDevices(device_class, newVals)
 {
     def mapping =
         [
-            switch: [type: "Generic Component Switch",                  event: [[name: "switch", value: newVals[0], descriptionText:"Switch changed to ${newVals[0]}"]]],
-            light: [type: "Generic Component Dimmer",                   event: [[name: "switch", value: newVals[0], descriptionText:"Switch changed to ${newVals[0]}"],[name: "level", value: newVals[1], descriptionText:"Level changed to ${newVals[1]}"]]],
-            humidity: [type: "Generic Component Humidity Sensor",       event: [[name: "humidity", value: newVals[0], descriptionText:"Humidity changed to ${newVals[0]}"]]],
-            temperature: [type: "Generic Component Temperature Sensor", event: [[name: "temperature", value: newVals[0], descriptionText:"Temperature changed to ${newVals[0]}"]]],
-            voltage: [type: "Generic Component Voltage Sensor",         event: [[name: "voltage", value: newVals[0], descriptionText:"Voltage changed to ${newVals[0]}"]]],
             door: [type: "Generic Component Contact Sensor",            event: [[name: "contact", value: newVals[0] == "on" ? "open":"closed", descriptionText:"Contact updated"]]],
             garage_door: [type: "Generic Component Contact Sensor",     event: [[name: "contact", value: newVals[0] == "on" ? "open":"closed", descriptionText:"Contact updated"]]],
+            humidity: [type: "Generic Component Humidity Sensor",       event: [[name: "humidity", value: newVals[0], descriptionText:"Humidity changed to ${newVals[0]}"]]],
+            illuminance: [type: "Generic Component Illuminance Sensor", event: [[name: "humidity", value: newVals[0], descriptionText:"Illuminance changed to ${newVals[0]}"]], namespace: "community"],
+            light: [type: "Generic Component Dimmer",                   event: [[name: "switch", value: newVals[0], descriptionText:"Switch changed to ${newVals[0]}"],[name: "level", value: newVals[1], descriptionText:"Level changed to ${newVals[1]}"]]],
             moisture: [type: "Generic Component Water Sensor",          event: [[name: "water", value: newVals[0] == "on" ? "wet":"dry", descriptionText:"Water updated"]]],
             motion: [type: "Generic Component Motion Sensor",           event: [[name: "motion", value: newVals[0] == "on" ? """active""":"""inactive""", descriptionText:"Motion updated"]]],
             opening: [type: "Generic Component Contact Sensor",         event: [[name: "contact", value: newVals[0] == "on" ? "open":"closed", descriptionText:"Contact updated"]]],
             presence: [type: "Generic Component Presence Sensor",       event: [[name: "presence", value: newVals[0] == "on" ? "present":"not present", descriptionText:"Presence updated"]]],
+            pressure: [type: "Generic Component Pressure Sensor",       event: [[name: "humidity", value: newVals[0], descriptionText:"Pressure changed to ${newVals[0]}"]], namespace: "community"],
+            switch: [type: "Generic Component Switch",                  event: [[name: "switch", value: newVals[0], descriptionText:"Switch changed to ${newVals[0]}"]]],
+            temperature: [type: "Generic Component Temperature Sensor", event: [[name: "temperature", value: newVals[0], descriptionText:"Temperature changed to ${newVals[0]}"]]],
+            voltage: [type: "Generic Component Voltage Sensor",         event: [[name: "voltage", value: newVals[0], descriptionText:"Voltage changed to ${newVals[0]}"]]],
             window: [type: "Generic Component Contact Sensor",          event: [[name: "contact", value: newVals[0] == "on" ? "open":"closed", descriptionText:"Contact updated"]]]
         ]
 
@@ -170,7 +172,7 @@ def translateDevices(device_class, newVals)
 }
 
 def updateChildDevice(mapping, entity, friendly) {
-    def ch = createChild(mapping.type, entity, friendly)
+    def ch = createChild(mapping.type, entity, friendly, mapping.namespace)
     if (!ch) {
         log.warn "Child type: ${mapping.type} not created for entity: ${entity}"
         return
@@ -180,10 +182,10 @@ def updateChildDevice(mapping, entity, friendly) {
     }
 }
 
-def createChild(deviceType, entity, friendly)
+def createChild(deviceType, entity, friendly, namespace = null)
 {
     def ch = getChildDevice("${device.id}-${entity}")
-    if (!ch) ch = addChildDevice("hubitat", deviceType, "${device.id}-${entity}", [name: "${entity}", label: "${friendly}", isComponent: false])
+    if (!ch) ch = addChildDevice(namespace ?: "hubitat", deviceType, "${device.id}-${entity}", [name: "${entity}", label: "${friendly}", isComponent: false])
     return ch
 }
 

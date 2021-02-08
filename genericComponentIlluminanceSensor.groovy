@@ -27,5 +27,32 @@ metadata
     definition(name: "Generic Component Illuminance Sensor", namespace: "community", author: "community", importUrl: "https://raw.githubusercontent.com/ymerj/HE-HA-control/main/genericComponentIlluminanceSensor.groovy")
     {
         capability "IlluminanceMeasurement"
+        capability "Refresh"
     }
+}
+
+void updated() {
+    log.info "Updated..."
+    log.warn "description logging is: ${txtEnable == true}"
+}
+
+void installed() {
+    log.info "Installed..."
+    device.updateSetting("txtEnable",[type:"bool",value:true])
+    refresh()
+}
+
+void parse(String description) { log.warn "parse(String description) not implemented" }
+
+void parse(List<Map> description) {
+    description.each {
+        if (it.name in ["illuminance"]) {
+            if (txtEnable) log.info it.descriptionText
+            sendEvent(it)
+        }
+    }
+}
+
+void refresh() {
+    parent?.componentRefresh(this.device)
 }

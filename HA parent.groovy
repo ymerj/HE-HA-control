@@ -34,6 +34,7 @@
 * 0.1.11 2021-02-07 Dan Ogorchock      Completed refactoring of Dimmer Switch support
 * 0.1.12 2021-02-08 Dan Ogorchock      Fixed typo in log.info statement
 * 0.1.13 2021-02-08 tomw               Added "community" namespace support for component drivers.  Added Pressure and Illuminance.
+* 0.1.14 2021-02-10 Dan Ogorchock      Added support for Fan devices (used Lutron Fan Controller as test device.)
 *
 * Thank you(s):
 */
@@ -122,6 +123,12 @@ def parse(String description) {
         if (logEnable) log.debug "parse: domain: ${domain}, device_class: ${device_class}, entity: ${entity}, newVals: ${newVals}, friendly: ${friendly}"
         
         switch (domain) {
+            case "fan":
+                def speed = response?.event?.data?.new_state?.attributes?.speed
+                newVals += speed
+                mapping = translateDevices(domain, newVals)
+                if (mapping) updateChildDevice(mapping, entity, friendly)
+                break
             case "switch":
                 mapping = translateDevices(domain, newVals)
                 if (mapping) updateChildDevice(mapping, entity, friendly)
@@ -155,6 +162,7 @@ def translateDevices(device_class, newVals)
     def mapping =
         [
             door: [type: "Generic Component Contact Sensor",            event: [[name: "contact", value: newVals[0] == "on" ? "open":"closed", descriptionText:"Contact updated"]]],
+            fan: [type: "Generic Component Fan Control",                event: [[name: "switch", value: newVals[0], descriptionText:"Fan switch changed to ${newVals[0]}"],[name: "speed", value: newVals[1], descriptionText:"Speed changed to ${newVals[1]}"]]],
             garage_door: [type: "Generic Component Contact Sensor",     event: [[name: "contact", value: newVals[0] == "on" ? "open":"closed", descriptionText:"Contact updated"]]],
             humidity: [type: "Generic Component Humidity Sensor",       event: [[name: "humidity", value: newVals[0], descriptionText:"Humidity changed to ${newVals[0]}"]]],
             illuminance: [type: "Generic Component Illuminance Sensor", event: [[name: "illuminance", value: newVals[0], descriptionText:"Illuminance changed to ${newVals[0]}"]], namespace: "community"],
@@ -226,12 +234,85 @@ def componentSetLevel(ch, level, transition=1){
     if (logEnable) log.info("received setLevel request from ${ch.label}")
     if (level > 100) level = 100
     if (level < 0) level = 0
+
+    //if a Fan device, special handling
+    if (ch.currentValue("speed")) {
+        switch (level.toInteger()) {
+            case 0:
+                componentSetSpeed(ch, "off")
+            break
+            case 1..33:
+                componentSetSpeed(ch, "low")
+            break
+            case 34..66:
+                componentSetSpeed(ch, "medium")
+            break
+            case 67..100:
+                componentSetSpeed(ch, "high")
+            break
+            default:
+                if (logEnable) log.info "No case defined for Fan setLevel(${level})"
+        }
+    } 
+    else {        
+        state.id = state.id + 1
+        entity = ch.name
+        domain = entity.tokenize(".")[0]
+        messLevel = JsonOutput.toJson([id: state.id, type: "call_service", domain: "${domain}", service: "turn_on", service_data: [entity_id: "${entity}", brightness_pct: "${level}", transition: "${transition}"]])
+        if (logEnable) log.debug("messLevel = ${messLevel}")
+        interfaces.webSocket.sendMessage("${messLevel}")
+    }
+}
+
+def componentSetSpeed(ch, speed) {
+    if (logEnable) log.info("received setSpeed request from ${ch.label}, with speed = ${speed}")
+    switch (speed) {
+        case "off":
+            //no change
+        break
+        case "low":
+        case "medium-low":
+            speed = "low"
+        break
+        case "on":
+        case "auto":
+        case "medium":
+        case "medium-high":
+            speed = "medium"
+        break
+        case "high":
+            //no change
+        break
+        default:
+            if (logEnable) log.info "No case defined for Fan setSpeed(${speed})"
+    }
     state.id = state.id + 1
     entity = ch.name
     domain = entity.tokenize(".")[0]
-    messLevel = JsonOutput.toJson([id: state.id, type: "call_service", domain: "${domain}", service: "turn_on", service_data: [entity_id: "${entity}", brightness_pct: "${level}", transition: "${transition}"]])
-    if (logEnable) log.debug("messLevel = ${messLevel}")
-    interfaces.webSocket.sendMessage("${messLevel}")
+    messOn = JsonOutput.toJson([id: state.id, type: "call_service", domain: "${domain}", service: "set_speed", service_data: [entity_id: "${entity}", speed: "${speed}"]])        
+    if (logEnable) log.debug("messOn = ${messOn}")
+    interfaces.webSocket.sendMessage("${messOn}")
+}
+
+def componentCycleSpeed(ch) {
+    def newSpeed = ""
+    switch (ch.currentValue("speed")) {
+        case "off":
+            speed = "low"
+        break
+        case "low":
+        case "medium-low":
+            speed = "medium"
+        break
+        case "medium":
+        case "medium-high":
+            speed = "high"
+        break
+        case "high":
+            speed = "off"
+        break
+    }
+    componentSetSpeed(ch, speed)
 }
 
 def componentRefresh(ch){

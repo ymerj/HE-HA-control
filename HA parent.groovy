@@ -36,6 +36,7 @@
 * 0.1.13 2021-02-08 tomw               Added "community" namespace support for component drivers.  Added Pressure and Illuminance.
 * 0.1.14 2021-02-10 Dan Ogorchock      Added support for Fan devices (used Lutron Fan Controller as test device.)
 * 0.1.15 2021-02-10 tomw               Adjust websocket status handling to reconnect on both close and error conditions.
+* 0.1.16 2021-02-14 tomw               Revert 0.0.15
 *
 * Thank you(s):
 */
@@ -99,20 +100,10 @@ def uninstalled() {
 }
 
 def webSocketStatus(String status){
-    switch(status)
-    {
-        case "status: open":
-            log.info("websocket ${status}")
-            break
-        
-        case "status: closing":
-            log.info("websocket ${status}, trying to reconnect")
-            runIn(10, initialize)
-            break
-        
-        default:
-            log.warn("websocket ${status}, trying to reconnect")
-            runIn(10, initialize)
+    if ((status == "status: open") || (status == "status: closing")) log.info("websocket ${status}")
+    else {
+        log.warn("WebSocket ${status}, trying to reconnect")
+        runIn(10, initialize)
     }
 }
 

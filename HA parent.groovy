@@ -35,9 +35,10 @@
 * 0.1.12 2021-02-08 Dan Ogorchock      Fixed typo in log.info statement
 * 0.1.13 2021-02-08 tomw               Added "community" namespace support for component drivers.  Added Pressure and Illuminance.
 * 0.1.14 2021-02-10 Dan Ogorchock      Added support for Fan devices (used Lutron Fan Controller as test device.)
-* 0.1.15 2021-02-10 tomw               Adjust websocket status handling to reconnect on both close and error conditions.
+* 0.1.15 2021-02-13 tomw               Adjust websocket status handling to reconnect on both close and error conditions.
 * 0.1.16 2021-02-14 tomw               Revert 0.1.15
 * 0.1.17 2021-02-14 Dan Ogorchock      Improved webSocket reconnect logic
+* 0.1.18 2021-02-14 Dan Ogorchock      Avoid reconnect loop on initialize
 *
 * Thank you(s):
 */
@@ -80,6 +81,9 @@ def updated(){
 
 def initialize() {
     log.info("initializing...")
+    
+    closeConnection()    
+    
     state.id = 2
     auth = '{"type":"auth","access_token":"' + "${token}" + '"}'
     evenements = '{"id":1,"type":"subscribe_events","event_type":"state_changed"}'
@@ -115,6 +119,13 @@ def webSocketStatus(String status){
     } 
     else if (status == "status: closing"){
         log.warn "WebSocket connection closing."
+        
+        if(state.wasExpectedClose)
+        {
+            state.remove("wasExpectedClose")
+            return
+        }
+        
         reconnectWebSocket()
     } 
     else {
@@ -350,6 +361,9 @@ def componentRefresh(ch){
 
 def closeConnection() {
     if (logEnable) log.debug("Closing connection...")
+    
+    state.wasExpectedClose = true
+    
     interfaces.webSocket.sendMessage('{"id":2,"type":"unsubscribe_events","subscription":1}')
     interfaces.webSocket.close()
 }

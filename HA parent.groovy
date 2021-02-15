@@ -37,6 +37,7 @@
 * 0.1.14 2021-02-10 Dan Ogorchock      Added support for Fan devices (used Lutron Fan Controller as test device.)
 * 0.1.15 2021-02-10 tomw               Adjust websocket status handling to reconnect on both close and error conditions.
 * 0.1.16 2021-02-14 tomw               Revert 0.1.15
+* 0.1.17 2021-02-14 Dan Ogorchock      Improved webSocket reconnect logic
 *
 * Thank you(s):
 */
@@ -100,12 +101,38 @@ def uninstalled() {
 }
 
 def webSocketStatus(String status){
-    if ((status == "status: open") || (status == "status: closing")) log.info("websocket ${status}")
+    if (logEnable) log.debug "webSocketStatus- ${status}"
+
+    if(status.startsWith('failure: ')) {
+        log.warn("failure message from web socket ${status}")
+        reconnectWebSocket()
+    } 
+    else if(status == 'status: open') {
+        log.info "websocket is open"
+        // success! reset reconnect delay
+        pauseExecution(1000)
+        state.reconnectDelay = 1
+    } 
+    else if (status == "status: closing"){
+        log.warn "WebSocket connection closing."
+        reconnectWebSocket()
+    } 
     else {
-        log.warn("WebSocket ${status}, trying to reconnect")
-        runIn(10, initialize)
+        log.warn "WebSocket error, reconnecting."
+        reconnectWebSocket()
     }
 }
+
+def reconnectWebSocket() {
+    // first delay is 2 seconds, doubles every time
+    state.reconnectDelay = (state.reconnectDelay ?: 1) * 2
+    // don't let delay get too crazy, max it out at 10 minutes
+    if(state.reconnectDelay > 600) state.reconnectDelay = 600
+
+    //If the Home Assistant Hub is offline, give it some time before trying to reconnect
+    runIn(state.reconnectDelay, initialize)
+}
+
 
 def parse(String description) {
     if (logEnable) log.debug("parse(): description = ${description}")

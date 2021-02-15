@@ -38,7 +38,7 @@
 * 0.1.15 2021-02-13 tomw               Adjust websocket status handling to reconnect on both close and error conditions.
 * 0.1.16 2021-02-14 tomw               Revert 0.1.15
 * 0.1.17 2021-02-14 Dan Ogorchock      Improved webSocket reconnect logic
-* 0.1.18 2021-02-14 Dan Ogorchock      Avoid reconnect loop on initialize
+* 0.1.18 2021-02-14 tomw               Avoid reconnect loop on initialize
 *
 * Thank you(s):
 */

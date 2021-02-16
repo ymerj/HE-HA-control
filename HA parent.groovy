@@ -40,6 +40,7 @@
 * 0.1.17 2021-02-14 Dan Ogorchock      Improved webSocket reconnect logic
 * 0.1.18 2021-02-14 tomw               Avoid reconnect loop on initialize
 * 0.1.19 2021-02-16 Yves Mercier       Added Refresh handler
+* 0.1.20 2021-02-16 Yves mercier       Refactored webSocketStatus
 *
 * Thank you(s):
 */
@@ -83,7 +84,7 @@ def updated(){
 def initialize() {
     log.info("initializing...")
     
-    closeConnection()    
+    state.wasExpectedClose = true
     
     state.id = 2
     auth = '{"type":"auth","access_token":"' + "${token}" + '"}'
@@ -106,28 +107,18 @@ def uninstalled() {
 }
 
 def webSocketStatus(String status){
-    if (logEnable) log.debug "webSocketStatus- ${status}"
+    if (logEnable) log.debug "webSocket ${status}"
 
-    if(status.startsWith('failure: ')) {
-        log.warn("failure message from web socket ${status}")
-        reconnectWebSocket()
+    if ((status == "status: closing") && (state.wasExpectedClose)) {
+        state.wasExpectedClose = false
+        return
     } 
     else if(status == 'status: open') {
         log.info "websocket is open"
         // success! reset reconnect delay
         pauseExecution(1000)
         state.reconnectDelay = 1
-    } 
-    else if (status == "status: closing"){
-        log.warn "WebSocket connection closing."
-        
-        if(state.wasExpectedClose)
-        {
-            state.remove("wasExpectedClose")
-            return
-        }
-        
-        reconnectWebSocket()
+        state.wasExpectedClose = false
     } 
     else {
         log.warn "WebSocket error, reconnecting."
@@ -367,10 +358,7 @@ def componentRefresh(ch){
 }
 
 def closeConnection() {
-    if (logEnable) log.debug("Closing connection...")
-    
-    state.wasExpectedClose = true
-    
+    if (logEnable) log.debug("Closing connection...")   
     interfaces.webSocket.sendMessage('{"id":2,"type":"unsubscribe_events","subscription":1}')
     interfaces.webSocket.close()
 }

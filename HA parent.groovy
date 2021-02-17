@@ -23,7 +23,7 @@
 * 0.1.1  2021-02-06 Dan Ogorchock      Added basic support for simple "Light" devices from Home Assistant using Hubitat Generic Component Dimmer driver
 * 0.1.2  2021-02-06 tomw               Added handling for some binary_sensor subtypes based on device_class
 * 0.1.3  2021-02-06 Dan Ogorchock      Bug Fixes 
-* 0.1.4  2021-02-06 ymerj              Added version number and import URL
+* 0.1.4  2021-02-06 Yves Mercier       Added version number and import URL
 * 0.1.5  2021-02-06 Dan Ogorchock      Added support for Temperature and Humidity Sensors
 * 0.1.6  2021-02-06 Dan Ogorchock      Corrected open/closed for HA door events
 * 0.1.7  2021-02-07 Dan Ogorchock      Corrected open/closed for HA window, garage_door, and opening per @smarthomeprimer
@@ -39,6 +39,8 @@
 * 0.1.16 2021-02-14 tomw               Revert 0.1.15
 * 0.1.17 2021-02-14 Dan Ogorchock      Improved webSocket reconnect logic
 * 0.1.18 2021-02-14 tomw               Avoid reconnect loop on initialize
+* 0.1.19 2021-02-16 Yves Mercier       Added Refresh handler
+* 0.1.20 2021-02-16 Yves mercier       Refactored webSocketStatus
 *
 * Thank you(s):
 */
@@ -82,7 +84,7 @@ def updated(){
 def initialize() {
     log.info("initializing...")
     
-    closeConnection()    
+    closeConnection()
     
     state.id = 2
     auth = '{"type":"auth","access_token":"' + "${token}" + '"}'
@@ -105,28 +107,18 @@ def uninstalled() {
 }
 
 def webSocketStatus(String status){
-    if (logEnable) log.debug "webSocketStatus- ${status}"
+    if (logEnable) log.debug "webSocket ${status}"
 
-    if(status.startsWith('failure: ')) {
-        log.warn("failure message from web socket ${status}")
-        reconnectWebSocket()
+    if ((status == "status: closing") && (state.wasExpectedClose)) {
+        state.wasExpectedClose = false
+        return
     } 
     else if(status == 'status: open') {
         log.info "websocket is open"
         // success! reset reconnect delay
         pauseExecution(1000)
         state.reconnectDelay = 1
-    } 
-    else if (status == "status: closing"){
-        log.warn "WebSocket connection closing."
-        
-        if(state.wasExpectedClose)
-        {
-            state.remove("wasExpectedClose")
-            return
-        }
-        
-        reconnectWebSocket()
+        state.wasExpectedClose = false
     } 
     else {
         log.warn "WebSocket error, reconnecting."
@@ -357,14 +349,17 @@ def componentCycleSpeed(ch) {
 
 def componentRefresh(ch){
     if (logEnable) log.info("received refresh request from ${ch.label}")
+    state.id = state.id + 1
+    entity = ch.name
+    domain = entity.tokenize(".")[0]
+    messUpd = JsonOutput.toJson([id: state.id, type: "call_service", domain: "homeassistant", service: "update_entity", service_data: [entity_id: "${entity}"]])
+    if (logEnable) log.debug("messUpd = ${messUpd}")
+    interfaces.webSocket.sendMessage("${messUpd}")
 }
 
 def closeConnection() {
-    if (logEnable) log.debug("Closing connection...")
-    
+    if (logEnable) log.debug("Closing connection...")   
     state.wasExpectedClose = true
-    
-    interfaces.webSocket.sendMessage('{"id":2,"type":"unsubscribe_events","subscription":1}')
     interfaces.webSocket.close()
 }
 

@@ -84,7 +84,7 @@ def updated(){
 def initialize() {
     log.info("initializing...")
     
-    state.wasExpectedClose = true
+    closeConnection()
     
     state.id = 2
     auth = '{"type":"auth","access_token":"' + "${token}" + '"}'
@@ -359,7 +359,7 @@ def componentRefresh(ch){
 
 def closeConnection() {
     if (logEnable) log.debug("Closing connection...")   
-    interfaces.webSocket.sendMessage('{"id":2,"type":"unsubscribe_events","subscription":1}')
+    state.wasExpectedClose = true
     interfaces.webSocket.close()
 }
 

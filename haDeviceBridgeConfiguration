@@ -95,9 +95,9 @@ def logDebug(msg)
 
 def installed()
 {
-    if(!getChildDevice("HE-HE-control"))
+    if(!getChildDevice("HE-HA-control"))
     {
-        ch = addChildDevice("ymerj", "HomeAssistant Hub Parent", "HE-HE-control", [name: "Home Assistant Device Bridge", label: "Home Assistant Device Bridge", isComponent: false])
+        ch = addChildDevice("ymerj", "HomeAssistant Hub Parent", "HE-HA-control", [name: "Home Assistant Device Bridge", label: "Home Assistant Device Bridge", isComponent: false])
     }
 }
 

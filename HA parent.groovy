@@ -41,6 +41,7 @@
 * 0.1.18 2021-02-14 tomw               Avoid reconnect loop on initialize
 * 0.1.19 2021-02-16 Yves Mercier       Added Refresh handler
 * 0.1.20 2021-02-16 Yves mercier       Refactored webSocketStatus
+* 0.1.21 2021-02-22 Yves mercier       Reinstated CloseConnection command. Added connection status on device page.
 *
 * Thank you(s):
 */
@@ -54,8 +55,10 @@ metadata {
 
 //        command "createChild", [[ name: "entity", type: "STRING", description: "HomeAssistant Entity ID" ]]
 //        command "removeChild", [[ name: "entity", type: "STRING", description: "HomeAssistant Entity ID" ]]
-//        command "closeConnection"        
+        command "closeConnection"        
 //        command "deleteAllChildDevices"
+        
+        attribute "Connection", "string"
     }
 
     preferences {
@@ -111,6 +114,7 @@ def webSocketStatus(String status){
 
     if ((status == "status: closing") && (state.wasExpectedClose)) {
         state.wasExpectedClose = false
+        sendEvent(name: "Connection", value: "Closed")
         return
     } 
     else if(status == 'status: open') {
@@ -119,9 +123,11 @@ def webSocketStatus(String status){
         pauseExecution(1000)
         state.reconnectDelay = 1
         state.wasExpectedClose = false
+        sendEvent(name: "Connection", value: "Open")
     } 
     else {
         log.warn "WebSocket error, reconnecting."
+        sendEvent(name: "Connection", value: "Reconnecting")
         reconnectWebSocket()
     }
 }

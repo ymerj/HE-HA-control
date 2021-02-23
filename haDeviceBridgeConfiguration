@@ -23,9 +23,6 @@ def mainPage1()
 {
     dynamicPage(name: "mainPage1", title: "", install: false, uninstall: true)
     {
-        state.excludeList ?: []
-        state.includeList ?: []        
-        
         section
         {
             input ("ip", "text", title: "IP", description: "HomeAssistant IP Address", required: true)

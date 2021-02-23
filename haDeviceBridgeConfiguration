@@ -1,0 +1,173 @@
+/*
+
+ */
+
+definition(
+    name: "Home Assistant Device Bridge configuration",
+    namespace: "tomw",
+    author: "tomw",
+    description: "",
+    category: "Convenience",
+    iconUrl: "",
+    iconX2Url: "",
+    iconX3Url: "")
+
+preferences
+{
+    page(name: "mainPage1")
+    page(name: "mainPage2")
+    page(name: "mainPage2b")
+}
+
+def mainPage1()
+{
+    dynamicPage(name: "mainPage1", title: "", install: false, uninstall: true)
+    {
+        state.excludeList ?: []
+        state.includeList ?: []        
+        
+        section
+        {
+            input ("ip", "text", title: "IP", description: "HomeAssistant IP Address", required: true)
+            input ("port", "text", title: "Port", description: "HomeAssistant Port Number", required: true, defaultValue: "8123")
+            input ("token", "text", title: "Token", description: "HomeAssistant Access Token", required: true)
+            input name: "enableLogging", type: "bool", title: "Enable debug logging?", defaultValue: false, required: true
+        }
+        section
+        {
+            href(page: "mainPage2", title: "<b>Select devices to exclude</b>", description: "Query Home Assistant for all currently configured devices, and indicate which to exclude from Hubitat.", params: [runDiscovery : true])
+        }
+        section
+        {
+            href(page: "mainPage2b", title: "<b>Use existing exclusion list</b>", description: "Re-use previous device list.", params: [runDiscovery : false] )
+        }
+    }
+}
+
+def mainPage2(params)
+{
+    dynamicPage(name: "mainPage2", title: "", install: true, uninstall: true)
+    {
+        if(params?.runDiscovery)
+        {
+            state.entityList = []
+            // query HA to get entity_id list
+            def resp = httpGetExec(genParamsMain("states"))
+            if(resp?.data)
+            {
+                resp.data.each
+                {
+                    state.entityList.push(it.entity_id)
+                }
+            }
+        }
+        
+        section
+        {
+            paragraph "<b>Discovered devices:</b> ${(!state?.entityList?.isEmpty() && state?.entityList) ? state.entityList.toString() : "none"}"
+        }
+        
+        section
+        {
+            href(page: "mainPage1", title: "<b>Retry discovery process</b>", description: "")
+        }
+        
+        section
+        {
+            input name: "excludeList", type: "enum", title: "Select any devices to exclude", options: state.entityList, required: false, multiple: true
+        }
+    }
+}
+
+def mainPage2b(params)
+{
+    // necessary because two links to the same page with different params doesn't work
+    mainPage2(params)
+}
+
+def logDebug(msg)
+{
+    if(enableLogging)
+    {
+        log.debug "${msg}"
+    }
+}
+
+def installed()
+{
+    if(!getChildDevice("HE-HE-control"))
+    {
+        ch = addChildDevice("ymerj", "HomeAssistant Hub Parent", "HE-HE-control", [name: "Home Assistant Device Bridge", label: "Home Assistant Device Bridge", isComponent: false])
+    }
+}
+
+def uninstalled()
+{
+    deleteChildren()
+}
+
+def deleteChildren()
+{
+    for(child in getChildDevices())
+    {
+        deleteChildDevice(child.getDeviceNetworkId())
+    }
+}
+
+def updated()
+{
+    installed()
+}
+
+def genParamsMain(suffix, body = null)
+{
+    def params =
+        [
+            uri: getBaseURI() + suffix,
+            headers:
+            [
+                'Authorization': "Bearer: ${token}",
+                'Content-Type': "application/json"
+            ],
+        ]
+    
+    if(body)
+    {
+        params['body'] = body
+    }
+ 
+    return params
+}
+
+def getBaseURI()
+{
+    return "http://${ip}:${port}/api/"
+}
+
+def httpGetExec(params, throwToCaller = false)
+{
+    logDebug("httpGetExec(${params})")
+    
+    try
+    {
+        def result
+        httpGet(params)
+        { resp ->
+            if (resp)
+            {
+                //logDebug("resp.data = ${resp.data}")
+                result = resp
+            }
+        }
+        return result
+    }
+    catch (Exception e)
+    {
+        logDebug("httpGetExec() failed: ${e.message}")
+        //logDebug("status = ${e.getResponse().getStatus().toInteger()}")
+        if(throwToCaller)
+        {
+            throw(e)
+        }
+    }
+}

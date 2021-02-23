@@ -32,11 +32,11 @@ def mainPage1()
         }
         section
         {
-            href(page: "mainPage2", title: "<b>Select devices to exclude</b>", description: "Query Home Assistant for all currently configured devices, and indicate which to exclude from Hubitat.", params: [runDiscovery : true])
+            href(page: "mainPage2", title: "<b>Discover and select devices to exclude</b>", description: "Query Home Assistant for all currently configured devices, and indicate which to exclude from Hubitat.", params: [runDiscovery : true])
         }
         section
         {
-            href(page: "mainPage2b", title: "<b>Use existing exclusion list</b>", description: "Re-use previous device list.", params: [runDiscovery : false] )
+            href(page: "mainPage2b", title: "<b>Use existing discovery list</b>", description: "Re-use previous device list.", params: [runDiscovery : false] )
         }
     }
 }

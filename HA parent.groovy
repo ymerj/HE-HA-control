@@ -127,7 +127,7 @@ def webSocketStatus(String status){
     } 
     else {
         log.warn "WebSocket error, reconnecting."
-        sendEvent(name: "Connection", value: "Closed")
+        sendEvent(name: "Connection", value: "Reconnecting")
         reconnectWebSocket()
     }
 }

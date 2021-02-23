@@ -152,6 +152,11 @@ def parse(String description) {
         
         def newVals = []
         def entity = response?.event?.data?.entity_id
+        
+        // check whether we have a parent, and search its excludeList for devices to skip
+        def excludeList = getParent()?.excludeList
+        if(excludeList && excludeList?.contains(entity)) return
+        
         def domain = entity?.tokenize(".")?.getAt(0)
         def device_class = response?.event?.data?.new_state?.attributes?.device_class
         def friendly = response?.event?.data?.new_state?.attributes?.friendly_name

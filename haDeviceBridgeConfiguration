@@ -1,6 +1,7 @@
 /*
 
-* 0.1.22 2021-02-24 tomw               Entity filtering (in work)
+* 0.1.22     2021-02-24 tomw               Entity filtering (in work)
+* 0.1.221    2021-02-24 tomw               Usability via friendly_name on filtering and select/clear all
 
  */
 
@@ -18,7 +19,6 @@ preferences
 {
     page(name: "mainPage1")
     page(name: "mainPage2")
-    page(name: "mainPage2b")
 }
 
 def mainPage1()
@@ -36,10 +36,6 @@ def mainPage1()
         {
             href(page: "mainPage2", title: "<b>Discover and select devices to exclude</b>", description: "Query Home Assistant for all currently configured devices, and indicate which to exclude from Hubitat.", params: [runDiscovery : true])
         }
-        section
-        {
-            href(page: "mainPage2b", title: "<b>Use existing discovery list</b>", description: "Re-use previous device list.", params: [runDiscovery : false] )
-        }
     }
 }
 
@@ -49,10 +45,11 @@ def mainPage2(params)
     {
         if(params?.runDiscovery)
         {
-            state.entityList = []
+            state.entityList = [:]            
             def domain
             // query HA to get entity_id list
             def resp = httpGetExec(genParamsMain("states"))
+            //def resp = [data: [[entity_id: "fan.ABC123", attributes: [friendly_name: "friendly ABC"]], [entity_id: "fan.ABC124", attributes: [friendly_name: "friendly ABC"]], [entity_id: "fan.ABC125", attributes: [friendly_name: "friendly ABC"]]]]
             logDebug("states response = ${resp?.data}")
             
             if(resp?.data)
@@ -62,7 +59,7 @@ def mainPage2(params)
                     domain = it.entity_id?.tokenize(".")?.getAt(0)
                     if(["fan", "switch", "light", "binary_sensor", "sensor"].contains(domain))
                     {
-                        state.entityList.push(it.entity_id)
+                        state.entityList.put(it.entity_id, "${it.attributes?.friendly_name} (${it.entity_id})")
                     }
                 }
             }
@@ -75,20 +72,28 @@ def mainPage2(params)
         
         section
         {
-            href(page: "mainPage1", title: "<b>Retry discovery process</b>", description: "")
+            href(page: "mainPage1", title: "<b>Re-run discovery process</b>", description: "")
         }
         
         section
         {
+            input name: "selectAll", type: "bool", title: "Select all devices? (note: use this option first if you only plan to exclude a small number of devices)", defaultValue: false, submitOnChange: true
+            input name: "clearAll", type: "bool", title: "Clear selection?", defaultValue: false, submitOnChange: true
             input name: "excludeList", type: "enum", title: "Select any devices to exclude", options: state.entityList, required: false, multiple: true
         }
+        
+        if(selectAll)
+        {
+            app.updateSetting("excludeList", state.entityList.keySet().toList())
+            app.updateSetting("selectAll", false)            
+        }
+        
+        if(clearAll)
+        {
+            app.updateSetting("excludeList", [])
+            app.updateSetting("clearAll", false)
+        }
     }
-}
-
-def mainPage2b(params)
-{
-    // necessary because two links to the same page with different params doesn't work
-    mainPage2(params)
 }
 
 def logDebug(msg)

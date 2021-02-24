@@ -2,6 +2,7 @@
 
 * 0.1.22     2021-02-24 tomw               Entity filtering (in work)
 * 0.1.221    2021-02-24 tomw               Usability via friendly_name on filtering and select/clear all
+* 0.1.222    2021-02-24 tomw               Polishing usability
 
  */
 
@@ -77,9 +78,9 @@ def mainPage2(params)
         
         section
         {
-            input name: "selectAll", type: "bool", title: "Select all devices? (note: use this option first if you only plan to exclude a small number of devices)", defaultValue: false, submitOnChange: true
-            input name: "clearAll", type: "bool", title: "Clear selection?", defaultValue: false, submitOnChange: true
-            input name: "excludeList", type: "enum", title: "Select any devices to exclude", options: state.entityList, required: false, multiple: true
+            input name: "excludeList", type: "enum", title: "Select any devices to exclude from Home Assistant Device Bridge", options: state.entityList, required: false, multiple: true
+            input name: "selectAll", type: "bool", title: "Select all devices?", defaultValue: false, submitOnChange: true
+            input name: "clearAll", type: "bool", title: "De-select all devices?", defaultValue: false, submitOnChange: true
         }
         
         if(selectAll)

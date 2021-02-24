@@ -1,5 +1,7 @@
 /*
 
+* 0.1.22 2021-02-24 tomw               Entity filtering (in work)
+
  */
 
 definition(
@@ -48,13 +50,20 @@ def mainPage2(params)
         if(params?.runDiscovery)
         {
             state.entityList = []
+            def domain
             // query HA to get entity_id list
             def resp = httpGetExec(genParamsMain("states"))
+            logDebug("states response = ${resp?.data}")
+            
             if(resp?.data)
             {
                 resp.data.each
                 {
-                    state.entityList.push(it.entity_id)
+                    domain = it.entity_id?.tokenize(".")?.getAt(0)
+                    if(["fan", "switch", "light", "binary_sensor", "sensor"].contains(domain))
+                    {
+                        state.entityList.push(it.entity_id)
+                    }
                 }
             }
         }

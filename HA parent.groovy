@@ -42,7 +42,8 @@
 * 0.1.19 2021-02-16 Yves Mercier       Added Refresh handler
 * 0.1.20 2021-02-16 Yves mercier       Refactored webSocketStatus
 * 0.1.21 2021-02-22 Yves mercier       Reinstated CloseConnection command. Added connection status on device page.
-*
+* 0.1.22 2021-02-24 tomw               Entity filtering (in work)
+* 
 * Thank you(s):
 */
 

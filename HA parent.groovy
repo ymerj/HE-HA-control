@@ -43,6 +43,7 @@
 * 0.1.20 2021-02-16 Yves mercier       Refactored webSocketStatus
 * 0.1.21 2021-02-22 Yves mercier       Reinstated CloseConnection command. Added connection status on device page.
 * 0.1.22 2021-02-24 tomw               Changes to support optional device filtering.  For use with haDeviceBridgeConfiguration.groovy.
+* 0.1.23 2021-02-25 Dan Ogorchock      Switched from Exclude List to Include List
 * 
 * Thank you(s):
 */
@@ -154,9 +155,9 @@ def parse(String description) {
         def newVals = []
         def entity = response?.event?.data?.entity_id
         
-        // check whether we have a parent, and search its excludeList for devices to skip
-        def excludeList = getParent()?.excludeList
-        if(excludeList && excludeList?.contains(entity)) return
+        // check whether we have a parent, and search its includeList for devices to process
+        def includeList = getParent()?.includeList
+        if(includeList && !includeList?.contains(entity)) return
         
         def domain = entity?.tokenize(".")?.getAt(0)
         def device_class = response?.event?.data?.new_state?.attributes?.device_class

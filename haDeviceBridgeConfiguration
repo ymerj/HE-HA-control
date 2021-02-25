@@ -3,6 +3,7 @@
 * 0.1.22     2021-02-24 tomw               Entity filtering (in work)
 * 0.1.221    2021-02-24 tomw               Usability via friendly_name on filtering and select/clear all
 * 0.1.222    2021-02-24 tomw               Polishing usability
+* 0.1.223    2021-02-24 tomw               Cosmetic changes and configure driver parameters from app
 
  */
 
@@ -35,7 +36,7 @@ def mainPage1()
         }
         section
         {
-            href(page: "mainPage2", title: "<b>Discover and select devices to exclude</b>", description: "Query Home Assistant for all currently configured devices, and indicate which to exclude from Hubitat.", params: [runDiscovery : true])
+            href(page: "mainPage2", title: "<b>Discover and select devices</b>", description: "Query Home Assistant for all currently configured devices, and indicate which to exclude from Hubitat.", params: [runDiscovery : true])
         }
     }
 }
@@ -73,14 +74,14 @@ def mainPage2(params)
         
         section
         {
-            href(page: "mainPage1", title: "<b>Re-run discovery process</b>", description: "")
+            input name: "excludeList", type: "enum", title: "Select any devices to <b>exclude</b> from Home Assistant Device Bridge", options: state.entityList, required: false, multiple: true
+            input name: "selectAll", type: "bool", title: "Select all devices?", defaultValue: false, submitOnChange: true
+            input name: "clearAll", type: "bool", title: "De-select all devices?", defaultValue: false, submitOnChange: true
         }
         
         section
         {
-            input name: "excludeList", type: "enum", title: "Select any devices to exclude from Home Assistant Device Bridge", options: state.entityList, required: false, multiple: true
-            input name: "selectAll", type: "bool", title: "Select all devices?", defaultValue: false, submitOnChange: true
-            input name: "clearAll", type: "bool", title: "De-select all devices?", defaultValue: false, submitOnChange: true
+            href(page: "mainPage1", title: "<b>Return to previous page</b>", description: "")
         }
         
         if(selectAll)
@@ -107,9 +108,20 @@ def logDebug(msg)
 
 def installed()
 {
-    if(!getChildDevice("HE-HA-control"))
+    def ch = getChildDevice("HE-HA-control")
+    if(!ch)
     {
         ch = addChildDevice("ymerj", "HomeAssistant Hub Parent", "HE-HA-control", [name: "Home Assistant Device Bridge", label: "Home Assistant Device Bridge", isComponent: false])
+    }
+    
+    if(ch)
+    {
+        // propoagate our settings to the child
+        ch.updateSetting("ip", ip)
+        ch.updateSetting("port", port)
+        ch.updateSetting("token", token)
+
+        ch.updated()
     }
 }
 

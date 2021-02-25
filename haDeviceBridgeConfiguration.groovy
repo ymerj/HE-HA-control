@@ -20,10 +20,11 @@
 *
 * Version Control:
 * 0.1.22     2021-02-24 tomw               Optional configuration app to selectively filter out Home Assistant devices
+* 0.1.23     2021002-25 Dan Ogorchock      Switched logic from Exclude to Include to make more intuitive.  Sorted Device List.
 */
 
 definition(
-    name: "Home Assistant Device Bridge configuration",
+    name: "Home Assistant Device Bridge",
     namespace: "tomw",
     author: "tomw",
     description: "",
@@ -42,17 +43,20 @@ def mainPage1()
 {
     dynamicPage(name: "mainPage1", title: "", install: false, uninstall: true)
     {
-        section
+        section("Home Assistant Device Bridge")
         {
-            input ("ip", "text", title: "IP", description: "HomeAssistant IP Address", required: true)
-            input ("port", "text", title: "Port", description: "HomeAssistant Port Number", required: true, defaultValue: "8123")
-            input ("token", "text", title: "Token", description: "HomeAssistant Access Token", required: true)
+            input ("ip", "text", title: "Home Assistant IP Address", description: "HomeAssistant IP Address", required: true)
+            input ("port", "text", title: "Home Assistant Port", description: "HomeAssistant Port Number", required: true, defaultValue: "8123")
+            input ("token", "text", title: "Home Assistant Long Term Access Token", description: "HomeAssistant Access Token", required: true)
             input name: "enableLogging", type: "bool", title: "Enable debug logging?", defaultValue: false, required: true
         }
-        section
+        section("Please note, it may take some time to retrieve all entities from Home Assistant.")
         {
-            href(page: "mainPage2", title: "<b>Discover and select devices</b>", description: "Query Home Assistant for all currently configured devices, and indicate which to exclude from Hubitat.", params: [runDiscovery : true])
+            href(page: "mainPage2", title: "<b>Discover and select devices</b>", description: "Query Home Assistant for all currently configured devices.  Please select which entities to Import to Hubitat.", params: [runDiscovery : true])
         }
+        section("App Name") {
+            label title: "Optionally assign a custom name for this app", required: false
+        }        
     }
 }
 
@@ -78,17 +82,18 @@ def mainPage2(params)
                         state.entityList.put(it.entity_id, "${it.attributes?.friendly_name} (${it.entity_id})")
                     }
                 }
+                state.entityList = state.entityList.sort { it.value }
             }
         }
         
-        section
-        {
-            paragraph "<b>Discovered devices:</b> ${(!state?.entityList?.isEmpty() && state?.entityList) ? state.entityList.toString() : "none"}"
-        }
+//        section
+//        {
+//            paragraph "<b>Discovered devices:</b> ${(!state?.entityList?.isEmpty() && state?.entityList) ? state.entityList.toString() : "none"}"
+//        }
         
         section
         {
-            input name: "excludeList", type: "enum", title: "Select any devices to <b>exclude</b> from Home Assistant Device Bridge", options: state.entityList, required: false, multiple: true
+            input name: "includeList", type: "enum", title: "Select any devices to <b>include</b> from Home Assistant Device Bridge", options: state.entityList, required: true, multiple: true
             input name: "selectAll", type: "bool", title: "Select all devices?", defaultValue: false, submitOnChange: true
             input name: "clearAll", type: "bool", title: "De-select all devices?", defaultValue: false, submitOnChange: true
         }
@@ -100,13 +105,13 @@ def mainPage2(params)
         
         if(selectAll)
         {
-            app.updateSetting("excludeList", state.entityList.keySet().toList())
+            app.updateSetting("includeList", state.entityList.keySet().toList())
             app.updateSetting("selectAll", false)            
         }
         
         if(clearAll)
         {
-            app.updateSetting("excludeList", [])
+            app.updateSetting("includeList", [])
             app.updateSetting("clearAll", false)
         }
     }
@@ -125,7 +130,7 @@ def installed()
     def ch = getChildDevice("HE-HA-control")
     if(!ch)
     {
-        ch = addChildDevice("ymerj", "HomeAssistant Hub Parent", "HE-HA-control", [name: "Home Assistant Device Bridge", label: "Home Assistant Device Bridge", isComponent: false])
+        ch = addChildDevice("ymerj", "HomeAssistant Hub Parent", "HE-HA-control", [name: "Home Assistant Device Bridge", label: "Home Assistant Device Bridge (${ip})", isComponent: false])
     }
     
     if(ch)

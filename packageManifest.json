@@ -1,7 +1,7 @@
 {
   "packageName": "HE-HA-control",
   "author": "ymerj",
-  "version": "0.1.20",
+  "version": "0.1.22",
   "minimumHEVersion": "2.1.9",
   "dateReleased": "2021-01-31",
   "drivers": [
@@ -27,6 +27,15 @@
       "required": false
     }    
   ],
+  "apps" : [
+		{
+			"id" : "375fa0c3-14e2-4a72-81f5-8a1a826a2d57",
+      "name": "Home Assistant Device Bridge configuration",
+			"namespace": "tomw",
+			"location": "haDeviceBridgeConfiguration.groovy",
+			"required": false
+		}
+	],
   "licenseFile": "https://raw.githubusercontent.com/ymerj/HE-HA-control/main/LICENSE",
   "releaseNotes": "",
   "documentationLink": "",

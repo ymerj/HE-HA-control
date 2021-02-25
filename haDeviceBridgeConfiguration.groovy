@@ -66,7 +66,6 @@ def mainPage2(params)
             def domain
             // query HA to get entity_id list
             def resp = httpGetExec(genParamsMain("states"))
-            //def resp = [data: [[entity_id: "fan.ABC123", attributes: [friendly_name: "friendly ABC"]], [entity_id: "fan.ABC124", attributes: [friendly_name: "friendly ABC"]], [entity_id: "fan.ABC125", attributes: [friendly_name: "friendly ABC"]]]]
             logDebug("states response = ${resp?.data}")
             
             if(resp?.data)

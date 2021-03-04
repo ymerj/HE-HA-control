@@ -47,7 +47,7 @@ def mainPage1()
         {
             input ("ip", "text", title: "Home Assistant IP Address", description: "HomeAssistant IP Address", required: true)
             input ("port", "text", title: "Home Assistant Port", description: "HomeAssistant Port Number", required: true, defaultValue: "8123")
-            input ("token", "text", title: "Home Assistant Long Term Access Token", description: "HomeAssistant Access Token", required: true)
+            input ("token", "text", title: "Home Assistant Long-Lived Access Token", description: "HomeAssistant Access Token", required: true)
             input name: "enableLogging", type: "bool", title: "Enable debug logging?", defaultValue: false, required: true
         }
         section("Please note, it may take some time to retrieve all entities from Home Assistant.")

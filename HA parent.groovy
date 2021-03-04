@@ -66,7 +66,7 @@ metadata {
     preferences {
         input ("ip", "text", title: "IP", description: "HomeAssistant IP Address", required: true)
         input ("port", "text", title: "Port", description: "HomeAssistant Port Number", required: true, defaultValue: "8123")
-        input ("token", "text", title: "Token", description: "HomeAssistant Access Token", required: true)
+        input ("token", "text", title: "Token", description: "HomeAssistant Long-Lived Access Token", required: true)
         input ("logEnable", "bool", title: "Enable debug logging", defaultValue: true)
         input ("txtEnable", "bool", title: "Enable description text logging", defaultValue: true)        
     }

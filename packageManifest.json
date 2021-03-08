@@ -1,7 +1,7 @@
 {
   "packageName": "HE-HA-control",
   "author": "ymerj",
-  "version": "0.1.23",
+  "version": "0.1.24",
   "minimumHEVersion": "2.1.9",
   "dateReleased": "2021-03-04",
   "drivers": [

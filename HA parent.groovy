@@ -44,7 +44,8 @@
 * 0.1.21 2021-02-22 Yves mercier       Reinstated CloseConnection command. Added connection status on device page.
 * 0.1.22 2021-02-24 tomw               Changes to support optional device filtering.  For use with haDeviceBridgeConfiguration.groovy.
 * 0.1.23 2021-02-25 Dan Ogorchock      Switched from Exclude List to Include List
-* 
+* 0.1.24 2021-03-07 Yves Mercier       Added device label in event description
+*
 * Thank you(s):
 */
 
@@ -171,24 +172,24 @@ def parse(String description) {
             case "fan":
                 def speed = response?.event?.data?.new_state?.attributes?.speed
                 newVals += speed
-                mapping = translateDevices(domain, newVals)
+                mapping = translateDevices(domain, newVals, friendly)
                 if (mapping) updateChildDevice(mapping, entity, friendly)
                 break
             case "switch":
-                mapping = translateDevices(domain, newVals)
+                mapping = translateDevices(domain, newVals, friendly)
                 if (mapping) updateChildDevice(mapping, entity, friendly)
                 break
             case "light":
                 def level = response?.event?.data?.new_state?.attributes?.brightness
                 if (level) level = Math.round((level.toInteger() * 100 / 255))
                 newVals += level
-                mapping = translateDevices(domain, newVals)
+                mapping = translateDevices(domain, newVals, friendly)
                 if (!level) mapping.event.remove(1) //remove the level update since it is not provided with the HA 'off' event json data
                 if (mapping) updateChildDevice(mapping, entity, friendly)
                 break
             case "binary_sensor":
             case "sensor":
-                mapping = translateDevices(device_class, newVals)
+                mapping = translateDevices(device_class, newVals, friendly)
                 if (mapping) updateChildDevice(mapping, entity, friendly)                
                 break
             default:
@@ -202,25 +203,25 @@ def parse(String description) {
     }
 }
 
-def translateDevices(device_class, newVals)
+def translateDevices(device_class, newVals, friendly)
 {
     def mapping =
         [
-            door: [type: "Generic Component Contact Sensor",            event: [[name: "contact", value: newVals[0] == "on" ? "open":"closed", descriptionText:"Contact updated"]]],
-            fan: [type: "Generic Component Fan Control",                event: [[name: "switch", value: newVals[0], descriptionText:"Fan switch changed to ${newVals[0]}"],[name: "speed", value: newVals[1], descriptionText:"Speed changed to ${newVals[1]}"]]],
-            garage_door: [type: "Generic Component Contact Sensor",     event: [[name: "contact", value: newVals[0] == "on" ? "open":"closed", descriptionText:"Contact updated"]]],
-            humidity: [type: "Generic Component Humidity Sensor",       event: [[name: "humidity", value: newVals[0], descriptionText:"Humidity changed to ${newVals[0]}"]]],
-            illuminance: [type: "Generic Component Illuminance Sensor", event: [[name: "illuminance", value: newVals[0], descriptionText:"Illuminance changed to ${newVals[0]}"]], namespace: "community"],
-            light: [type: "Generic Component Dimmer",                   event: [[name: "switch", value: newVals[0], descriptionText:"Switch changed to ${newVals[0]}"],[name: "level", value: newVals[1], descriptionText:"Level changed to ${newVals[1]}"]]],
-            moisture: [type: "Generic Component Water Sensor",          event: [[name: "water", value: newVals[0] == "on" ? "wet":"dry", descriptionText:"Water updated"]]],
-            motion: [type: "Generic Component Motion Sensor",           event: [[name: "motion", value: newVals[0] == "on" ? """active""":"""inactive""", descriptionText:"Motion updated"]]],
-            opening: [type: "Generic Component Contact Sensor",         event: [[name: "contact", value: newVals[0] == "on" ? "open":"closed", descriptionText:"Contact updated"]]],
-            presence: [type: "Generic Component Presence Sensor",       event: [[name: "presence", value: newVals[0] == "on" ? "present":"not present", descriptionText:"Presence updated"]]],
-            pressure: [type: "Generic Component Pressure Sensor",       event: [[name: "pressure", value: newVals[0], descriptionText:"Pressure changed to ${newVals[0]}"]], namespace: "community"],
-            switch: [type: "Generic Component Switch",                  event: [[name: "switch", value: newVals[0], descriptionText:"Switch changed to ${newVals[0]}"]]],
-            temperature: [type: "Generic Component Temperature Sensor", event: [[name: "temperature", value: newVals[0], descriptionText:"Temperature changed to ${newVals[0]}"]]],
-            voltage: [type: "Generic Component Voltage Sensor",         event: [[name: "voltage", value: newVals[0], descriptionText:"Voltage changed to ${newVals[0]}"]]],
-            window: [type: "Generic Component Contact Sensor",          event: [[name: "contact", value: newVals[0] == "on" ? "open":"closed", descriptionText:"Contact updated"]]]
+            door: [type: "Generic Component Contact Sensor",            event: [[name: "contact", value: newVals[0] == "on" ? "open":"closed", descriptionText:"${friendly} is updated"]]],
+            fan: [type: "Generic Component Fan Control",                event: [[name: "switch", value: newVals[0], descriptionText:"${friendly} was turn ${newVals[0]}"],[name: "speed", value: newVals[1], descriptionText:"${friendly} speed was set to ${newVals[1]}"]]],
+            garage_door: [type: "Generic Component Contact Sensor",     event: [[name: "contact", value: newVals[0] == "on" ? "open":"closed", descriptionText:"${friendly} is updated"]]],
+            humidity: [type: "Generic Component Humidity Sensor",       event: [[name: "humidity", value: newVals[0], descriptionText:"${friendly} humidity is ${newVals[0]}"]]],
+            illuminance: [type: "Generic Component Illuminance Sensor", event: [[name: "illuminance", value: newVals[0], descriptionText:"${friendly} illuminance is ${newVals[0]}"]], namespace: "community"],
+            light: [type: "Generic Component Dimmer",                   event: [[name: "switch", value: newVals[0], descriptionText:"${friendly} was turn ${newVals[0]}"],[name: "level", value: newVals[1], descriptionText:"${friendly} level was set to ${newVals[1]}"]]],
+            moisture: [type: "Generic Component Water Sensor",          event: [[name: "water", value: newVals[0] == "on" ? "wet":"dry", descriptionText:"${friendly} is updated"]]],
+            motion: [type: "Generic Component Motion Sensor",           event: [[name: "motion", value: newVals[0] == "on" ? """active""":"""inactive""", descriptionText:"${friendly} is updated"]]],
+            opening: [type: "Generic Component Contact Sensor",         event: [[name: "contact", value: newVals[0] == "on" ? "open":"closed", descriptionText:"${friendly} is updated"]]],
+            presence: [type: "Generic Component Presence Sensor",       event: [[name: "presence", value: newVals[0] == "on" ? "present":"not present", descriptionText:"${friendly} is updated"]]],
+            pressure: [type: "Generic Component Pressure Sensor",       event: [[name: "pressure", value: newVals[0], descriptionText:"${friendly} pressure is ${newVals[0]}"]], namespace: "community"],
+            switch: [type: "Generic Component Switch",                  event: [[name: "switch", value: newVals[0], descriptionText:"${friendly} was turn ${newVals[0]}"]]],
+            temperature: [type: "Generic Component Temperature Sensor", event: [[name: "temperature", value: newVals[0], descriptionText:"${friendly} temperature is ${newVals[0]}"]]],
+            voltage: [type: "Generic Component Voltage Sensor",         event: [[name: "voltage", value: newVals[0], descriptionText:"${friendly} voltage is ${newVals[0]}"]]],
+            window: [type: "Generic Component Contact Sensor",          event: [[name: "contact", value: newVals[0] == "on" ? "open":"closed", descriptionText:"${friendly} is updated"]]]
         ]
 
     return mapping[device_class]

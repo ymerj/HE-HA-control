@@ -45,6 +45,7 @@
 * 0.1.22 2021-02-24 tomw               Changes to support optional device filtering.  For use with haDeviceBridgeConfiguration.groovy.
 * 0.1.23 2021-02-25 Dan Ogorchock      Switched from Exclude List to Include List
 * 0.1.24 2021-03-07 Yves Mercier       Added device label in event description
+* 0.1.25 2021-03-18 Dan Ogorchock      Updated for recent Hass Fan handling changes (use percentages to set speeds instead of deprecated speed names)
 *
 * Thank you(s):
 */
@@ -171,7 +172,27 @@ def parse(String description) {
         switch (domain) {
             case "fan":
                 def speed = response?.event?.data?.new_state?.attributes?.speed
+                def percentage = response?.event?.data?.new_state?.attributes?.percentage
+                switch (percentage.toInteger()) {
+                    case 0: 
+                        speed = "off"
+                        break
+                    case 25: 
+                        speed = "low"
+                        break
+                    case 50: 
+                        speed = "medium"
+                        break
+                    case 75: 
+                        speed = "medium-high"
+                        break
+                    case 100: 
+                        speed = "high"
+                    default:
+                        if (logEnable) log.info "Invalid fan percentage received - ${percentage}"
+                }
                 newVals += speed
+                newVals += percentage
                 mapping = translateDevices(domain, newVals, friendly)
                 if (mapping) updateChildDevice(mapping, entity, friendly)
                 break
@@ -208,7 +229,7 @@ def translateDevices(device_class, newVals, friendly)
     def mapping =
         [
             door: [type: "Generic Component Contact Sensor",            event: [[name: "contact", value: newVals[0] == "on" ? "open":"closed", descriptionText:"${friendly} is updated"]]],
-            fan: [type: "Generic Component Fan Control",                event: [[name: "switch", value: newVals[0], descriptionText:"${friendly} was turn ${newVals[0]}"],[name: "speed", value: newVals[1], descriptionText:"${friendly} speed was set to ${newVals[1]}"]]],
+            fan: [type: "Generic Component Fan Control",                event: [[name: "switch", value: newVals[0], descriptionText:"${friendly} was turn ${newVals[0]}"],[name: "speed", value: newVals[1], descriptionText:"${friendly} speed was set to ${newVals[1]}"],[name: "level", value: newVals[2], descriptionText:"${friendly} level was set to ${newVals[2]}"]]],
             garage_door: [type: "Generic Component Contact Sensor",     event: [[name: "contact", value: newVals[0] == "on" ? "open":"closed", descriptionText:"${friendly} is updated"]]],
             humidity: [type: "Generic Component Humidity Sensor",       event: [[name: "humidity", value: newVals[0], descriptionText:"${friendly} humidity is ${newVals[0]}"]]],
             illuminance: [type: "Generic Component Illuminance Sensor", event: [[name: "illuminance", value: newVals[0], descriptionText:"${friendly} illuminance is ${newVals[0]}"]], namespace: "community"],
@@ -287,13 +308,16 @@ def componentSetLevel(ch, level, transition=1){
             case 0:
                 componentSetSpeed(ch, "off")
             break
-            case 1..33:
+            case 1..25:
                 componentSetSpeed(ch, "low")
             break
-            case 34..66:
+            case 26..50:
                 componentSetSpeed(ch, "medium")
             break
-            case 67..100:
+            case 51..75:
+                componentSetSpeed(ch, "medium-high")
+            break
+            case 76..100:
                 componentSetSpeed(ch, "high")
             break
             default:
@@ -312,30 +336,33 @@ def componentSetLevel(ch, level, transition=1){
 
 def componentSetSpeed(ch, speed) {
     if (logEnable) log.info("received setSpeed request from ${ch.label}, with speed = ${speed}")
+    int percentage = 0
     switch (speed) {
         case "off":
-            //no change
-        break
+            percentage = 0
+            break
         case "low":
         case "medium-low":
-            speed = "low"
-        break
+            percentage = 25
+            break
         case "on":
         case "auto":
         case "medium":
+            percentage = 50
+            break
         case "medium-high":
-            speed = "medium"
-        break
+            percentage = 75
+            break
         case "high":
-            //no change
-        break
+            percentage = 100
+            break
         default:
             if (logEnable) log.info "No case defined for Fan setSpeed(${speed})"
     }
     state.id = state.id + 1
     entity = ch.name
     domain = entity.tokenize(".")[0]
-    messOn = JsonOutput.toJson([id: state.id, type: "call_service", domain: "${domain}", service: "set_speed", service_data: [entity_id: "${entity}", speed: "${speed}"]])        
+    messOn = JsonOutput.toJson([id: state.id, type: "call_service", domain: "${domain}", service: "set_percentage", service_data: [entity_id: "${entity}", percentage: "${percentage}"]])        
     if (logEnable) log.debug("messOn = ${messOn}")
     interfaces.webSocket.sendMessage("${messOn}")
 }
@@ -345,18 +372,20 @@ def componentCycleSpeed(ch) {
     switch (ch.currentValue("speed")) {
         case "off":
             speed = "low"
-        break
+            break
         case "low":
         case "medium-low":
             speed = "medium"
-        break
+            break
         case "medium":
+            speed = "medium-high"
+            break
         case "medium-high":
             speed = "high"
-        break
+            break
         case "high":
             speed = "off"
-        break
+            break
     }
     componentSetSpeed(ch, speed)
 }

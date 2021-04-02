@@ -46,6 +46,8 @@
 * 0.1.23 2021-02-25 Dan Ogorchock      Switched from Exclude List to Include List
 * 0.1.24 2021-03-07 Yves Mercier       Added device label in event description
 * 0.1.25 2021-03-18 Dan Ogorchock      Updated for recent Hass Fan handling changes (use percentages to set speeds instead of deprecated speed names)
+* 0.1.26 2021-04-02 DongHwan Suh       Added partial support for Color temperature, RGB, RGBW lights
+*                                      (Manually updating the device type to the corresponding one is required in Hubitat. Only statuses of level and switch are shown in Hubitat.)
 *
 * Thank you(s):
 */
@@ -332,6 +334,29 @@ def componentSetLevel(ch, level, transition=1){
         if (logEnable) log.debug("messLevel = ${messLevel}")
         interfaces.webSocket.sendMessage("${messLevel}")
     }
+}
+
+def componentSetColor(ch, color, transition=1){
+    if (logEnable) log.info("received setColor request from ${ch.label}")
+    
+    state.id = state.id + 1
+    entity = ch.name
+    domain = entity.tokenize(".")[0]
+    convertedHue = Math.round(color.hue * 360/100)
+    messHSL = JsonOutput.toJson([id: state.id, type: "call_service", domain: "${domain}", service: "turn_on", service_data: [entity_id: "${entity}", brightness_pct: "${color.level}", hs_color: ["${convertedHue}", "${color.saturation}"], transition: "${transition}"]])
+    if (logEnable) log.debug("messHSL = ${messHSL}")
+    interfaces.webSocket.sendMessage("${messHSL}")
+}
+
+def componentSetColorTemperature(ch, colortemperature, transition=1){
+    if (logEnable) log.info("received setColorTemperature request from ${ch.label}")
+    
+    state.id = state.id + 1
+    entity = ch.name
+    domain = entity.tokenize(".")[0]
+    messCT = JsonOutput.toJson([id: state.id, type: "call_service", domain: "${domain}", service: "turn_on", service_data: [entity_id: "${entity}", kelvin: "${colortemperature}", transition: "${transition}"]])
+    if (logEnable) log.debug("messCT = ${messCT}")
+    interfaces.webSocket.sendMessage("${messCT}")
 }
 
 def componentSetSpeed(ch, speed) {

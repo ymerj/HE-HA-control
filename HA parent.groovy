@@ -71,6 +71,7 @@ metadata {
         input ("ip", "text", title: "IP", description: "HomeAssistant IP Address", required: true)
         input ("port", "text", title: "Port", description: "HomeAssistant Port Number", required: true, defaultValue: "8123")
         input ("token", "text", title: "Token", description: "HomeAssistant Long-Lived Access Token", required: true)
+        input ("secure", "bool", title: "Require secure connection (https)", defaultValue: false)
         input ("logEnable", "bool", title: "Enable debug logging", defaultValue: true)
         input ("txtEnable", "bool", title: "Enable description text logging", defaultValue: true)        
     }
@@ -96,10 +97,12 @@ def initialize() {
     closeConnection()
     
     state.id = 2
+    def connectionType = "ws"
+    if (secure) connectionType = "wss"
     auth = '{"type":"auth","access_token":"' + "${token}" + '"}'
     evenements = '{"id":1,"type":"subscribe_events","event_type":"state_changed"}'
     try {
-        interfaces.webSocket.connect("ws://${ip}:${port}/api/websocket")
+        interfaces.webSocket.connect("${connectionType}://${ip}:${port}/api/websocket")
         interfaces.webSocket.sendMessage("${auth}")
         interfaces.webSocket.sendMessage("${evenements}")
     } 

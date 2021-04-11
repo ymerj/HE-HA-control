@@ -48,6 +48,7 @@
 * 0.1.25 2021-03-18 Dan Ogorchock      Updated for recent Hass Fan handling changes (use percentages to set speeds instead of deprecated speed names)
 * 0.1.26 2021-04-02 DongHwan Suh       Added partial support for Color temperature, RGB, RGBW lights
 *                                      (Manually updating the device type to the corresponding one is required in Hubitat. Only statuses of level and switch are shown in Hubitat.)
+* 0.1.27 2021-04-10 Yves Mercier       Added option for secure connection
 *
 * Thank you(s):
 */
@@ -102,7 +103,7 @@ def initialize() {
     auth = '{"type":"auth","access_token":"' + "${token}" + '"}'
     evenements = '{"id":1,"type":"subscribe_events","event_type":"state_changed"}'
     try {
-        interfaces.webSocket.connect("${connectionType}://${ip}:${port}/api/websocket")
+        interfaces.webSocket.connect("${connectionType}://${ip}:${port}/api/websocket", ignoreSSLIssues: true)
         interfaces.webSocket.sendMessage("${auth}")
         interfaces.webSocket.sendMessage("${evenements}")
     } 

@@ -48,7 +48,7 @@
 * 0.1.25 2021-03-18 Dan Ogorchock      Updated for recent Hass Fan handling changes (use percentages to set speeds instead of deprecated speed names)
 * 0.1.26 2021-04-02 DongHwan Suh       Added partial support for Color temperature, RGB, RGBW lights
 *                                      (Manually updating the device type to the corresponding one is required in Hubitat. Only statuses of level and switch are shown in Hubitat.)
-* 0.1.27 2021-04-10 Yves Mercier       Added option for secure connection
+* 0.1.27 2021-04-11 Yves Mercier       Added option for secure connection
 *
 * Thank you(s):
 */

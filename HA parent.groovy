@@ -48,6 +48,7 @@
 * 0.1.25 2021-03-18 Dan Ogorchock      Updated for recent Hass Fan handling changes (use percentages to set speeds instead of deprecated speed names)
 * 0.1.26 2021-04-02 DongHwan Suh       Added partial support for Color temperature, RGB, RGBW lights
 *                                      (Manually updating the device type to the corresponding one is required in Hubitat. Only statuses of level and switch are shown in Hubitat.)
+* 0.1.27 2021-04-11 Yves Mercier       Added option for secure connection
 *
 * Thank you(s):
 */
@@ -71,6 +72,7 @@ metadata {
         input ("ip", "text", title: "IP", description: "HomeAssistant IP Address", required: true)
         input ("port", "text", title: "Port", description: "HomeAssistant Port Number", required: true, defaultValue: "8123")
         input ("token", "text", title: "Token", description: "HomeAssistant Long-Lived Access Token", required: true)
+        input ("secure", "bool", title: "Require secure connection (https)", defaultValue: false)
         input ("logEnable", "bool", title: "Enable debug logging", defaultValue: true)
         input ("txtEnable", "bool", title: "Enable description text logging", defaultValue: true)        
     }
@@ -96,10 +98,12 @@ def initialize() {
     closeConnection()
     
     state.id = 2
+    def connectionType = "ws"
+    if (secure) connectionType = "wss"
     auth = '{"type":"auth","access_token":"' + "${token}" + '"}'
     evenements = '{"id":1,"type":"subscribe_events","event_type":"state_changed"}'
     try {
-        interfaces.webSocket.connect("ws://${ip}:${port}/api/websocket")
+        interfaces.webSocket.connect("${connectionType}://${ip}:${port}/api/websocket", ignoreSSLIssues: true)
         interfaces.webSocket.sendMessage("${auth}")
         interfaces.webSocket.sendMessage("${evenements}")
     } 

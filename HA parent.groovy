@@ -49,6 +49,7 @@
 * 0.1.26 2021-04-02 DongHwan Suh       Added partial support for Color temperature, RGB, RGBW lights
 *                                      (Manually updating the device type to the corresponding one is required in Hubitat. Only statuses of level and switch are shown in Hubitat.)
 * 0.1.27 2021-04-11 Yves Mercier       Added option for secure connection
+* 0.1.28 2021-04-14 Dan Ogorchock      Improved Fan Device handling
 *
 * Thank you(s):
 */
@@ -366,15 +367,23 @@ def componentSetColorTemperature(ch, colortemperature, transition=1){
 def componentSetSpeed(ch, speed) {
     if (logEnable) log.info("received setSpeed request from ${ch.label}, with speed = ${speed}")
     int percentage = 0
+    entity = ch.name
+    domain = entity.tokenize(".")[0]
     switch (speed) {
+        case "on":
+            state.id = state.id + 1
+            messOn = JsonOutput.toJson([id: state.id, type: "call_service", domain: "${domain}", service: "turn_on", service_data: [entity_id: "${entity}"]])
+            interfaces.webSocket.sendMessage("${messOn}")
+            break
         case "off":
-            percentage = 0
+            state.id = state.id + 1    
+            messOff = JsonOutput.toJson([id: state.id, type: "call_service", domain: "${domain}", service: "turn_off", service_data: [entity_id: "${entity}"]])
+            interfaces.webSocket.sendMessage("${messOff}")
             break
         case "low":
         case "medium-low":
             percentage = 25
             break
-        case "on":
         case "auto":
         case "medium":
             percentage = 50
@@ -388,12 +397,12 @@ def componentSetSpeed(ch, speed) {
         default:
             if (logEnable) log.info "No case defined for Fan setSpeed(${speed})"
     }
-    state.id = state.id + 1
-    entity = ch.name
-    domain = entity.tokenize(".")[0]
-    messOn = JsonOutput.toJson([id: state.id, type: "call_service", domain: "${domain}", service: "set_percentage", service_data: [entity_id: "${entity}", percentage: "${percentage}"]])        
-    if (logEnable) log.debug("messOn = ${messOn}")
-    interfaces.webSocket.sendMessage("${messOn}")
+
+    if (percentage != 0) {
+        state.id = state.id + 1
+        messOn = JsonOutput.toJson([id: state.id, type: "call_service", domain: "${domain}", service: "turn_on", service_data: [entity_id: "${entity}", percentage: "${percentage}"]])
+        interfaces.webSocket.sendMessage("${messOn}")
+    }
 }
 
 def componentCycleSpeed(ch) {

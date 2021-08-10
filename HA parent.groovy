@@ -51,6 +51,7 @@
 * 0.1.27 2021-04-11 Yves Mercier       Added option for secure connection
 * 0.1.28 2021-04-14 Dan Ogorchock      Improved Fan Device handling
 * 0.1.29 2021-04-17 Dan Ogorchock      Added support for Smoke Detector Binary Sensor
+* 0.1.30 2021-08-10 tomw               Added support for device_tracker as Presence Sensor
 *
 * Thank you(s):
 */
@@ -205,6 +206,7 @@ def parse(String description) {
                 if (mapping) updateChildDevice(mapping, entity, friendly)
                 break
             case "switch":
+            case "device_tracker":
                 mapping = translateDevices(domain, newVals, friendly)
                 if (mapping) updateChildDevice(mapping, entity, friendly)
                 break
@@ -251,7 +253,8 @@ def translateDevices(device_class, newVals, friendly)
             switch: [type: "Generic Component Switch",                  event: [[name: "switch", value: newVals[0], descriptionText:"${friendly} was turn ${newVals[0]}"]]],
             temperature: [type: "Generic Component Temperature Sensor", event: [[name: "temperature", value: newVals[0], descriptionText:"${friendly} temperature is ${newVals[0]}"]]],
             voltage: [type: "Generic Component Voltage Sensor",         event: [[name: "voltage", value: newVals[0], descriptionText:"${friendly} voltage is ${newVals[0]}"]]],
-            window: [type: "Generic Component Contact Sensor",          event: [[name: "contact", value: newVals[0] == "on" ? "open":"closed", descriptionText:"${friendly} is updated"]]]
+            window: [type: "Generic Component Contact Sensor",          event: [[name: "contact", value: newVals[0] == "on" ? "open":"closed", descriptionText:"${friendly} is updated"]]],
+            device_tracker: [type: "Generic Component Presence Sensor", event: [[name: "presence", value: newVals[0] == "home" ? "present":"not present", descriptionText:"${friendly} is updated"]]]
         ]
 
     return mapping[device_class]

@@ -77,7 +77,7 @@ def mainPage2(params)
                 resp.data.each
                 {
                     domain = it.entity_id?.tokenize(".")?.getAt(0)
-                    if(["fan", "switch", "light", "binary_sensor", "sensor"].contains(domain))
+                    if(["fan", "switch", "light", "binary_sensor", "sensor", "device_tracker"].contains(domain))
                     {
                         state.entityList.put(it.entity_id, "${it.attributes?.friendly_name} (${it.entity_id})")
                     }

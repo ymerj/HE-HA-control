@@ -25,7 +25,14 @@
       "namespace": "community",
       "location": "https://raw.githubusercontent.com/ymerj/HE-HA-control/main/genericComponentPressureSensor.groovy",
       "required": false
-    }    
+    },
+    {
+      "id": "cb5d799b-9916-487e-9f7d-c0501f4c9a49",
+      "name": "Generic Component Presence Sensor",
+      "namespace": "community",
+      "location": "https://raw.githubusercontent.com/ymerj/HE-HA-control/main/genericComponentPresenceSensor.groovy",
+      "required": false
+    }   
   ],
   "apps": [
     {

@@ -52,6 +52,7 @@
 * 0.1.28 2021-04-14 Dan Ogorchock      Improved Fan Device handling
 * 0.1.29 2021-04-17 Dan Ogorchock      Added support for Smoke Detector Binary Sensor
 * 0.1.30 2021-08-10 tomw               Added support for device_tracker as Presence Sensor
+* 0.1.31 (dev) 2021-09-05 tomw               Added support for cover as Garage Door Opener
 *
 * Thank you(s):
 */
@@ -205,11 +206,6 @@ def parse(String description) {
                 mapping = translateDevices(domain, newVals, friendly)
                 if (mapping) updateChildDevice(mapping, entity, friendly)
                 break
-            case "switch":
-            case "device_tracker":
-                mapping = translateDevices(domain, newVals, friendly)
-                if (mapping) updateChildDevice(mapping, entity, friendly)
-                break
             case "light":
                 def level = response?.event?.data?.new_state?.attributes?.brightness
                 if (level) level = Math.round((level.toInteger() * 100 / 255))
@@ -218,8 +214,19 @@ def parse(String description) {
                 if (!level) mapping.event.remove(1) //remove the level update since it is not provided with the HA 'off' event json data
                 if (mapping) updateChildDevice(mapping, entity, friendly)
                 break
+            case "cover":
+                def opening = response?.event?.data?.new_state?.attributes?.is_opening
+                def closing = response?.event?.data?.new_state?.attributes?.is_closing
+                def closed = response?.event?.data?.new_state?.attributes?.is_close
+                
+                if(closed != "None") { newVals[1] = (closed ? "closed" : "open") }
+                if(opening) { newVals[1] = "opening" }
+                if(closing) { newVals[1] = "closing" }
+                break
             case "binary_sensor":
+            case "device_tracker":
             case "sensor":
+            case "switch":            
                 mapping = translateDevices(device_class, newVals, friendly)
                 if (mapping) updateChildDevice(mapping, entity, friendly)                
                 break
@@ -254,7 +261,8 @@ def translateDevices(device_class, newVals, friendly)
             temperature: [type: "Generic Component Temperature Sensor", event: [[name: "temperature", value: newVals[0], descriptionText:"${friendly} temperature is ${newVals[0]}"]]],
             voltage: [type: "Generic Component Voltage Sensor",         event: [[name: "voltage", value: newVals[0], descriptionText:"${friendly} voltage is ${newVals[0]}"]]],
             window: [type: "Generic Component Contact Sensor",          event: [[name: "contact", value: newVals[0] == "on" ? "open":"closed", descriptionText:"${friendly} is updated"]]],
-            device_tracker: [type: "Generic Component Presence Sensor", event: [[name: "presence", value: newVals[0] == "home" ? "present":"not present", descriptionText:"${friendly} is updated"]], namespace: "community"]
+            device_tracker: [type: "Generic Component Presence Sensor", event: [[name: "presence", value: newVals[0] == "home" ? "present":"not present", descriptionText:"${friendly} is updated"]], namespace: "community"],
+            cover: [type: "Generic Component Garage Door Control",      event: [[name: "door", value: newVals[1] ?: "unknown", descriptionText:"${friendly} was turn ${newVals[1]}"]], namespace: "community"]
         ]
 
     return mapping[device_class]
@@ -431,6 +439,25 @@ def componentCycleSpeed(ch) {
             break
     }
     componentSetSpeed(ch, speed)
+}
+
+void componentClose(ch) {
+    operateCover(ch, "close")
+}
+
+void componentOpen(ch) {
+    operateCover(ch, "open")
+}
+
+void operateCover(ch, op)
+{
+    if (logEnable) log.info("received ${op} request from ${ch.label}")
+    state.id = state.id + 1
+    entity = ch.name
+    domain = entity.tokenize(".")[0]
+    messOff = JsonOutput.toJson([id: state.id, type: "call_service", domain: "${domain}", service: (op == "open") ? "open_cover" : "close_cover", service_data: [entity_id: "${entity}"]])
+    if (logEnable) log.debug("messOff = ${messOff}")
+    interfaces.webSocket.sendMessage("${messOff}")
 }
 
 def componentRefresh(ch){

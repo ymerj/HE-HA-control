@@ -206,6 +206,11 @@ def parse(String description) {
                 mapping = translateDevices(domain, newVals, friendly)
                 if (mapping) updateChildDevice(mapping, entity, friendly)
                 break
+            case "device_tracker":
+            case "switch":            
+                mapping = translateDevices(device_class, newVals, friendly)
+                if (mapping) updateChildDevice(mapping, entity, friendly)                
+                break
             case "light":
                 def level = response?.event?.data?.new_state?.attributes?.brightness
                 if (level) level = Math.round((level.toInteger() * 100 / 255))
@@ -224,9 +229,7 @@ def parse(String description) {
                 if(closing) { newVals[1] = "closing" }
                 break
             case "binary_sensor":
-            case "device_tracker":
             case "sensor":
-            case "switch":            
                 mapping = translateDevices(device_class, newVals, friendly)
                 if (mapping) updateChildDevice(mapping, entity, friendly)                
                 break

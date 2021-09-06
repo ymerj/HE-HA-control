@@ -209,7 +209,7 @@ def parse(String description) {
             case "device_tracker":
             case "switch":            
                 mapping = translateDevices(domain, newVals, friendly)
-                if (mapping) updateChildDevice(mapping, entity, friendly)                
+                if (mapping) updateChildDevice(mapping, entity, friendly)      
                 break
             case "light":
                 def level = response?.event?.data?.new_state?.attributes?.brightness

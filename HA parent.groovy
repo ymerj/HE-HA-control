@@ -208,7 +208,7 @@ def parse(String description) {
                 break
             case "device_tracker":
             case "switch":            
-                mapping = translateDevices(device_class, newVals, friendly)
+                mapping = translateDevices(domain, newVals, friendly)
                 if (mapping) updateChildDevice(mapping, entity, friendly)                
                 break
             case "light":

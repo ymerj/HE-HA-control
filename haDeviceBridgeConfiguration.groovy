@@ -20,7 +20,8 @@
 *
 * Version Control:
 * 0.1.22     2021-02-24 tomw               Optional configuration app to selectively filter out Home Assistant devices
-* 0.1.23     2021002-25 Dan Ogorchock      Switched logic from Exclude to Include to make more intuitive.  Sorted Device List.
+* 0.1.23     2021-02-25 Dan Ogorchock      Switched logic from Exclude to Include to make more intuitive.  Sorted Device List.
+* 0.1.32     2021-09-27 kaimyn             Add option to use HTTPS support in configuration app
 */
 
 definition(
@@ -48,7 +49,10 @@ def mainPage1()
             input ("ip", "text", title: "Home Assistant IP Address", description: "HomeAssistant IP Address", required: true)
             input ("port", "text", title: "Home Assistant Port", description: "HomeAssistant Port Number", required: true, defaultValue: "8123")
             input ("token", "text", title: "Home Assistant Long-Lived Access Token", description: "HomeAssistant Access Token", required: true)
+            input name: "secure", type: "bool", title: "Require secure connection", defaultValue: false, required: true
+            input name: "ignoreSSLIssues", type: "bool", title: "Ignore SSL Issues", defaultValue: false, required: true
             input name: "enableLogging", type: "bool", title: "Enable debug logging?", defaultValue: false, required: true
+            
         }
         section("Please note, it may take some time to retrieve all entities from Home Assistant.")
         {
@@ -139,6 +143,7 @@ def installed()
         ch.updateSetting("ip", ip)
         ch.updateSetting("port", port)
         ch.updateSetting("token", token)
+        ch.updateSetting("secure", secure)
 
         ch.updated()
     }
@@ -172,6 +177,7 @@ def genParamsMain(suffix, body = null)
                 'Authorization': "Bearer ${token}",
                 'Content-Type': "application/json"
             ],
+            ignoreSSLIssues: ignoreSSLIssues
         ]
     
     if(body)
@@ -184,6 +190,7 @@ def genParamsMain(suffix, body = null)
 
 def getBaseURI()
 {
+    if(secure) return "https://${ip}:${port}/api/"
     return "http://${ip}:${port}/api/"
 }
 

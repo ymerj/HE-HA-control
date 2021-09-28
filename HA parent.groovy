@@ -206,6 +206,10 @@ def parse(String description) {
                 mapping = translateDevices(domain, newVals, friendly)
                 if (mapping) updateChildDevice(mapping, entity, friendly)
                 break
+            case "cover":
+                if(device_class != "garage")
+                    // only support "garage" device_class for "cover" domain
+                    return
             case "device_tracker":
             case "switch":            
                 mapping = translateDevices(domain, newVals, friendly)
@@ -218,21 +222,6 @@ def parse(String description) {
                 mapping = translateDevices(domain, newVals, friendly)
                 if (!level) mapping.event.remove(1) //remove the level update since it is not provided with the HA 'off' event json data
                 if (mapping) updateChildDevice(mapping, entity, friendly)
-                break
-            case "cover":
-                if(device_class != "garage")
-                    return
-            
-                def opening = response?.event?.data?.new_state?.attributes?.is_opening
-                def closing = response?.event?.data?.new_state?.attributes?.is_closing
-                def closed = response?.event?.data?.new_state?.attributes?.is_close
-                
-                if(closed != "None") { newVals[1] = (closed ? "closed" : "open") }
-                if(opening) { newVals[1] = "opening" }
-                if(closing) { newVals[1] = "closing" }
-                
-                mapping = translateDevices(device_class, newVals, friendly)
-                if (mapping) updateChildDevice(mapping, entity, friendly)            
                 break
             case "binary_sensor":
             case "sensor":
@@ -271,7 +260,7 @@ def translateDevices(device_class, newVals, friendly)
             voltage: [type: "Generic Component Voltage Sensor",         event: [[name: "voltage", value: newVals[0], descriptionText:"${friendly} voltage is ${newVals[0]}"]]],
             window: [type: "Generic Component Contact Sensor",          event: [[name: "contact", value: newVals[0] == "on" ? "open":"closed", descriptionText:"${friendly} is updated"]]],
             device_tracker: [type: "Generic Component Presence Sensor", event: [[name: "presence", value: newVals[0] == "home" ? "present":"not present", descriptionText:"${friendly} is updated"]], namespace: "community"],
-            garage: [type: "Generic Component Garage Door Control",     event: [[name: "door", value: newVals[1] ?: "unknown", descriptionText:"${friendly} was turn ${newVals[1]}"]], namespace: "community"]
+            garage: [type: "Generic Component Garage Door Control",     event: [[name: "door", value: newVals[0] ?: "unknown", descriptionText:"${friendly} was turn ${newVals[0]}"]], namespace: "community"]
         ]
 
     return mapping[device_class]

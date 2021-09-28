@@ -208,8 +208,10 @@ def parse(String description) {
                 break
             case "cover":
                 if(device_class != "garage")
+                {
                     // only support "garage" device_class for "cover" domain
                     return
+                }
             case "device_tracker":
             case "switch":            
                 mapping = translateDevices(domain, newVals, friendly)

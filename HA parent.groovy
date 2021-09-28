@@ -53,7 +53,7 @@
 * 0.1.29 2021-04-17 Dan Ogorchock      Added support for Smoke Detector Binary Sensor
 * 0.1.30 2021-08-10 tomw               Added support for device_tracker as Presence Sensor
 * 0.1.31 2021-09-23 tomw               Added support for Power sensor
-* 0.1.32 2021-09-28 tomw               Added support for cover as Garage Door Opener
+* 0.1.33 2021-09-28 tomw               Added support for cover as Garage Door Opener
 *
 * Thank you(s):
 */

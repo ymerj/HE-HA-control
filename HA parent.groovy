@@ -175,10 +175,11 @@ def parse(String description) {
         def domain = entity?.tokenize(".")?.getAt(0)
         def device_class = response?.event?.data?.new_state?.attributes?.device_class
         def friendly = response?.event?.data?.new_state?.attributes?.friendly_name
+        def colormode = response?.event?.data?.new_state?.attributes?.color_mode
         newVals << response?.event?.data?.new_state?.state
         def mapping = null
         
-        if (logEnable) log.debug "parse: domain: ${domain}, device_class: ${device_class}, entity: ${entity}, newVals: ${newVals}, friendly: ${friendly}"
+        if (logEnable) log.debug "parse: domain: ${domain}, device_class: ${device_class}, entity: ${entity}, newVals: ${newVals}, friendly: ${friendly}, colormode: ${colormode}"
         
         switch (domain) {
             case "fan":
@@ -219,12 +220,78 @@ def parse(String description) {
                 if (mapping) updateChildDevice(mapping, entity, friendly)
                 break
             case "light":
-                def level = response?.event?.data?.new_state?.attributes?.brightness
-                if (level) level = Math.round((level.toInteger() * 100 / 255))
-                newVals += level
+            if (newVals[0] == "off") {
                 mapping = translateDevices(domain, newVals, friendly)
-                if (!level) mapping.event.remove(1) //remove the level update since it is not provided with the HA 'off' event json data
+                mapping.event.remove(4)
+                mapping.event.remove(3)
+                mapping.event.remove(2)
+                mapping.event.remove(1)
                 if (mapping) updateChildDevice(mapping, entity, friendly)
+            } else {
+            switch (colormode) {
+                case "color_temp":
+                    def level = response?.event?.data?.new_state?.attributes?.brightness
+                    if (level) level = Math.round((level.toInteger() * 100 / 255))
+                    def ct = response?.event?.data?.new_state?.attributes?.color_temp
+                    if (ct) ct = (Math.round(1000000/ct))
+                    newVals += level
+                    newVals += ct
+                    mapping = translateDevices(domain, newVals, friendly)
+                    if (logEnable) log.debug "parse: 0: ${newVals[0]}, 1: ${newVals[1]}, 2: ${newVals[2]}, 3: ${newVals[3]}"//, friendly: ${friendly}, colormode: ${colormode}"
+                    mapping.event.remove(4)
+                    mapping.event.remove(3)                  
+                    if (!ct) mapping.event.remove(2) //remove the CT update since it is not provided with the HA 'off' event json data
+                    if (!level) mapping.event.remove(1) //remove the level update since it is not provided with the HA 'off' event json data
+                    if (mapping) updateChildDevice(mapping, entity, friendly)
+                    break
+                case "hs":
+                    def level = response?.event?.data?.new_state?.attributes?.brightness
+                    if (level) level = Math.round((level.toInteger() * 100 / 255))
+                    def ct = response?.event?.data?.new_state?.attributes?.color_temp
+                    if (ct) ct = (Math.round(1000000/ct))
+                    def hue = response?.event?.data?.new_state?.attributes?.hs_color.getAt(0)
+                    if (hue) hue = Math.round((hue.toInteger() * 100 / 360))
+                    def sat = response?.event?.data?.new_state?.attributes?.hs_color.getAt(1)
+                    if (sat) sat = Math.round((sat.toInteger()))
+                    newVals += level
+                    newVals += ct
+                    newVals += hue
+                    newVals += sat
+                    if (logEnable) log.debug "parse: 0: ${newVals[0]}, 1: ${newVals[1]}, 2: ${newVals[2]}, 3: ${newVals[3]}, 4: ${newVals[4]}, 5: ${newVals[5]}"
+                    mapping = translateDevices(domain, newVals, friendly)
+                    if (!ct) mapping.event.remove(2) //remove the CT update since it is not provided with the HA 'off' event json data
+                    if (!level) mapping.event.remove(1) //remove the level update since it is not provided with the HA 'off' event json data
+                    if (mapping) updateChildDevice(mapping, entity, friendly)
+                    break
+                case "xy":
+                    def level = response?.event?.data?.new_state?.attributes?.brightness
+                    if (level) level = Math.round((level.toInteger() * 100 / 255))
+                    def ct = response?.event?.data?.new_state?.attributes?.color_temp
+                    if (ct) ct = (Math.round(1000000/ct))
+                    def hue = response?.event?.data?.new_state?.attributes?.hs_color.getAt(0)
+                    if (hue) hue = Math.round((hue.toInteger() * 100 / 360))
+                    def sat = response?.event?.data?.new_state?.attributes?.hs_color.getAt(1)
+                    if (sat) sat = Math.round((sat.toInteger()))
+                    newVals += level
+                    newVals += ct
+                    newVals += hue
+                    newVals += sat
+                    if (logEnable) log.debug "parse: 0: ${newVals[0]}, 1: ${newVals[1]}, 2: ${newVals[2]}, 3: ${newVals[3]}, 4: ${newVals[4]}, 5: ${newVals[5]}"
+                    mapping = translateDevices(domain, newVals, friendly)
+                    if (!ct) mapping.event.remove(2) //remove the CT update since it is not provided with the HA 'off' event json data
+                    if (!level) mapping.event.remove(1) //remove the level update since it is not provided with the HA 'off' event json data
+                    if (mapping) updateChildDevice(mapping, entity, friendly)
+                    break
+                case "brightness":
+                    def level = response?.event?.data?.new_state?.attributes?.brightness
+                    if (level) level = Math.round((level.toInteger() * 100 / 255))
+                    newVals += level
+                    if (logEnable) log.debug "parse: 0: ${newVals[0]}, 1: ${newVals[1]}, 2: ${newVals[2]}, 3: ${newVals[3]}, 4: ${newVals[4]}, 5: ${newVals[5]}"
+                    mapping = translateDevices(colormode, newVals, friendly)
+                    if (mapping) updateChildDevice(mapping, entity, friendly)
+                    break
+            }
+            }
                 break
             case "binary_sensor":
             case "sensor":
@@ -246,12 +313,15 @@ def translateDevices(device_class, newVals, friendly)
 {
     def mapping =
         [
+            brightness :[type: "Generic Component Dimmer",              event: [[name: "switch", value: newVals[0], descriptionText:"${friendly} was turn ${newVals[0]}"],[name: "level", value: newVals[1], descriptionText:"${friendly} level was set to ${newVals[1]}"]]],            moisture: [type: "Generic Component Water Sensor",          event: [[name: "water", value: newVals[0] == "on" ? "wet":"dry", descriptionText:"${friendly} is updated"]]],
+            cover: [type: "Generic Component Garage Door Control",      event: [[name: "door", value: newVals[0] ?: "unknown", descriptionText:"${friendly} was turn ${newVals[0]}"]], namespace: "community"],
+            device_tracker: [type: "Generic Component Presence Sensor", event: [[name: "presence", value: newVals[0] == "home" ? "present":"not present", descriptionText:"${friendly} is updated"]], namespace: "community"],
             door: [type: "Generic Component Contact Sensor",            event: [[name: "contact", value: newVals[0] == "on" ? "open":"closed", descriptionText:"${friendly} is updated"]]],
             fan: [type: "Generic Component Fan Control",                event: [[name: "switch", value: newVals[0], descriptionText:"${friendly} was turn ${newVals[0]}"],[name: "speed", value: newVals[1], descriptionText:"${friendly} speed was set to ${newVals[1]}"],[name: "level", value: newVals[2], descriptionText:"${friendly} level was set to ${newVals[2]}"]]],
             garage_door: [type: "Generic Component Contact Sensor",     event: [[name: "contact", value: newVals[0] == "on" ? "open":"closed", descriptionText:"${friendly} is updated"]]],
             humidity: [type: "Generic Component Humidity Sensor",       event: [[name: "humidity", value: newVals[0], descriptionText:"${friendly} humidity is ${newVals[0]}"]]],
             illuminance: [type: "Generic Component Illuminance Sensor", event: [[name: "illuminance", value: newVals[0], descriptionText:"${friendly} illuminance is ${newVals[0]}"]], namespace: "community"],
-            light: [type: "Generic Component Dimmer",                   event: [[name: "switch", value: newVals[0], descriptionText:"${friendly} was turn ${newVals[0]}"],[name: "level", value: newVals[1], descriptionText:"${friendly} level was set to ${newVals[1]}"]]],
+            light: [type: "Generic Component RGBW",                     event: [[name: "switch", value: newVals[0], descriptionText:"${friendly} was turn ${newVals[0]}"],[name: "level", value: newVals[1], descriptionText:"${friendly} level was set to ${newVals[1]}"],[name: "colorTemperature", value: newVals[2]],[name: "hue", value: newVals[3]],[name: "saturation", value: newVals[4]]]],
             moisture: [type: "Generic Component Water Sensor",          event: [[name: "water", value: newVals[0] == "on" ? "wet":"dry", descriptionText:"${friendly} is updated"]]],
             motion: [type: "Generic Component Motion Sensor",           event: [[name: "motion", value: newVals[0] == "on" ? """active""":"""inactive""", descriptionText:"${friendly} is updated"]]],
             opening: [type: "Generic Component Contact Sensor",         event: [[name: "contact", value: newVals[0] == "on" ? "open":"closed", descriptionText:"${friendly} is updated"]]],
@@ -262,9 +332,7 @@ def translateDevices(device_class, newVals, friendly)
             switch: [type: "Generic Component Switch",                  event: [[name: "switch", value: newVals[0], descriptionText:"${friendly} was turn ${newVals[0]}"]]],
             temperature: [type: "Generic Component Temperature Sensor", event: [[name: "temperature", value: newVals[0], descriptionText:"${friendly} temperature is ${newVals[0]}"]]],
             voltage: [type: "Generic Component Voltage Sensor",         event: [[name: "voltage", value: newVals[0], descriptionText:"${friendly} voltage is ${newVals[0]}"]]],
-            window: [type: "Generic Component Contact Sensor",          event: [[name: "contact", value: newVals[0] == "on" ? "open":"closed", descriptionText:"${friendly} is updated"]]],
-            device_tracker: [type: "Generic Component Presence Sensor", event: [[name: "presence", value: newVals[0] == "home" ? "present":"not present", descriptionText:"${friendly} is updated"]], namespace: "community"],
-            cover: [type: "Generic Component Garage Door Control",      event: [[name: "door", value: newVals[0] ?: "unknown", descriptionText:"${friendly} was turn ${newVals[0]}"]], namespace: "community"]
+            window: [type: "Generic Component Contact Sensor",          event: [[name: "contact", value: newVals[0] == "on" ? "open":"closed", descriptionText:"${friendly} is updated"]]]
         ]
 
     return mapping[device_class]
@@ -368,8 +436,9 @@ def componentSetColor(ch, color, transition=1){
     interfaces.webSocket.sendMessage("${messHSL}")
 }
 
-def componentSetColorTemperature(ch, colortemperature, transition=1){
+def componentSetColorTemperature(ch, colortemperature, level, transition){
     if (logEnable) log.info("received setColorTemperature request from ${ch.label}")
+    if (transition < 1) transition = 1
     
     state.id = state.id + 1
     entity = ch.name

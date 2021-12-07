@@ -250,7 +250,7 @@ def translateDevices(device_class, newVals, friendly)
         [
             door: [type: "Generic Component Contact Sensor",            event: [[name: "contact", value: newVals[0] == "on" ? "open":"closed", descriptionText:"${friendly} is updated"]]],
             fan: [type: "Generic Component Fan Control",                event: [[name: "switch", value: newVals[0], type: state.type, descriptionText:"${friendly} was turn ${newVals[0]} [${state.type}]"],[name: "speed", value: newVals[1], type: state.type, descriptionText:"${friendly} speed was set to ${newVals[1]} [${state.type}]"],[name: "level", value: newVals[2], type: state.type, descriptionText:"${friendly} level was set to ${newVals[2]} [${state.type}]"]]],
-            garage_door: [type: "Generic Component Contact Sensor",     event: [[name: "contact", value: newVals[0] == "on" ? "open":"closed", type: state.type, descriptionText:"${friendly} is updated"]]],
+            garage_door: [type: "Generic Component Contact Sensor",     event: [[name: "contact", value: newVals[0] == "on" ? "open":"closed", descriptionText:"${friendly} is updated"]]],
             humidity: [type: "Generic Component Humidity Sensor",       event: [[name: "humidity", value: newVals[0], descriptionText:"${friendly} humidity is ${newVals[0]}"]]],
             illuminance: [type: "Generic Component Illuminance Sensor", event: [[name: "illuminance", value: newVals[0], descriptionText:"${friendly} illuminance is ${newVals[0]}"]], namespace: "community"],
             light: [type: "Generic Component Dimmer",                   event: [[name: "switch", value: newVals[0], type: state.type, descriptionText:"${friendly} was turn ${newVals[0]} [${state.type}]"],[name: "level", value: newVals[1], type: state.type, descriptionText:"${friendly} level was set to ${newVals[1]} [${state.type}]"]]],
@@ -266,7 +266,7 @@ def translateDevices(device_class, newVals, friendly)
             voltage: [type: "Generic Component Voltage Sensor",         event: [[name: "voltage", value: newVals[0], descriptionText:"${friendly} voltage is ${newVals[0]}"]]],
             window: [type: "Generic Component Contact Sensor",          event: [[name: "contact", value: newVals[0] == "on" ? "open":"closed", descriptionText:"${friendly} is updated"]]],
             device_tracker: [type: "Generic Component Presence Sensor", event: [[name: "presence", value: newVals[0] == "home" ? "present":"not present", descriptionText:"${friendly} is updated"]], namespace: "community"],
-            cover: [type: "Generic Component Garage Door Control",      event: [[name: "door", value: newVals[0] ?: "unknown", descriptionText:"${friendly} was turn ${newVals[0]}"]], namespace: "community"]
+            cover: [type: "Generic Component Garage Door Control",      event: [[name: "door", value: newVals[0] ?: "unknown", type: state.type, descriptionText:"${friendly} was turn ${newVals[0]}"]], namespace: "community"]
         ]
 
     return mapping[device_class]

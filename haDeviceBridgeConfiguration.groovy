@@ -32,7 +32,8 @@ definition(
     category: "Convenience",
     iconUrl: "",
     iconX2Url: "",
-    iconX3Url: "")
+    iconX3Url: ""),
+    importUrl: "https://raw.githubusercontent.com/ymerj/HE-HA-control/main/HA%20parent.groovy",
 
 preferences
 {
@@ -81,7 +82,7 @@ def mainPage2(params)
                 resp.data.each
                 {
                     domain = it.entity_id?.tokenize(".")?.getAt(0)
-                    if(["fan", "switch", "light", "binary_sensor", "sensor", "device_tracker", "cover"].contains(domain))
+                    if(["fan", "switch", "light", "binary_sensor", "sensor", "device_tracker", "cover", "lock"].contains(domain))
                     {
                         state.entityList.put(it.entity_id, "${it.attributes?.friendly_name} (${it.entity_id})")
                     }

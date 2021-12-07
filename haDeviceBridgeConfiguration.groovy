@@ -32,8 +32,7 @@ definition(
     category: "Convenience",
     iconUrl: "",
     iconX2Url: "",
-    iconX3Url: "",
-    importUrl: "https://raw.githubusercontent.com/ymerj/HE-HA-control/main/HA%20parent.groovy")
+    iconX3Url: "")
 
 preferences
 {

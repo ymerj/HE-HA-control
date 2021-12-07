@@ -479,7 +479,7 @@ void operateLock(ch, op)
     entity = ch.name
     domain = entity.tokenize(".")[0]
     messLock = JsonOutput.toJson([id: state.id, type: "call_service", domain: "${domain}", service: (op == "unlock") ? "unlock" : "lock", service_data: [entity_id: "${entity}"]])
-    if (logEnable) log.debug("messLock = ${messOff}")
+    if (logEnable) log.debug("messLock = ${messLock}")
     interfaces.webSocket.sendMessage("${messLock}")
 }
 

@@ -213,6 +213,7 @@ def parse(String description) {
                     // only support "garage" device_class for "cover" domain
                     return
                 }
+            case "lock":
             case "device_tracker":
             case "switch":            
                 mapping = translateDevices(domain, newVals, friendly)
@@ -231,7 +232,6 @@ def parse(String description) {
                 mapping = translateDevices(device_class, newVals, friendly)
                 if (mapping) updateChildDevice(mapping, entity, friendly)                
                 break
-            case "lock":
             default:
                 if (logEnable) log.info "No mapping exists for domain: ${domain}, device_class: ${device_class}.  Please contact devs to have this added."
         }
@@ -478,9 +478,9 @@ void operateLock(ch, op)
     state.id = state.id + 1
     entity = ch.name
     domain = entity.tokenize(".")[0]
-    messOff = JsonOutput.toJson([id: state.id, type: "call_service", domain: "${domain}", service: (op == "unlock") ? "unlock" : "lock", service_data: [entity_id: "${entity}"]])
-    if (logEnable) log.debug("messOff = ${messOff}")
-    interfaces.webSocket.sendMessage("${messOff}")
+    messLock = JsonOutput.toJson([id: state.id, type: "call_service", domain: "${domain}", service: (op == "unlock") ? "unlock" : "lock", service_data: [entity_id: "${entity}"]])
+    if (logEnable) log.debug("messLock = ${messOff}")
+    interfaces.webSocket.sendMessage("${messLock}")
 }
 
 def componentRefresh(ch){

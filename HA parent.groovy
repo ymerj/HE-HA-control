@@ -268,7 +268,7 @@ def translateDevices(device_class, newVals, friendly)
             window: [type: "Generic Component Contact Sensor",          event: [[name: "contact", value: newVals[0] == "on" ? "open":"closed", descriptionText:"${friendly} is updated"]]],
             device_tracker: [type: "Generic Component Presence Sensor", event: [[name: "presence", value: newVals[0] == "home" ? "present":"not present", descriptionText:"${friendly} is updated"]], namespace: "community"],
             cover: [type: "Generic Component Garage Door Control",      event: [[name: "door", value: newVals[0] ?: "unknown", type: state.type, descriptionText:"${friendly} was turn ${newVals[0]}"]], namespace: "community"],
-            lock: [type: "Generic Component Lock",                      event: [[name: "lock", value: newVals[0] ?: "unknown", descriptionText:"${friendly} was turn ${newVals[0]}"]]]
+            lock: [type: "Generic Component Lock",                      event: [[name: "lock", value: newVals[0] ?: "unknown", type: state.type, descriptionText:"${friendly} was turn ${newVals[0]}"]]]
         ]
 
     return mapping[device_class]
@@ -481,6 +481,7 @@ void componentUnlock(ch) {
 void operateLock(ch, op)
 {
     if (logEnable) log.info("received ${op} request from ${ch.label}")
+    state.type = "digital"
     state.id = state.id + 1
     entity = ch.name
     domain = entity.tokenize(".")[0]

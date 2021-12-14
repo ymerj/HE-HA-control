@@ -214,6 +214,7 @@ def parse(String description) {
                     // only support "garage" device_class for "cover" domain
                     return
                 }
+            case "lock":
             case "device_tracker":
             case "switch":            
                 mapping = translateDevices(domain, newVals, friendly)
@@ -266,7 +267,8 @@ def translateDevices(device_class, newVals, friendly)
             voltage: [type: "Generic Component Voltage Sensor",         event: [[name: "voltage", value: newVals[0], descriptionText:"${friendly} voltage is ${newVals[0]}"]]],
             window: [type: "Generic Component Contact Sensor",          event: [[name: "contact", value: newVals[0] == "on" ? "open":"closed", descriptionText:"${friendly} is updated"]]],
             device_tracker: [type: "Generic Component Presence Sensor", event: [[name: "presence", value: newVals[0] == "home" ? "present":"not present", descriptionText:"${friendly} is updated"]], namespace: "community"],
-            cover: [type: "Generic Component Garage Door Control",      event: [[name: "door", value: newVals[0] ?: "unknown", type: state.type, descriptionText:"${friendly} was turn ${newVals[0]}"]], namespace: "community"]
+            cover: [type: "Generic Component Garage Door Control",      event: [[name: "door", value: newVals[0] ?: "unknown", type: state.type, descriptionText:"${friendly} was turn ${newVals[0]}"]], namespace: "community"],
+            lock: [type: "Generic Component Lock",                      event: [[name: "lock", value: newVals[0] ?: "unknown", type: state.type, descriptionText:"${friendly} was turn ${newVals[0]}"]]]
         ]
 
     return mapping[device_class]
@@ -466,6 +468,26 @@ void operateCover(ch, op){
     messOff = JsonOutput.toJson([id: state.id, type: "call_service", domain: "${domain}", service: (op == "open") ? "open_cover" : "close_cover", service_data: [entity_id: "${entity}"]])
     if (logEnable) log.debug("messOff = ${messOff}")
     interfaces.webSocket.sendMessage("${messOff}")
+}
+
+void componentLock(ch) {
+    operateLock(ch, "lock")
+}
+
+void componentUnlock(ch) {
+    operateLock(ch, "unlock")
+}
+
+void operateLock(ch, op)
+{
+    if (logEnable) log.info("received ${op} request from ${ch.label}")
+    state.type = "digital"
+    state.id = state.id + 1
+    entity = ch.name
+    domain = entity.tokenize(".")[0]
+    messLock = JsonOutput.toJson([id: state.id, type: "call_service", domain: "${domain}", service: (op == "unlock") ? "unlock" : "lock", service_data: [entity_id: "${entity}"]])
+    if (logEnable) log.debug("messLock = ${messLock}")
+    interfaces.webSocket.sendMessage("${messLock}")
 }
 
 def componentRefresh(ch){

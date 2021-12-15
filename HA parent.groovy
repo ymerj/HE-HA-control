@@ -55,6 +55,8 @@
 * 0.1.31 2021-09-23 tomw               Added support for Power sensor
 * 0.1.33 2021-09-28 tomw               Added support for cover as Garage Door Opener
 * 0.1.34 2021-11-24 Yves Mercier       Added event type: digital or physical (in that case, from Hubitat or from Home Assistant).	
+* 0.1.35 2021-12-01 draperw            Added support for locks
+* 0.1.36 2021-12-14 Yves Mercier       Improved event type
 *
 * Thank you(s):
 */
@@ -100,7 +102,6 @@ def updated(){
 
 def initialize() {
     log.info("initializing...")
-    state.type = "physical"
     closeConnection()
 
     state.id = 2
@@ -166,6 +167,9 @@ def parse(String description) {
         response = new groovy.json.JsonSlurper().parseText(description)
         if (response.type != "event") return
         
+        def origin = "physical"
+        if (response.event.context.user_id) origin = "digital"
+        
         def newVals = []
         def entity = response?.event?.data?.entity_id
         
@@ -205,7 +209,7 @@ def parse(String description) {
                 }
                 newVals += speed
                 newVals += percentage
-                mapping = translateDevices(domain, newVals, friendly)
+                mapping = translateDevices(domain, newVals, friendly, origin)
                 if (mapping) updateChildDevice(mapping, entity, friendly)
                 break
             case "cover":
@@ -217,26 +221,25 @@ def parse(String description) {
             case "lock":
             case "device_tracker":
             case "switch":            
-                mapping = translateDevices(domain, newVals, friendly)
+                mapping = translateDevices(domain, newVals, friendly, origin)
                 if (mapping) updateChildDevice(mapping, entity, friendly)
                 break
             case "light":
                 def level = response?.event?.data?.new_state?.attributes?.brightness
                 if (level) level = Math.round((level.toInteger() * 100 / 255))
                 newVals += level
-                mapping = translateDevices(domain, newVals, friendly)
+                mapping = translateDevices(domain, newVals, friendly, origin)
                 if (!level) mapping.event.remove(1) //remove the level update since it is not provided with the HA 'off' event json data
                 if (mapping) updateChildDevice(mapping, entity, friendly)
                 break
             case "binary_sensor":
             case "sensor":
-                mapping = translateDevices(device_class, newVals, friendly)
+                mapping = translateDevices(device_class, newVals, friendly, origin)
                 if (mapping) updateChildDevice(mapping, entity, friendly)                
                 break
             default:
                 if (logEnable) log.info "No mapping exists for domain: ${domain}, device_class: ${device_class}.  Please contact devs to have this added."
         }
-        state.type = "physical"
         return
     }  
     catch(e) {
@@ -245,16 +248,16 @@ def parse(String description) {
     }
 }
 
-def translateDevices(device_class, newVals, friendly)
+def translateDevices(device_class, newVals, friendly, origin)
 {
     def mapping =
         [
             door: [type: "Generic Component Contact Sensor",            event: [[name: "contact", value: newVals[0] == "on" ? "open":"closed", descriptionText:"${friendly} is updated"]]],
-            fan: [type: "Generic Component Fan Control",                event: [[name: "switch", value: newVals[0], type: state.type, descriptionText:"${friendly} was turn ${newVals[0]} [${state.type}]"],[name: "speed", value: newVals[1], type: state.type, descriptionText:"${friendly} speed was set to ${newVals[1]} [${state.type}]"],[name: "level", value: newVals[2], type: state.type, descriptionText:"${friendly} level was set to ${newVals[2]} [${state.type}]"]]],
+            fan: [type: "Generic Component Fan Control",                event: [[name: "switch", value: newVals[0], type: origin, descriptionText:"${friendly} was turn ${newVals[0]} [${origin}]"],[name: "speed", value: newVals[1], type: origin, descriptionText:"${friendly} speed was set to ${newVals[1]} [${origin}]"],[name: "level", value: newVals[2], type: origin, descriptionText:"${friendly} level was set to ${newVals[2]} [${origin}]"]]],
             garage_door: [type: "Generic Component Contact Sensor",     event: [[name: "contact", value: newVals[0] == "on" ? "open":"closed", descriptionText:"${friendly} is updated"]]],
             humidity: [type: "Generic Component Humidity Sensor",       event: [[name: "humidity", value: newVals[0], descriptionText:"${friendly} humidity is ${newVals[0]}"]]],
             illuminance: [type: "Generic Component Illuminance Sensor", event: [[name: "illuminance", value: newVals[0], descriptionText:"${friendly} illuminance is ${newVals[0]}"]], namespace: "community"],
-            light: [type: "Generic Component Dimmer",                   event: [[name: "switch", value: newVals[0], type: state.type, descriptionText:"${friendly} was turn ${newVals[0]} [${state.type}]"],[name: "level", value: newVals[1], type: state.type, descriptionText:"${friendly} level was set to ${newVals[1]} [${state.type}]"]]],
+            light: [type: "Generic Component Dimmer",                   event: [[name: "switch", value: newVals[0], type: origin, descriptionText:"${friendly} was turn ${newVals[0]} [${origin}]"],[name: "level", value: newVals[1], type: origin, descriptionText:"${friendly} level was set to ${newVals[1]} [${origin}]"]]],
             moisture: [type: "Generic Component Water Sensor",          event: [[name: "water", value: newVals[0] == "on" ? "wet":"dry", descriptionText:"${friendly} is updated"]]],
             motion: [type: "Generic Component Motion Sensor",           event: [[name: "motion", value: newVals[0] == "on" ? """active""":"""inactive""", descriptionText:"${friendly} is updated"]]],
             opening: [type: "Generic Component Contact Sensor",         event: [[name: "contact", value: newVals[0] == "on" ? "open":"closed", descriptionText:"${friendly} is updated"]]],
@@ -262,13 +265,13 @@ def translateDevices(device_class, newVals, friendly)
             presence: [type: "Generic Component Presence Sensor",       event: [[name: "presence", value: newVals[0] == "on" ? "present":"not present", descriptionText:"${friendly} is updated"]], namespace: "community"],
             pressure: [type: "Generic Component Pressure Sensor",       event: [[name: "pressure", value: newVals[0], descriptionText:"${friendly} pressure is ${newVals[0]}"]], namespace: "community"],
             smoke: [type: "Generic Component Smoke Detector",           event: [[name: "smoke", value: newVals[0] == "on" ? "detected":"clear", descriptionText:"${friendly} is updated"]]],
-            switch: [type: "Generic Component Switch",                  event: [[name: "switch", value: newVals[0], type: state.type, descriptionText:"${friendly} was turn ${newVals[0]} [${state.type}]"]]],
+            switch: [type: "Generic Component Switch",                  event: [[name: "switch", value: newVals[0], type: origin, descriptionText:"${friendly} was turn ${newVals[0]} [${origin}]"]]],
             temperature: [type: "Generic Component Temperature Sensor", event: [[name: "temperature", value: newVals[0], descriptionText:"${friendly} temperature is ${newVals[0]}"]]],
             voltage: [type: "Generic Component Voltage Sensor",         event: [[name: "voltage", value: newVals[0], descriptionText:"${friendly} voltage is ${newVals[0]}"]]],
             window: [type: "Generic Component Contact Sensor",          event: [[name: "contact", value: newVals[0] == "on" ? "open":"closed", descriptionText:"${friendly} is updated"]]],
             device_tracker: [type: "Generic Component Presence Sensor", event: [[name: "presence", value: newVals[0] == "home" ? "present":"not present", descriptionText:"${friendly} is updated"]], namespace: "community"],
-            cover: [type: "Generic Component Garage Door Control",      event: [[name: "door", value: newVals[0] ?: "unknown", type: state.type, descriptionText:"${friendly} was turn ${newVals[0]}"]], namespace: "community"],
-            lock: [type: "Generic Component Lock",                      event: [[name: "lock", value: newVals[0] ?: "unknown", type: state.type, descriptionText:"${friendly} was turn ${newVals[0]}"]]]
+            cover: [type: "Generic Component Garage Door Control",      event: [[name: "door", value: newVals[0] ?: "unknown", type: origin, descriptionText:"${friendly} was turn ${newVals[0]} [${origin}]"]], namespace: "community"],
+            lock: [type: "Generic Component Lock",                      event: [[name: "lock", value: newVals[0] ?: "unknown", type: origin, descriptionText:"${friendly} was turn ${newVals[0]} [${origin}]"]]]
         ]
 
     return mapping[device_class]
@@ -300,7 +303,6 @@ def removeChild(entity){
 
 def componentOn(ch){
     if (logEnable) log.info("received on request from ${ch.label}")
-    state.type = "digital"
     state.id = state.id + 1
     entity = ch.name
     domain = entity.tokenize(".")[0]
@@ -316,7 +318,6 @@ def componentOn(ch){
 
 def componentOff(ch){
     if (logEnable) log.info("received off request from ${ch.label}")
-    state.type = "digital"
     state.id = state.id + 1
     entity = ch.name
     domain = entity.tokenize(".")[0]
@@ -327,7 +328,6 @@ def componentOff(ch){
 
 def componentSetLevel(ch, level, transition=1){
     if (logEnable) log.info("received setLevel request from ${ch.label}")
-    state.type = "digital"
     if (level > 100) level = 100
     if (level < 0) level = 0
 
@@ -365,7 +365,6 @@ def componentSetLevel(ch, level, transition=1){
 
 def componentSetColor(ch, color, transition=1){
     if (logEnable) log.info("received setColor request from ${ch.label}")
-    state.type = "digital"
     state.id = state.id + 1
     entity = ch.name
     domain = entity.tokenize(".")[0]
@@ -377,7 +376,6 @@ def componentSetColor(ch, color, transition=1){
 
 def componentSetColorTemperature(ch, colortemperature, transition=1){
     if (logEnable) log.info("received setColorTemperature request from ${ch.label}")
-    state.type = "digital"
     state.id = state.id + 1
     entity = ch.name
     domain = entity.tokenize(".")[0]
@@ -388,7 +386,6 @@ def componentSetColorTemperature(ch, colortemperature, transition=1){
 
 def componentSetSpeed(ch, speed) {
     if (logEnable) log.info("received setSpeed request from ${ch.label}, with speed = ${speed}")
-    state.type = "digital"
     int percentage = 0
     entity = ch.name
     domain = entity.tokenize(".")[0]
@@ -461,7 +458,6 @@ void componentOpen(ch) {
 
 void operateCover(ch, op){
     if (logEnable) log.info("received ${op} request from ${ch.label}")
-    state.type = "digital"
     state.id = state.id + 1
     entity = ch.name
     domain = entity.tokenize(".")[0]

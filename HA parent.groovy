@@ -57,6 +57,7 @@
 * 0.1.34 2021-11-24 Yves Mercier       Added event type: digital or physical (in that case, from Hubitat or from Home Assistant).	
 * 0.1.35 2021-12-01 draperw            Added support for locks
 * 0.1.36 2021-12-14 Yves Mercier       Improved event type
+* 0.1.37 2021-12-26 gabriel_kpk        Added support for Climate domain
 *
 * Thank you(s):
 */

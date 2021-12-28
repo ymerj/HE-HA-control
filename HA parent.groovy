@@ -69,7 +69,7 @@ metadata {
     definition (name: "HomeAssistant Hub Parent", namespace: "ymerj", author: "Yves Mercier", importUrl: "https://raw.githubusercontent.com/ymerj/HE-HA-control/main/HA%20parent.groovy") {
         capability "Initialize"
 
-        command "createChild", [[ name: "entity", type: "STRING", description: "HomeAssistant Entity ID" ]]
+//        command "createChild", [[ name: "entity", type: "STRING", description: "HomeAssistant Entity ID" ]]
 //        command "removeChild", [[ name: "entity", type: "STRING", description: "HomeAssistant Entity ID" ]]
         command "closeConnection"        
 //        command "deleteAllChildDevices"

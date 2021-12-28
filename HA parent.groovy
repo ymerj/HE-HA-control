@@ -345,10 +345,10 @@ def componentOn(ch){
     if (logEnable) log.info("received on request from ${ch.label}")
 
     if (!ch.currentValue("level")) {
-        messUpd = JsonOutput.toJson([id: state.id, type: "call_service", domain: "${domain}", service: "turn_on", service_data: [entity_id: "${entity}"]])
+        messUpd = [id: null, type: "call_service", domain: "${domain}", service: "turn_on", service_data: [entity_id: "${entity}"]]
     }
     else {
-        messUpd = JsonOutput.toJson([id: state.id, type: "call_service", domain: "${domain}", service: "turn_on", service_data: [entity_id: "${entity}", brightness_pct: "${ch.currentValue("level")}"]])        
+        messUpd = [id: null, type: "call_service", domain: "${domain}", service: "turn_on", service_data: [entity_id: "${entity}", brightness_pct: "${ch.currentValue("level")}"]]
     }
     
     executeCommand(ch, messUpd)
@@ -616,7 +616,7 @@ def executeCommand(ch, messUpd)
     
     // use existing domain and entity if present, else fill them in
     messUpd.domain = messUpd.domain ?: domain
-    messUpd.serviceData.entity_id = messUpd.serviceData.entity_id ?: entity
+    messUpd.service_data.entity_id = messUpd.service_data.entity_id ?: entity
     
     messUpdStr = JsonOutput.toJson(messUpd)    
     if (logEnable) log.debug("messUpdStr = ${messUpdStr}")

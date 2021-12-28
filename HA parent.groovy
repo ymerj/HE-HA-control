@@ -240,7 +240,7 @@ def parse(String description) {
                 break
             case "climate":
                 def current_temperature = response?.event?.data?.new_state?.attributes?.current_temperature
-                // def thermostat_state = response?.event?.data?.new_state?.attributes?.current_hvac
+                // def thermostat_state = response?.event?.data?.new_state?.attributes?.hvac_action
                 def target_temperature = response?.event?.data?.new_state?.attributes?.temperature
                 def fan_mode = response?.event?.data?.new_state?.attributes?.fan_mode
                 def thermostat_mode = response?.event?.data?.new_state?.attributes?.hvac_mode
@@ -306,7 +306,7 @@ def translateDevices(device_class, newVals, friendly, origin)
             device_tracker: [type: "Generic Component Presence Sensor", event: [[name: "presence", value: newVals[0] == "home" ? "present":"not present", descriptionText:"${friendly} is ${newVals[0]}"]], namespace: "community"],
             cover: [type: "Generic Component Garage Door Control",      event: [[name: "door", value: newVals[0] ?: "unknown", type: origin, descriptionText:"${friendly} was turn ${newVals[0]} [${origin}]"]], namespace: "community"],
             lock: [type: "Generic Component Lock",                      event: [[name: "lock", value: newVals[0] ?: "unknown", type: origin, descriptionText:"${friendly} was turn ${newVals[0]} [${origin}]"]]],
-            climate: [type: "Generic Component Thermostat",             event: [[name: "thermostatMode", value: newVals[0], descriptionText: "${friendly} is set to ${newVals[0]}"],[name: "temperature", value: newVals[1], descriptionText: "${friendly}'s current temperature is ${newVals[1]} degree"],[name: "coolingSetpoint", value: newVals[2], descriptionText: "${friendly}'s cooling temperature is set to ${newVals[2]} degree"],[name: "heatingSetpoint", value: newVals[2], descriptionText: "${friendly}'s heating temperature is set to ${newVals[2]} degree"],[name: "thermostatFanMode", value: newVals[3], descriptionText: "${friendly}'s fan is set to ${newVals[3]}"],[name: "thermostatSetpoint", value: newVals[2], descriptionText: "${friendly}'s temperature is set to ${newVals[2]} degree"]]]
+            climate: [type: "Generic Component Thermostat",             event: [[name: "thermostatMode", value: newVals[0], descriptionText: "${friendly} is set to ${newVals[0]}"],[name: "temperature", value: newVals[1], descriptionText: "${friendly}'s current temperature is ${newVals[1]} degree"],[name: "coolingSetpoint", value: newVals[2], descriptionText: "${friendly}'s cooling temperature is set to ${newVals[2]} degree"],[name: "heatingSetpoint", value: newVals[2], descriptionText: "${friendly}'s heating temperature is set to ${newVals[2]} degree"],[name: "thermostatFanMode", value: newVals[3], descriptionText: "${friendly}'s fan is set to ${newVals[3]}"],[name: "thermostatSetpoint", value: newVals[2], descriptionText: "${friendly}'s temperature is set to ${newVals[2]} degree"],[name: "thermostatMode", value: newVals[4], descriptionText: "${friendly}'s mode is set to ${newVals[4]}"]]]
         ]
 
     return mapping[device_class]

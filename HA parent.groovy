@@ -69,7 +69,7 @@ metadata {
     definition (name: "HomeAssistant Hub Parent", namespace: "ymerj", author: "Yves Mercier", importUrl: "https://raw.githubusercontent.com/ymerj/HE-HA-control/main/HA%20parent.groovy") {
         capability "Initialize"
 
-//        command "createChild", [[ name: "entity", type: "STRING", description: "HomeAssistant Entity ID" ]]
+        command "createChild", [[ name: "entity", type: "STRING", description: "HomeAssistant Entity ID" ]]
 //        command "removeChild", [[ name: "entity", type: "STRING", description: "HomeAssistant Entity ID" ]]
         command "closeConnection"        
 //        command "deleteAllChildDevices"
@@ -240,15 +240,34 @@ def parse(String description) {
                 break
             case "climate":
                 def current_temperature = response?.event?.data?.new_state?.attributes?.current_temperature
+                // def thermostat_state = response?.event?.data?.new_state?.attributes?.current_hvac
                 def target_temperature = response?.event?.data?.new_state?.attributes?.temperature
                 def fan_mode = response?.event?.data?.new_state?.attributes?.fan_mode
-                def preset_mode = response?.event?.data?.new_state?.attributes?.preset_mode
-                def swing_mode = response?.event?.data?.new_state?.attributes?.swing_mode
+                def thermostat_mode = response?.event?.data?.new_state?.attributes?.hvac_mode
+                switch (fan_mode)
+                    case "off":
+                        thermostat_mode = "off"
+                    break
+                    case "auto"
+                    break
+                    default
+                    	fan_mode = "on"
+                    	
+                switch (thermostat_mode)
+                    case "fan_only":
+                        fan_mode = "circulate"
+                    break
+                    case "heat_cool":
+                        thermostat_mode = "auto"
+                    break
+                    case "dry":
+                    case "auto":
+                       return
+                
                 newVals += current_temperature
                 newVals += target_temperature
                 newVals += fan_mode
-                newVals += preset_mode
-                newVals += swing_mode
+                newVals += thermostat_mode                
                 mapping = translateDevices(domain, newVals, friendly, origin)
                 if (mapping) updateChildDevice(mapping, entity, friendly) 
                 break
@@ -267,27 +286,27 @@ def translateDevices(device_class, newVals, friendly, origin)
 {
     def mapping =
         [
-            door: [type: "Generic Component Contact Sensor",            event: [[name: "contact", value: newVals[0] == "on" ? "open":"closed", descriptionText:"${friendly} is updated"]]],
+            door: [type: "Generic Component Contact Sensor",            event: [[name: "contact", value: newVals[0] == "on" ? "open":"closed", descriptionText:"${friendly} is ${newVals[0]}"]]],
             fan: [type: "Generic Component Fan Control",                event: [[name: "switch", value: newVals[0], type: origin, descriptionText:"${friendly} was turn ${newVals[0]} [${origin}]"],[name: "speed", value: newVals[1], type: origin, descriptionText:"${friendly} speed was set to ${newVals[1]} [${origin}]"],[name: "level", value: newVals[2], type: origin, descriptionText:"${friendly} level was set to ${newVals[2]} [${origin}]"]]],
-            garage_door: [type: "Generic Component Contact Sensor",     event: [[name: "contact", value: newVals[0] == "on" ? "open":"closed", descriptionText:"${friendly} is updated"]]],
+            garage_door: [type: "Generic Component Contact Sensor",     event: [[name: "contact", value: newVals[0] == "on" ? "open":"closed", descriptionText:"${friendly} is ${newVals[0]}"]]],
             humidity: [type: "Generic Component Humidity Sensor",       event: [[name: "humidity", value: newVals[0], descriptionText:"${friendly} humidity is ${newVals[0]}"]]],
             illuminance: [type: "Generic Component Illuminance Sensor", event: [[name: "illuminance", value: newVals[0], descriptionText:"${friendly} illuminance is ${newVals[0]}"]], namespace: "community"],
             light: [type: "Generic Component Dimmer",                   event: [[name: "switch", value: newVals[0], type: origin, descriptionText:"${friendly} was turn ${newVals[0]} [${origin}]"],[name: "level", value: newVals[1], type: origin, descriptionText:"${friendly} level was set to ${newVals[1]} [${origin}]"]]],
-            moisture: [type: "Generic Component Water Sensor",          event: [[name: "water", value: newVals[0] == "on" ? "wet":"dry", descriptionText:"${friendly} is updated"]]],
-            motion: [type: "Generic Component Motion Sensor",           event: [[name: "motion", value: newVals[0] == "on" ? """active""":"""inactive""", descriptionText:"${friendly} is updated"]]],
-            opening: [type: "Generic Component Contact Sensor",         event: [[name: "contact", value: newVals[0] == "on" ? "open":"closed", descriptionText:"${friendly} is updated"]]],
+            moisture: [type: "Generic Component Water Sensor",          event: [[name: "water", value: newVals[0] == "on" ? "wet":"dry", descriptionText:"${friendly} is ${newVals[0]}"]]],
+            motion: [type: "Generic Component Motion Sensor",           event: [[name: "motion", value: newVals[0] == "on" ? """active""":"""inactive""", descriptionText:"${friendly} is ${newVals[0]}"]]],
+            opening: [type: "Generic Component Contact Sensor",         event: [[name: "contact", value: newVals[0] == "on" ? "open":"closed", descriptionText:"${friendly} is ${newVals[0]}"]]],
             power: [type: "Generic Component Power Meter",              event: [[name: "power", value: newVals[0], descriptionText:"${friendly} power is ${newVals[0]}"]]],
-            presence: [type: "Generic Component Presence Sensor",       event: [[name: "presence", value: newVals[0] == "on" ? "present":"not present", descriptionText:"${friendly} is updated"]], namespace: "community"],
+            presence: [type: "Generic Component Presence Sensor",       event: [[name: "presence", value: newVals[0] == "on" ? "present":"not present", descriptionText:"${friendly} is ${newVals[0]}"]], namespace: "community"],
             pressure: [type: "Generic Component Pressure Sensor",       event: [[name: "pressure", value: newVals[0], descriptionText:"${friendly} pressure is ${newVals[0]}"]], namespace: "community"],
-            smoke: [type: "Generic Component Smoke Detector",           event: [[name: "smoke", value: newVals[0] == "on" ? "detected":"clear", descriptionText:"${friendly} is updated"]]],
+            smoke: [type: "Generic Component Smoke Detector",           event: [[name: "smoke", value: newVals[0] == "on" ? "detected":"clear", descriptionText:"${friendly} is ${newVals[0]}"]]],
             switch: [type: "Generic Component Switch",                  event: [[name: "switch", value: newVals[0], type: origin, descriptionText:"${friendly} was turn ${newVals[0]} [${origin}]"]]],
             temperature: [type: "Generic Component Temperature Sensor", event: [[name: "temperature", value: newVals[0], descriptionText:"${friendly} temperature is ${newVals[0]}"]]],
             voltage: [type: "Generic Component Voltage Sensor",         event: [[name: "voltage", value: newVals[0], descriptionText:"${friendly} voltage is ${newVals[0]}"]]],
-            window: [type: "Generic Component Contact Sensor",          event: [[name: "contact", value: newVals[0] == "on" ? "open":"closed", descriptionText:"${friendly} is updated"]]],
-            device_tracker: [type: "Generic Component Presence Sensor", event: [[name: "presence", value: newVals[0] == "home" ? "present":"not present", descriptionText:"${friendly} is updated"]], namespace: "community"],
+            window: [type: "Generic Component Contact Sensor",          event: [[name: "contact", value: newVals[0] == "on" ? "open":"closed", descriptionText:"${friendly} is ${newVals[0]}"]]],
+            device_tracker: [type: "Generic Component Presence Sensor", event: [[name: "presence", value: newVals[0] == "home" ? "present":"not present", descriptionText:"${friendly} is ${newVals[0]}"]], namespace: "community"],
             cover: [type: "Generic Component Garage Door Control",      event: [[name: "door", value: newVals[0] ?: "unknown", type: origin, descriptionText:"${friendly} was turn ${newVals[0]} [${origin}]"]], namespace: "community"],
             lock: [type: "Generic Component Lock",                      event: [[name: "lock", value: newVals[0] ?: "unknown", type: origin, descriptionText:"${friendly} was turn ${newVals[0]} [${origin}]"]]],
-            climate: [type: "Generic Component Thermostat",             event: [[name: "thermostatMode", value: newVals[0], descriptionText: "${friendly} is set to ${newVals[0]}"],[name: "temperature", value: newVals[1], descriptionText: "${friendly}'s current temperature is ${newVals[1]} degree"],[name: "coolingSetpoint", value: newVals[2], descriptionText: "${friendly}'s cooling temperature is set to ${newVals[2]} degree"],[name: "heatingSetpoint", value: newVals[2], descriptionText: "${friendly}'s heating temperature is set to ${newVals[2]} degree"],[name: "thermostatFanMode", value: newVals[3], descriptionText: "${friendly}'s fan speed is set to ${newVals[3]}"],[name: "presetMode", value: newVals[4], descriptionText: "${friendly}'s preset mode is set to ${newVals[4]}"],[name: "swingMode", value: newVals[5], descriptionText: "${friendly}'s swing mode is set to ${newVals[5]}"],[name: "thermostatSetpoint", value: newVals[2], descriptionText: "${friendly}'s temperature is set to ${newVals[2]} degree"]]]
+            climate: [type: "Generic Component Thermostat",             event: [[name: "thermostatMode", value: newVals[0], descriptionText: "${friendly} is set to ${newVals[0]}"],[name: "temperature", value: newVals[1], descriptionText: "${friendly}'s current temperature is ${newVals[1]} degree"],[name: "coolingSetpoint", value: newVals[2], descriptionText: "${friendly}'s cooling temperature is set to ${newVals[2]} degree"],[name: "heatingSetpoint", value: newVals[2], descriptionText: "${friendly}'s heating temperature is set to ${newVals[2]} degree"],[name: "thermostatFanMode", value: newVals[3], descriptionText: "${friendly}'s fan is set to ${newVals[3]}"],[name: "thermostatSetpoint", value: newVals[2], descriptionText: "${friendly}'s temperature is set to ${newVals[2]} degree"]]]
         ]
 
     return mapping[device_class]
@@ -517,6 +536,8 @@ def componentSetThermostatMode(ch, thermostatmode){
     state.id = state.id + 1
     entity = ch.name
     domain = entity.tokenize(".")[0]
+    if (thermostatmode == "auto") thermostatmode = "heat_cool"
+    if (thermostatmode == "emergencyHeat" thermostatmode = "heat"
     messUpd = JsonOutput.toJson([id: state.id, type: "call_service", domain: "${domain}", service: "set_hvac_mode", service_data: [entity_id: "${entity}", hvac_mode: "${thermostatmode}"]])
     if (logEnable) log.debug("messUpd = ${messUpd}")
     interfaces.webSocket.sendMessage("${messUpd}")
@@ -547,27 +568,12 @@ def componentsetThermostatFanMode(ch, fanmode){
     state.id = state.id + 1
     entity = ch.name
     domain = entity.tokenize(".")[0]
-    messUpd = JsonOutput.toJson([id: state.id, type: "call_service", domain: "${domain}", service: "set_fan_mode", service_data: [entity_id: "${entity}", fan_mode: "${fanmode}"]])
-    if (logEnable) log.debug("messUpd = ${messUpd}")
-    interfaces.webSocket.sendMessage("${messUpd}")
-}
-
-def componentsetPresetMode(ch, presetmode){
-    if (logEnable) log.info("received preset mode request from ${ch.label}")
-    state.id = state.id + 1
-    entity = ch.name
-    domain = entity.tokenize(".")[0]
-    messUpd = JsonOutput.toJson([id: state.id, type: "call_service", domain: "${domain}", service: "set_preset_mode", service_data: [entity_id: "${entity}", preset_mode: "${presetmode}"]])
-    if (logEnable) log.debug("messUpd = ${messUpd}")
-    interfaces.webSocket.sendMessage("${messUpd}")
-}
-
-def componentsetSwingMode(ch, swingmode){
-    if (logEnable) log.info("received swing mode request from ${ch.label}")
-    state.id = state.id + 1
-    entity = ch.name
-    domain = entity.tokenize(".")[0]
-    messUpd = JsonOutput.toJson([id: state.id, type: "call_service", domain: "${domain}", service: "set_swing_mode", service_data: [entity_id: "${entity}", swing_mode: "${swingmode}"]])
+    if (fanmode == circulate) {
+    	messUpd = JsonOutput.toJson([id: state.id, type: "call_service", domain: "${domain}", service: "set_hvac_mode", service_data: [entity_id: "${entity}", fan_mode: "fan_only"]])
+    }
+    else {    
+    	messUpd = JsonOutput.toJson([id: state.id, type: "call_service", domain: "${domain}", service: "set_fan_mode", service_data: [entity_id: "${entity}", fan_mode: "${fanmode}"]])
+    }
     if (logEnable) log.debug("messUpd = ${messUpd}")
     interfaces.webSocket.sendMessage("${messUpd}")
 }

@@ -345,13 +345,13 @@ def componentOn(ch){
     if (logEnable) log.info("received on request from ${ch.label}")
 
     if (!ch.currentValue("level")) {
-        messUpd = [id: null, type: "call_service", domain: null, service: "turn_on", service_data: [entity_id: null]]
+        data = [:]
     }
     else {
-        messUpd = [id: null, type: "call_service", domain: null, service: "turn_on", service_data: [entity_id: null, brightness_pct: "${ch.currentValue("level")}"]]
+        data = [brightness_pct: "${ch.currentValue("level")}"]
     }
     
-    executeCommand(ch, messUpd)
+    executeCommand(ch, "turn_on", data)
 }
 
 def componentOff(ch){
@@ -364,8 +364,8 @@ def componentOff(ch){
         return
     }
 
-    messUpd = [id: null, type: "call_service", domain: null, service: "turn_off", service_data: [entity_id: null]]
-    executeCommand(ch, messUpd)
+    data = [:]
+    executeCommand(ch, "turn_off", data)
 }
 
 def componentSetLevel(ch, level, transition=1){
@@ -396,12 +396,8 @@ def componentSetLevel(ch, level, transition=1){
         }
     } 
     else {        
-        state.id = state.id + 1
-        entity = ch.name
-        domain = entity.tokenize(".")[0]
-        messLevel = JsonOutput.toJson([id: state.id, type: "call_service", domain: null, service: "turn_on", service_data: [entity_id: null, brightness_pct: "${level}", transition: "${transition}"]])
-        if (logEnable) log.debug("messLevel = ${messLevel}")
-        interfaces.webSocket.sendMessage("${messLevel}")
+        data = [brightness_pct: "${level}", transition: "${transition}"]
+        executeCommand(ch, "turn_on", data)
     }
 }
 
@@ -410,55 +406,49 @@ def componentSetColor(ch, color, transition=1){
 
     convertedHue = Math.round(color.hue * 360/100)
     
-    messUpd = [id: null, type: "call_service", domain: null, service: "turn_on", service_data: [entity_id: null, brightness_pct: "${color.level}", hs_color: ["${convertedHue}", "${color.saturation}"], transition: "${transition}"]]
-    executeCommand(ch, messUpd)
+    data = [brightness_pct: "${color.level}", hs_color: ["${convertedHue}", "${color.saturation}"], transition: "${transition}"]]
+    executeCommand(ch, "turn_on", data)
 }
 
 def componentSetColorTemperature(ch, colortemperature, transition=1){
     if (logEnable) log.info("received setColorTemperature request from ${ch.label}")
     
-    messUpd = [id: null, type: "call_service", domain: null, service: "turn_on", service_data: [entity_id: null, kelvin: "${colortemperature}", transition: "${transition}"]]
-    executeCommand(ch, messUpd)
+    data: [kelvin: "${colortemperature}", transition: "${transition}"]
+    executeCommand(ch, "turn_on", data)
 }
 
 def componentSetSpeed(ch, speed) {
     if (logEnable) log.info("received setSpeed request from ${ch.label}, with speed = ${speed}")
     int percentage = 0
-    entity = ch.name
-    domain = entity.tokenize(".")[0]
     switch (speed) {
         case "on":
-            state.id = state.id + 1
-            messOn = JsonOutput.toJson([id: state.id, type: "call_service", domain: null, service: "turn_on", service_data: [entity_id: null]])
-            interfaces.webSocket.sendMessage("${messOn}")
+            data = [:]
+            executeCommand(ch, "turn_on", data)
             break
         case "off":
-            state.id = state.id + 1    
-            messOff = JsonOutput.toJson([id: state.id, type: "call_service", domain: null, service: "turn_off", service_data: [entity_id: null]])
-            interfaces.webSocket.sendMessage("${messOff}")
+            data = [:]
+            executeCommand(ch, "turn_off", data)
             break
         case "low":
         case "medium-low":
-            percentage = 25
+            data: [percentage: "25"]
+            executeCommand(ch, "turn_on", data)
             break
         case "auto":
         case "medium":
-            percentage = 50
+            data: [percentage: "50"]
+            executeCommand(ch, "turn_on", data)
             break
         case "medium-high":
-            percentage = 75
+            data: [percentage: "75"]
+            executeCommand(ch, "turn_on", data)
             break
         case "high":
-            percentage = 100
+            data: [percentage: "100"]
+            executeCommand(ch, "turn_on", data)
             break
         default:
             if (logEnable) log.info "No case defined for Fan setSpeed(${speed})"
-    }
-
-    if (percentage != 0) {
-        state.id = state.id + 1
-        messOn = JsonOutput.toJson([id: state.id, type: "call_service", domain: null, service: "turn_on", service_data: [entity_id: null, percentage: "${percentage}"]])
-        interfaces.webSocket.sendMessage("${messOn}")
     }
 }
 
@@ -496,8 +486,9 @@ void componentOpen(ch) {
 void operateCover(ch, op){
     if (logEnable) log.info("received ${op} request from ${ch.label}")
 
-    messUpd = [id: null, type: "call_service", domain: null, service: (op == "open") ? "open_cover" : "close_cover", service_data: [entity_id: null]]
-    executeCommand(ch, messUpd)
+    service = op + "_cover"
+    data: [:]
+    executeCommand(ch, service, data)
 }
 
 void componentLock(ch) {
@@ -512,15 +503,18 @@ void operateLock(ch, op)
 {
     if (logEnable) log.info("received ${op} request from ${ch.label}")
 
-    messUpd = [id: null, type: "call_service", domain: null, service: (op == "unlock") ? "unlock" : "lock", service_data: [entity_id: null]]
-    executeCommand(ch, messUpd)
+    data: [:]
+    executeCommand(ch, op, data)
 }
 
 def componentRefresh(ch){
     if (logEnable) log.info("received refresh request from ${ch.label}")
-
-    messUpd = [id: null, type: "call_service", domain: "homeassistant", service: "update_entity", service_data: [entity_id: null]]
-    executeCommand(ch, messUpd)
+    // special handling since domain is fixed 
+    entity = ch.name
+    messUpd = JsonOutput.toJson([id: state.id, type: "call_service", domain: "homeassistant", service: "update_entity", service_data: [entity_id: "${entity}"]])
+    state.id = state.id + 1
+    if (logEnable) log.debug("messUpd = ${messUpd}")
+    interfaces.webSocket.sendMessage("${messUpd}")
 }
 
 def componentSetThermostatMode(ch, thermostatmode){
@@ -528,36 +522,36 @@ def componentSetThermostatMode(ch, thermostatmode){
 
     if (thermostatmode == "auto") thermostatmode = "heat_cool"
     if (thermostatmode == "emergencyHeat") thermostatmode = "heat"
-    
-    messUpd = [id: null, type: "call_service", domain: null, service: "set_hvac_mode", service_data: [entity_id: null, hvac_mode: "${thermostatmode}"]]
-    executeCommand(ch, messUpd)
+
+    data: [hvac_mode: thermostatmode]
+    executeCommand(ch, "set_hvac_mode", data)
 }
 
 def componentSetCoolingSetpoint(ch, temperature){
     if (logEnable) log.info("received setCoolingSetpoint request from ${ch.label}")
 
-    messUpd = [id: null, type: "call_service", domain: null, service: "set_temperature", service_data: [entity_id: null, temperature: "${temperature}"]]
-    executeCommand(ch, messUpd)
+    data: [temperature: temperature]
+    executeCommand(ch, "set_temperature", data)
 }
 
 def componentSetHeatingSetpoint(ch, temperature){
     if (logEnable) log.info("received setHeatingSetpoint request from ${ch.label}")
 
-    messUpd = [id: null, type: "call_service", domain: null, service: "set_temperature", service_data: [entity_id: null, temperature: "${temperature}"]]
-    executeCommand(ch, messUpd)
+    data: [temperature: temperature]
+    executeCommand(ch, "set_temperature", data)
 }
 
 def componentSetThermostatFanMode(ch, fanmode){
     if (logEnable) log.info("received fanmode request from ${ch.label}")
 
     if (fanmode == "circulate") {
-    	messUpd = [id: null, type: "call_service", domain: null, service: "set_hvac_mode", service_data: [entity_id: null, fan_mode: "fan_only"]]
+        data: [hvac_mode: "fan_only"]
+        executeCommand(ch, "set_hvac_mode", data)
     }
     else {    
-    	messUpd = [id: null, type: "call_service", domain: null, service: "set_fan_mode", service_data: [entity_id: null, fan_mode: "${fanmode}"]]
+        data: [fan_mode: fanmode]
+        executeCommand(ch, "set_fan_mode", data)
     }
-    
-    executeCommand(ch, messUpd)
 }
 
 def componentAuto(ch)
@@ -606,26 +600,15 @@ def closeConnection() {
     interfaces.webSocket.close()
 }
 
-def executeCommand(ch, messUpd)
+def executeCommand(ch, service, data)
 {    
     entity = ch?.name
     domain = entity?.tokenize(".")[0]
-    
-    messUpd.id = state.id
+
+    messUpd = [id: state.id, type: "call_service", domain: domain, service: service, service_data : [entity_id: entity] + data]
     state.id = state.id + 1
-    
-    // use existing domain and entity if present, else fill them in
-    if(null == messUpd.domain)
-    {
-        messUpd.domain = domain
-    }
-    
-    if(null == messUpd.service_data.entity_id)
-    {
-        messUpd.service_data.entity_id = entity
-    }
-    
-    messUpdStr = JsonOutput.toJson(messUpd)    
+
+    messUpdStr = JsonOutput.toJson(messUpd)
     if (logEnable) log.debug("messUpdStr = ${messUpdStr}")
     interfaces.webSocket.sendMessage(messUpdStr)    
 }

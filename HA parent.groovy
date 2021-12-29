@@ -246,7 +246,7 @@ def parse(String description) {
                 def fan_mode = response?.event?.data?.new_state?.attributes?.fan_mode
                 def thermostat_mode = response?.event?.data?.new_state?.state
             	def target_temp_high = response?.event?.data?.new_state?.attributes?.target_temp_high
-				def target_temp_low = response?.event?.data?.new_state?.attributes?.target_temp_low
+		def target_temp_low = response?.event?.data?.new_state?.attributes?.target_temp_low
                 switch (fan_mode)
                 {
                     case "off":
@@ -277,7 +277,7 @@ def parse(String description) {
                 newVals += fan_mode
                 newVals += hvac_action
             	newVals += target_temp_high
-				newVals += target_temp_low
+		newVals += target_temp_low
                 mapping = translateDevices(domain, newVals, friendly, origin)
                 if (mapping) updateChildDevice(mapping, entity, friendly) 
                 break

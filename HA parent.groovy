@@ -345,13 +345,13 @@ def componentOn(ch){
     if (logEnable) log.info("received on request from ${ch.label}")
 
     if (!ch.currentValue("level")) {
-        messUpd = [id: null, type: "call_service", domain: null, service: "turn_on", service_data: [entity_id: null]]
+        data = [:]
     }
     else {
-        messUpd = [id: null, type: "call_service", domain: null, service: "turn_on", service_data: [entity_id: null, brightness_pct: "${ch.currentValue("level")}"]]
+        data = [brightness_pct: "${ch.currentValue("level")}"]
     }
     
-    executeCommand(ch, messUpd)
+    executeCommand(ch, "turn_on", data)
 }
 
 def componentOff(ch){
@@ -606,26 +606,15 @@ def closeConnection() {
     interfaces.webSocket.close()
 }
 
-def executeCommand(ch, messUpd)
+def executeCommand(ch, service, data)
 {    
     entity = ch?.name
     domain = entity?.tokenize(".")[0]
-    
-    messUpd.id = state.id
     state.id = state.id + 1
-    
-    // use existing domain and entity if present, else fill them in
-    if(null == messUpd.domain)
-    {
-        messUpd.domain = domain
-    }
-    
-    if(null == messUpd.service_data.entity_id)
-    {
-        messUpd.service_data.entity_id = entity
-    }
-    
-    messUpdStr = JsonOutput.toJson(messUpd)    
+
+    messUpd = [id: state.id, type: "call_service", domain: domain, service: service, service_data : [entity_id: entity] + data]
+       
+    messUpdStr = JsonOutput.toJson(messUpd)
     if (logEnable) log.debug("messUpdStr = ${messUpdStr}")
     interfaces.webSocket.sendMessage(messUpdStr)    
 }

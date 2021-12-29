@@ -511,7 +511,7 @@ def componentRefresh(ch){
     if (logEnable) log.info("received refresh request from ${ch.label}")
     // special handling since domain is fixed 
     entity = ch.name
-    messUpd = JsonOutput.toJson([id: state.id, type: "call_service", domain: "homeassistant", service: "update_entity", service_data: [entity_id: "${entity}"]])
+    messUpd = JsonOutput.toJson([id: state.id, type: "call_service", domain: "homeassistant", service: "update_entity", service_data: [entity_id: entity]])
     state.id = state.id + 1
     if (logEnable) log.debug("messUpd = ${messUpd}")
     interfaces.webSocket.sendMessage("${messUpd}")

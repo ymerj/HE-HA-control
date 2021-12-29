@@ -58,6 +58,7 @@
 * 0.1.35 2021-12-01 draperw            Added support for locks
 * 0.1.36 2021-12-14 Yves Mercier       Improved event type
 * 0.1.37 2021-12-26 gabriel_kpk        Added support for Climate domain
+* 0.1.38 2021-12-29                    Improved Climate support, Code cleanup, Minor decription fixes
 *
 * Thank you(s):
 */

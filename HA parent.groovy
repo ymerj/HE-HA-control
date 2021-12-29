@@ -415,10 +415,10 @@ def componentSetColor(ch, color, transition=1){
     executeCommand(ch, "turn_on", data)
 }
 
-def componentSetColorTemperature(ch, colortemperature, transition=1){
+def componentSetColorTemperature(ch, colortemperature, level, transition=1){
     if (logEnable) log.info("received setColorTemperature request from ${ch.label}")
     
-    data: [kelvin: "${colortemperature}", transition: "${transition}"]
+    data: [brightness_pct: "${level}", kelvin: "${colortemperature}", transition: "${transition}"]
     executeCommand(ch, "turn_on", data)
 }
 

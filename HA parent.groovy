@@ -411,7 +411,7 @@ def componentSetColor(ch, color, transition=1){
 
     convertedHue = Math.round(color.hue * 360/100)
     
-    data = [brightness_pct: "${color.level}", hs_color: ["${convertedHue}", "${color.saturation}"], transition: "${transition}"]]
+    data = [brightness_pct: "${color.level}", hs_color: ["${convertedHue}", "${color.saturation}"], transition: "${transition}"]
     executeCommand(ch, "turn_on", data)
 }
 
@@ -419,13 +419,6 @@ def componentSetColorTemperature(ch, colortemperature, level, transition=1){
     if (logEnable) log.info("received setColorTemperature request from ${ch.label}")
     
     data: [brightness_pct: "${level}", kelvin: "${colortemperature}", transition: "${transition}"]
-    executeCommand(ch, "turn_on", data)
-}
-
-def componentSetColorTemperature(ch, colortemperature, transition=1){
-    if (logEnable) log.info("received setColorTemperature request from ${ch.label}")
-    
-    data: [kelvin: "${colortemperature}", transition: "${transition}"]
     executeCommand(ch, "turn_on", data)
 }
 

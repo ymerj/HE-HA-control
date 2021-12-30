@@ -418,7 +418,7 @@ def componentSetColor(ch, color, transition=1){
 def componentSetColorTemperature(ch, colortemperature, level, transition=1){
     if (logEnable) log.info("received setColorTemperature request from ${ch.label}")
     
-    data: [brightness_pct: "${level}", kelvin: "${colortemperature}", transition: "${transition}"]
+    data = [brightness_pct: "${level}", kelvin: "${colortemperature}", transition: "${transition}"]
     executeCommand(ch, "turn_on", data)
 }
 
@@ -436,20 +436,20 @@ def componentSetSpeed(ch, speed) {
             break
         case "low":
         case "medium-low":
-            data: [percentage: "25"]
+            data = [percentage: "25"]
             executeCommand(ch, "turn_on", data)
             break
         case "auto":
         case "medium":
-            data: [percentage: "50"]
+            data = [percentage: "50"]
             executeCommand(ch, "turn_on", data)
             break
         case "medium-high":
-            data: [percentage: "75"]
+            data = [percentage: "75"]
             executeCommand(ch, "turn_on", data)
             break
         case "high":
-            data: [percentage: "100"]
+            data = [percentage: "100"]
             executeCommand(ch, "turn_on", data)
             break
         default:
@@ -492,7 +492,7 @@ void operateCover(ch, op){
     if (logEnable) log.info("received ${op} request from ${ch.label}")
 
     service = op + "_cover"
-    data: [:]
+    data = [:]
     executeCommand(ch, service, data)
 }
 
@@ -508,7 +508,7 @@ void operateLock(ch, op)
 {
     if (logEnable) log.info("received ${op} request from ${ch.label}")
 
-    data: [:]
+    data = [:]
     executeCommand(ch, op, data)
 }
 
@@ -528,21 +528,21 @@ def componentSetThermostatMode(ch, thermostatmode){
     if (thermostatmode == "auto") thermostatmode = "heat_cool"
     if (thermostatmode == "emergencyHeat") thermostatmode = "heat"
 
-    data: [hvac_mode: thermostatmode]
+    data = [hvac_mode: thermostatmode]
     executeCommand(ch, "set_hvac_mode", data)
 }
 
 def componentSetCoolingSetpoint(ch, temperature){
     if (logEnable) log.info("received setCoolingSetpoint request from ${ch.label}")
 
-    data: [target_temp_high: temperature]
+    data = [target_temp_high: temperature]
     executeCommand(ch, "set_temperature", data)
 }
 
 def componentSetHeatingSetpoint(ch, temperature){
     if (logEnable) log.info("received setHeatingSetpoint request from ${ch.label}")
 
-    data: [target_temp_low: temperature]
+    data = [target_temp_low: temperature]
     executeCommand(ch, "set_temperature", data)
 }
 
@@ -550,11 +550,11 @@ def componentSetThermostatFanMode(ch, fanmode){
     if (logEnable) log.info("received fanmode request from ${ch.label}")
 
     if (fanmode == "circulate") {
-        data: [hvac_mode: "fan_only"]
+        data = [hvac_mode: "fan_only"]
         executeCommand(ch, "set_hvac_mode", data)
     }
     else {    
-        data: [fan_mode: fanmode]
+        data = [fan_mode: fanmode]
         executeCommand(ch, "set_fan_mode", data)
     }
 }

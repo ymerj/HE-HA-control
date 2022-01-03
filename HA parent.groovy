@@ -527,7 +527,7 @@ def componentSetThermostatMode(ch, thermostatmode){
 
     if (thermostatmode == "auto")
         {
-	data = [hvac_mode: "heat_cool", target_temp_low: ch.currentValue("heatingSetpoint"), target_temp_high: ch.currentValue("coolingSetpoint")]
+	data = [target_temp_high: ch.currentValue("coolingSetpoint"), target_temp_low: ch.currentValue("heatingSetpoint"), hvac_mode: "heat_cool"]
         executeCommand(ch, "set_temperature", data)
         }
     if (thermostatmode == "emergencyHeat")

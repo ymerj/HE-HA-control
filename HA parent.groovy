@@ -525,11 +525,16 @@ def componentRefresh(ch){
 def componentSetThermostatMode(ch, thermostatmode){
     if (logEnable) log.info("received setThermostatMode request from ${ch.label}")
 
-    if (thermostatmode == "auto") thermostatmode = "heat_cool"
-    if (thermostatmode == "emergencyHeat") thermostatmode = "heat"
-
-    data = [hvac_mode: thermostatmode]
-    executeCommand(ch, "set_hvac_mode", data)
+    if (thermostatmode == "auto")
+        {
+	data = [hvac_mode: "heat_cool", target_temp_low: ch.currentValue("heatingSetpoint "), target_temp_high: ch.currentValue("coolingSetpoint")]
+        executeCommand(ch, "set_temperature", data)
+        }
+    if (thermostatmode == "emergencyHeat")
+	{
+        data = [hvac_mode: "heat"]
+        executeCommand(ch, "set_hvac_mode", data)
+	}
 }
 
 def componentSetCoolingSetpoint(ch, temperature){

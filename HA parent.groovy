@@ -535,7 +535,7 @@ def componentSetThermostatMode(ch, thermostatmode){
 def componentSetCoolingSetpoint(ch, temperature){
     if (logEnable) log.info("received setCoolingSetpoint request from ${ch.label}")
 
-	data = [target_temp_high: temperature, target_temp_low: ch.currentValue("heatingSetpoint")]
+    data = [target_temp_high: temperature, target_temp_low: ch.currentValue("heatingSetpoint")]
     executeCommand(ch, "set_temperature", data)
 }
 

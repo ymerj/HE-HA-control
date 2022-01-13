@@ -535,14 +535,14 @@ def componentSetThermostatMode(ch, thermostatmode){
 def componentSetCoolingSetpoint(ch, temperature){
     if (logEnable) log.info("received setCoolingSetpoint request from ${ch.label}")
 
-    data = [target_temp_high: "${temperature}", target_temp_low: "${ch.currentValue("heatingSetpoint")}", hvac_mode: "heat_cool"]
+    data = [temperature: "${temperature}", hvac_mode: "cool"]
     executeCommand(ch, "set_temperature", data)
 }
 
 def componentSetHeatingSetpoint(ch, temperature){
     if (logEnable) log.info("received setHeatingSetpoint request from ${ch.label}")
 
-    data = [target_temp_high: "${ch.currentValue("coolingSetpoint")}", target_temp_low: "${temperature}", hvac_mode: "heat_cool"]
+    data = [temperature: "${temperature}", hvac_mode: "heat"]
     executeCommand(ch, "set_temperature", data)
 }
 

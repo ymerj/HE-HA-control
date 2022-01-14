@@ -549,14 +549,14 @@ def componentSetThermostatMode(ch, thermostatmode){
 def componentSetCoolingSetpoint(ch, temperature){
     if (logEnable) log.info("received setCoolingSetpoint request from ${ch.label}")
 
-    data = [temperature: "${temperature}", hvac_mode: "cool"]
+    data = [temperature: temperature, hvac_mode: null]
     executeCommand(ch, "set_temperature", data)
 }
 
 def componentSetHeatingSetpoint(ch, temperature){
     if (logEnable) log.info("received setHeatingSetpoint request from ${ch.label}")
 
-    data = [temperature: "${temperature}", hvac_mode: "heat"]
+    data = [temperature: temperature, hvac_mode: null]
     executeCommand(ch, "set_temperature", data)
 }
 

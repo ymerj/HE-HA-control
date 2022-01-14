@@ -548,19 +548,33 @@ def componentSetThermostatMode(ch, thermostatmode){
 
 def componentSetCoolingSetpoint(ch, temperature){
     if (logEnable) log.info("received setCoolingSetpoint request from ${ch.label}")
-
-    data = [temperature: temperature, hvac_mode: "cool"]
+    
+    tmode = ch.currentValue("thermostatMode")
+    if (tmode == "auto") {
+        data = [target_temp_high: temperature, target_temp_low: ch.currentValue("heatingSetpoint"), hvac_mode: "heat_cool"]
+	}
+    else {
+	if (tmode == "emergencyHeat") tmode = "heat"
+	data = [temperature: temperature, hvac_mode: tmode]
+	}
     executeCommand(ch, "set_temperature", data)
 }
 
-def componentSetHeatingSetpoint(ch, temperature){
+def componentSetHeatingSetpoint(ch, temperature) {
     if (logEnable) log.info("received setHeatingSetpoint request from ${ch.label}")
 
-    data = [temperature: temperature, hvac_mode: "heat"]
+    tmode = ch.currentValue("thermostatMode")
+    if (tmode == "auto") {
+	data = [target_temp_high: ch.currentValue("coolingSetpoint"), target_temp_low: temperature, hvac_mode: "heat_cool"]
+    }
+    else {
+	if (tmode == "emergencyHeat") tmode = "heat"
+	data = [temperature: temperature, hvac_mode: tmode]
+    }
     executeCommand(ch, "set_temperature", data)
 }
 
-def componentSetThermostatFanMode(ch, fanmode){
+def componentSetThermostatFanMode(ch, fanmode) {
     if (logEnable) log.info("received fanmode request from ${ch.label}")
 
     if (fanmode == "circulate") {

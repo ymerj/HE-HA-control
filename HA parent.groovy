@@ -58,6 +58,7 @@
 * 0.1.35 2021-12-01 draperw            Added support for locks
 * 0.1.36 2021-12-14 Yves Mercier       Improved event type
 * 0.1.37 2021-12-26 gabriel_kpk        Added support for Climate domain
+* 0.1.38 2021-12-29                    Improved Climate support, Code cleanup, Minor decription fixes
 *
 * Thank you(s):
 */
@@ -240,15 +241,43 @@ def parse(String description) {
                 break
             case "climate":
                 def current_temperature = response?.event?.data?.new_state?.attributes?.current_temperature
+                def hvac_action = response?.event?.data?.new_state?.attributes?.hvac_action
                 def target_temperature = response?.event?.data?.new_state?.attributes?.temperature
                 def fan_mode = response?.event?.data?.new_state?.attributes?.fan_mode
-                def preset_mode = response?.event?.data?.new_state?.attributes?.preset_mode
-                def swing_mode = response?.event?.data?.new_state?.attributes?.swing_mode
+                def thermostat_mode = response?.event?.data?.new_state?.state
+            	def target_temp_high = response?.event?.data?.new_state?.attributes?.target_temp_high
+		def target_temp_low = response?.event?.data?.new_state?.attributes?.target_temp_low
+                switch (fan_mode)
+                {
+                    case "off":
+                        thermostat_mode = "off"
+                        break
+                    case "auto":
+                        break
+                    default:
+                    	fan_mode = "on"
+                }
+                    	
+                switch (thermostat_mode)
+                {
+                    case "fan_only":
+                        fan_mode = "circulate"
+                        break
+                    case "heat_cool":
+                        thermostat_mode = "auto"
+                        break
+                    case "dry":
+                    case "auto":
+                       return
+                }
+                
+                newVals[0] = thermostat_mode
                 newVals += current_temperature
                 newVals += target_temperature
                 newVals += fan_mode
-                newVals += preset_mode
-                newVals += swing_mode
+                newVals += hvac_action
+            	newVals += target_temp_high
+		newVals += target_temp_low
                 mapping = translateDevices(domain, newVals, friendly, origin)
                 if (mapping) updateChildDevice(mapping, entity, friendly) 
                 break
@@ -267,27 +296,27 @@ def translateDevices(device_class, newVals, friendly, origin)
 {
     def mapping =
         [
-            door: [type: "Generic Component Contact Sensor",            event: [[name: "contact", value: newVals[0] == "on" ? "open":"closed", descriptionText:"${friendly} is updated"]]],
+            door: [type: "Generic Component Contact Sensor",            event: [[name: "contact", value: newVals[0] == "on" ? "open":"closed", descriptionText:"${friendly} is ${newVals[0]}"]]],
             fan: [type: "Generic Component Fan Control",                event: [[name: "switch", value: newVals[0], type: origin, descriptionText:"${friendly} was turn ${newVals[0]} [${origin}]"],[name: "speed", value: newVals[1], type: origin, descriptionText:"${friendly} speed was set to ${newVals[1]} [${origin}]"],[name: "level", value: newVals[2], type: origin, descriptionText:"${friendly} level was set to ${newVals[2]} [${origin}]"]]],
-            garage_door: [type: "Generic Component Contact Sensor",     event: [[name: "contact", value: newVals[0] == "on" ? "open":"closed", descriptionText:"${friendly} is updated"]]],
+            garage_door: [type: "Generic Component Contact Sensor",     event: [[name: "contact", value: newVals[0] == "on" ? "open":"closed", descriptionText:"${friendly} is ${newVals[0]}"]]],
             humidity: [type: "Generic Component Humidity Sensor",       event: [[name: "humidity", value: newVals[0], descriptionText:"${friendly} humidity is ${newVals[0]}"]]],
             illuminance: [type: "Generic Component Illuminance Sensor", event: [[name: "illuminance", value: newVals[0], descriptionText:"${friendly} illuminance is ${newVals[0]}"]], namespace: "community"],
             light: [type: "Generic Component Dimmer",                   event: [[name: "switch", value: newVals[0], type: origin, descriptionText:"${friendly} was turn ${newVals[0]} [${origin}]"],[name: "level", value: newVals[1], type: origin, descriptionText:"${friendly} level was set to ${newVals[1]} [${origin}]"]]],
-            moisture: [type: "Generic Component Water Sensor",          event: [[name: "water", value: newVals[0] == "on" ? "wet":"dry", descriptionText:"${friendly} is updated"]]],
-            motion: [type: "Generic Component Motion Sensor",           event: [[name: "motion", value: newVals[0] == "on" ? """active""":"""inactive""", descriptionText:"${friendly} is updated"]]],
-            opening: [type: "Generic Component Contact Sensor",         event: [[name: "contact", value: newVals[0] == "on" ? "open":"closed", descriptionText:"${friendly} is updated"]]],
+            moisture: [type: "Generic Component Water Sensor",          event: [[name: "water", value: newVals[0] == "on" ? "wet":"dry", descriptionText:"${friendly} is ${newVals[0]}"]]],
+            motion: [type: "Generic Component Motion Sensor",           event: [[name: "motion", value: newVals[0] == "on" ? """active""":"""inactive""", descriptionText:"${friendly} is ${newVals[0]}"]]],
+            opening: [type: "Generic Component Contact Sensor",         event: [[name: "contact", value: newVals[0] == "on" ? "open":"closed", descriptionText:"${friendly} is ${newVals[0]}"]]],
             power: [type: "Generic Component Power Meter",              event: [[name: "power", value: newVals[0], descriptionText:"${friendly} power is ${newVals[0]}"]]],
-            presence: [type: "Generic Component Presence Sensor",       event: [[name: "presence", value: newVals[0] == "on" ? "present":"not present", descriptionText:"${friendly} is updated"]], namespace: "community"],
+            presence: [type: "Generic Component Presence Sensor",       event: [[name: "presence", value: newVals[0] == "on" ? "present":"not present", descriptionText:"${friendly} is ${newVals[0]}"]], namespace: "community"],
             pressure: [type: "Generic Component Pressure Sensor",       event: [[name: "pressure", value: newVals[0], descriptionText:"${friendly} pressure is ${newVals[0]}"]], namespace: "community"],
-            smoke: [type: "Generic Component Smoke Detector",           event: [[name: "smoke", value: newVals[0] == "on" ? "detected":"clear", descriptionText:"${friendly} is updated"]]],
+            smoke: [type: "Generic Component Smoke Detector",           event: [[name: "smoke", value: newVals[0] == "on" ? "detected":"clear", descriptionText:"${friendly} is ${newVals[0]}"]]],
             switch: [type: "Generic Component Switch",                  event: [[name: "switch", value: newVals[0], type: origin, descriptionText:"${friendly} was turn ${newVals[0]} [${origin}]"]]],
             temperature: [type: "Generic Component Temperature Sensor", event: [[name: "temperature", value: newVals[0], descriptionText:"${friendly} temperature is ${newVals[0]}"]]],
             voltage: [type: "Generic Component Voltage Sensor",         event: [[name: "voltage", value: newVals[0], descriptionText:"${friendly} voltage is ${newVals[0]}"]]],
-            window: [type: "Generic Component Contact Sensor",          event: [[name: "contact", value: newVals[0] == "on" ? "open":"closed", descriptionText:"${friendly} is updated"]]],
-            device_tracker: [type: "Generic Component Presence Sensor", event: [[name: "presence", value: newVals[0] == "home" ? "present":"not present", descriptionText:"${friendly} is updated"]], namespace: "community"],
+            window: [type: "Generic Component Contact Sensor",          event: [[name: "contact", value: newVals[0] == "on" ? "open":"closed", descriptionText:"${friendly} is ${newVals[0]}"]]],
+            device_tracker: [type: "Generic Component Presence Sensor", event: [[name: "presence", value: newVals[0] == "home" ? "present":"not present", descriptionText:"${friendly} is ${newVals[0]}"]], namespace: "community"],
             cover: [type: "Generic Component Garage Door Control",      event: [[name: "door", value: newVals[0] ?: "unknown", type: origin, descriptionText:"${friendly} was turn ${newVals[0]} [${origin}]"]], namespace: "community"],
             lock: [type: "Generic Component Lock",                      event: [[name: "lock", value: newVals[0] ?: "unknown", type: origin, descriptionText:"${friendly} was turn ${newVals[0]} [${origin}]"]]],
-            climate: [type: "Generic Component Thermostat",             event: [[name: "thermostatMode", value: newVals[0], descriptionText: "${friendly} is set to ${newVals[0]}"],[name: "temperature", value: newVals[1], descriptionText: "${friendly}'s current temperature is ${newVals[1]} degree"],[name: "coolingSetpoint", value: newVals[2], descriptionText: "${friendly}'s cooling temperature is set to ${newVals[2]} degree"],[name: "heatingSetpoint", value: newVals[2], descriptionText: "${friendly}'s heating temperature is set to ${newVals[2]} degree"],[name: "thermostatFanMode", value: newVals[3], descriptionText: "${friendly}'s fan speed is set to ${newVals[3]}"],[name: "presetMode", value: newVals[4], descriptionText: "${friendly}'s preset mode is set to ${newVals[4]}"],[name: "swingMode", value: newVals[5], descriptionText: "${friendly}'s swing mode is set to ${newVals[5]}"],[name: "thermostatSetpoint", value: newVals[2], descriptionText: "${friendly}'s temperature is set to ${newVals[2]} degree"]]]
+            climate: [type: "Generic Component Thermostat",             event: [[name: "thermostatMode", value: newVals[0], descriptionText: "${friendly} is set to ${newVals[0]}"],[name: "temperature", value: newVals[1], descriptionText: "${friendly}'s current temperature is ${newVals[1]} degree"],[name: "coolingSetpoint", value: newVals[2], descriptionText: "${friendly}'s cooling temperature is set to ${newVals[2]} degree"],[name: "heatingSetpoint", value: newVals[2], descriptionText: "${friendly}'s heating temperature is set to ${newVals[2]} degree"],[name: "thermostatFanMode", value: newVals[3], descriptionText: "${friendly}'s fan is set to ${newVals[3]}"],[name: "thermostatSetpoint", value: newVals[2], descriptionText: "${friendly}'s temperature is set to ${newVals[2]} degree"],[name: "thermostatOperatingState", value: newVals[4], descriptionText: "${friendly}'s mode is ${newVals[4]}"],[name: "coolingSetpoint", value: newVals[5], descriptionText: "${friendly}'s cooling temperature is set to ${newVals[5]} degrees"],[name: "heatingSetpoint", value: newVals[6], descriptionText: "${friendly}'s heating temperature is set to ${newVals[6]} degrees"]]]
         ]
 
     return mapping[device_class]
@@ -319,27 +348,29 @@ def removeChild(entity){
 
 def componentOn(ch){
     if (logEnable) log.info("received on request from ${ch.label}")
-    state.id = state.id + 1
-    entity = ch.name
-    domain = entity.tokenize(".")[0]
+
     if (!ch.currentValue("level")) {
-        messOn = JsonOutput.toJson([id: state.id, type: "call_service", domain: "${domain}", service: "turn_on", service_data: [entity_id: "${entity}"]])
+        data = [:]
     }
     else {
-        messOn = JsonOutput.toJson([id: state.id, type: "call_service", domain: "${domain}", service: "turn_on", service_data: [entity_id: "${entity}", brightness_pct: "${ch.currentValue("level")}"]])        
+        data = [brightness_pct: "${ch.currentValue("level")}"]
     }
-    if (logEnable) log.debug("messOn = ${messOn}")
-    interfaces.webSocket.sendMessage("${messOn}")
+    
+    executeCommand(ch, "turn_on", data)
 }
 
 def componentOff(ch){
     if (logEnable) log.info("received off request from ${ch.label}")
-    state.id = state.id + 1
-    entity = ch.name
-    domain = entity.tokenize(".")[0]
-    messOff = JsonOutput.toJson([id: state.id, type: "call_service", domain: "${domain}", service: "turn_off", service_data: [entity_id: "${entity}"]])
-    if (logEnable) log.debug("messOff = ${messOff}")
-    interfaces.webSocket.sendMessage("${messOff}")
+    
+    if(ch.getSupportedAttributes().contains("thermostatMode"))
+    {
+        // since componentOff() is not unique across Hubitat device types, catch this special case
+        componentOffTStat(ch)
+        return
+    }
+
+    data = [:]
+    executeCommand(ch, "turn_off", data)
 }
 
 def componentSetLevel(ch, level, transition=1){
@@ -370,74 +401,59 @@ def componentSetLevel(ch, level, transition=1){
         }
     } 
     else {        
-        state.id = state.id + 1
-        entity = ch.name
-        domain = entity.tokenize(".")[0]
-        messLevel = JsonOutput.toJson([id: state.id, type: "call_service", domain: "${domain}", service: "turn_on", service_data: [entity_id: "${entity}", brightness_pct: "${level}", transition: "${transition}"]])
-        if (logEnable) log.debug("messLevel = ${messLevel}")
-        interfaces.webSocket.sendMessage("${messLevel}")
+        data = [brightness_pct: "${level}", transition: "${transition}"]
+        executeCommand(ch, "turn_on", data)
     }
 }
 
 def componentSetColor(ch, color, transition=1){
     if (logEnable) log.info("received setColor request from ${ch.label}")
-    state.id = state.id + 1
-    entity = ch.name
-    domain = entity.tokenize(".")[0]
+
     convertedHue = Math.round(color.hue * 360/100)
-    messHSL = JsonOutput.toJson([id: state.id, type: "call_service", domain: "${domain}", service: "turn_on", service_data: [entity_id: "${entity}", brightness_pct: "${color.level}", hs_color: ["${convertedHue}", "${color.saturation}"], transition: "${transition}"]])
-    if (logEnable) log.debug("messHSL = ${messHSL}")
-    interfaces.webSocket.sendMessage("${messHSL}")
+    
+    data = [brightness_pct: "${color.level}", hs_color: ["${convertedHue}", "${color.saturation}"], transition: "${transition}"]
+    executeCommand(ch, "turn_on", data)
 }
 
-def componentSetColorTemperature(ch, colortemperature, transition=1){
+def componentSetColorTemperature(ch, colortemperature, level, transition=1){
     if (logEnable) log.info("received setColorTemperature request from ${ch.label}")
-    state.id = state.id + 1
-    entity = ch.name
-    domain = entity.tokenize(".")[0]
-    messCT = JsonOutput.toJson([id: state.id, type: "call_service", domain: "${domain}", service: "turn_on", service_data: [entity_id: "${entity}", kelvin: "${colortemperature}", transition: "${transition}"]])
-    if (logEnable) log.debug("messCT = ${messCT}")
-    interfaces.webSocket.sendMessage("${messCT}")
+    
+    data = [brightness_pct: "${level}", kelvin: "${colortemperature}", transition: "${transition}"]
+    executeCommand(ch, "turn_on", data)
 }
 
 def componentSetSpeed(ch, speed) {
     if (logEnable) log.info("received setSpeed request from ${ch.label}, with speed = ${speed}")
     int percentage = 0
-    entity = ch.name
-    domain = entity.tokenize(".")[0]
     switch (speed) {
         case "on":
-            state.id = state.id + 1
-            messOn = JsonOutput.toJson([id: state.id, type: "call_service", domain: "${domain}", service: "turn_on", service_data: [entity_id: "${entity}"]])
-            interfaces.webSocket.sendMessage("${messOn}")
+            data = [:]
+            executeCommand(ch, "turn_on", data)
             break
         case "off":
-            state.id = state.id + 1    
-            messOff = JsonOutput.toJson([id: state.id, type: "call_service", domain: "${domain}", service: "turn_off", service_data: [entity_id: "${entity}"]])
-            interfaces.webSocket.sendMessage("${messOff}")
+            data = [:]
+            executeCommand(ch, "turn_off", data)
             break
         case "low":
         case "medium-low":
-            percentage = 25
+            data = [percentage: "25"]
+            executeCommand(ch, "turn_on", data)
             break
         case "auto":
         case "medium":
-            percentage = 50
+            data = [percentage: "50"]
+            executeCommand(ch, "turn_on", data)
             break
         case "medium-high":
-            percentage = 75
+            data = [percentage: "75"]
+            executeCommand(ch, "turn_on", data)
             break
         case "high":
-            percentage = 100
+            data = [percentage: "100"]
+            executeCommand(ch, "turn_on", data)
             break
         default:
             if (logEnable) log.info "No case defined for Fan setSpeed(${speed})"
-    }
-
-    if (percentage != 0) {
-        state.id = state.id + 1
-        messOn = JsonOutput.toJson([id: state.id, type: "call_service", domain: "${domain}", service: "turn_on", service_data: [entity_id: "${entity}", percentage: "${percentage}"]])
-        interfaces.webSocket.sendMessage("${messOn}")
     }
 }
 
@@ -474,12 +490,10 @@ void componentOpen(ch) {
 
 void operateCover(ch, op){
     if (logEnable) log.info("received ${op} request from ${ch.label}")
-    state.id = state.id + 1
-    entity = ch.name
-    domain = entity.tokenize(".")[0]
-    messOff = JsonOutput.toJson([id: state.id, type: "call_service", domain: "${domain}", service: (op == "open") ? "open_cover" : "close_cover", service_data: [entity_id: "${entity}"]])
-    if (logEnable) log.debug("messOff = ${messOff}")
-    interfaces.webSocket.sendMessage("${messOff}")
+
+    service = op + "_cover"
+    data = [:]
+    executeCommand(ch, service, data)
 }
 
 void componentLock(ch) {
@@ -493,89 +507,147 @@ void componentUnlock(ch) {
 void operateLock(ch, op)
 {
     if (logEnable) log.info("received ${op} request from ${ch.label}")
-    state.type = "digital"
-    state.id = state.id + 1
-    entity = ch.name
-    domain = entity.tokenize(".")[0]
-    messLock = JsonOutput.toJson([id: state.id, type: "call_service", domain: "${domain}", service: (op == "unlock") ? "unlock" : "lock", service_data: [entity_id: "${entity}"]])
-    if (logEnable) log.debug("messLock = ${messLock}")
-    interfaces.webSocket.sendMessage("${messLock}")
+
+    data = [:]
+    executeCommand(ch, op, data)
 }
 
 def componentRefresh(ch){
     if (logEnable) log.info("received refresh request from ${ch.label}")
-    state.id = state.id + 1
+    // special handling since domain is fixed 
     entity = ch.name
-    domain = entity.tokenize(".")[0]
-    messUpd = JsonOutput.toJson([id: state.id, type: "call_service", domain: "homeassistant", service: "update_entity", service_data: [entity_id: "${entity}"]])
+    messUpd = JsonOutput.toJson([id: state.id, type: "call_service", domain: "homeassistant", service: "update_entity", service_data: [entity_id: entity]])
+    state.id = state.id + 1
     if (logEnable) log.debug("messUpd = ${messUpd}")
     interfaces.webSocket.sendMessage("${messUpd}")
 }
 
 def componentSetThermostatMode(ch, thermostatmode){
     if (logEnable) log.info("received setThermostatMode request from ${ch.label}")
-    state.id = state.id + 1
-    entity = ch.name
-    domain = entity.tokenize(".")[0]
-    messUpd = JsonOutput.toJson([id: state.id, type: "call_service", domain: "${domain}", service: "set_hvac_mode", service_data: [entity_id: "${entity}", hvac_mode: "${thermostatmode}"]])
-    if (logEnable) log.debug("messUpd = ${messUpd}")
-    interfaces.webSocket.sendMessage("${messUpd}")
+
+    switch(thermostatmode)
+	{
+	case "auto":
+	    data = [target_temp_high: ch.currentValue("coolingSetpoint"), target_temp_low: ch.currentValue("heatingSetpoint"), hvac_mode: "heat_cool"]
+	    service = "set_temperature"
+        break
+	case "emergencyHeat":
+	    thermostatmode = "heat"
+	case "heat":
+	case "cool":
+	    data = [temperature: ch.currentValue("thermostatSetpoint"), hvac_mode: thermostatmode]
+	    service = "set_temperature"
+	break
+	case "off":
+	    data =  [hvac_mode: thermostatmode]
+	    service = "set_hvac_mode"
+	break
+	}
+    executeCommand(ch, service, data)
 }
 
 def componentSetCoolingSetpoint(ch, temperature){
     if (logEnable) log.info("received setCoolingSetpoint request from ${ch.label}")
-    state.id = state.id + 1
-    entity = ch.name
-    domain = entity.tokenize(".")[0]
-    messUpd = JsonOutput.toJson([id: state.id, type: "call_service", domain: "${domain}", service: "set_temperature", service_data: [entity_id: "${entity}", temperature: "${temperature}"]])
-    if (logEnable) log.debug("messUpd = ${messUpd}")
-    interfaces.webSocket.sendMessage("${messUpd}")
+    
+    tmode = ch.currentValue("thermostatMode")
+    if (logEnable) log.info("thermostatMode is ${tmode}")
+	
+    if (tmode == "auto") {
+        data = [target_temp_high: temperature, target_temp_low: ch.currentValue("heatingSetpoint"), hvac_mode: "heat_cool"]
+	}
+    else {
+	if (tmode == "emergencyHeat") tmode = "heat"
+	data = [temperature: temperature, hvac_mode: tmode]
+	}
+    executeCommand(ch, "set_temperature", data)
 }
 
-def componentSetHeatingSetpoint(ch, temperature){
+def componentSetHeatingSetpoint(ch, temperature) {
     if (logEnable) log.info("received setHeatingSetpoint request from ${ch.label}")
-    state.id = state.id + 1
-    entity = ch.name
-    domain = entity.tokenize(".")[0]
-    messUpd = JsonOutput.toJson([id: state.id, type: "call_service", domain: "${domain}", service: "set_temperature", service_data: [entity_id: "${entity}", temperature: "${temperature}"]])
-    if (logEnable) log.debug("messUpd = ${messUpd}")
-    interfaces.webSocket.sendMessage("${messUpd}")
+
+    tmode = ch.currentValue("thermostatMode")
+    if (logEnable) log.info("thermostatMode is ${tmode}")
+	
+    if (tmode == "auto") {
+	data = [target_temp_high: ch.currentValue("coolingSetpoint"), target_temp_low: temperature, hvac_mode: "heat_cool"]
+    }
+    else {
+	if (tmode == "emergencyHeat") tmode = "heat"
+	data = [temperature: temperature, hvac_mode: tmode]
+    }
+    executeCommand(ch, "set_temperature", data)
 }
 
-def componentsetThermostatFanMode(ch, fanmode){
+def componentSetThermostatFanMode(ch, fanmode) {
     if (logEnable) log.info("received fanmode request from ${ch.label}")
-    state.id = state.id + 1
-    entity = ch.name
-    domain = entity.tokenize(".")[0]
-    messUpd = JsonOutput.toJson([id: state.id, type: "call_service", domain: "${domain}", service: "set_fan_mode", service_data: [entity_id: "${entity}", fan_mode: "${fanmode}"]])
-    if (logEnable) log.debug("messUpd = ${messUpd}")
-    interfaces.webSocket.sendMessage("${messUpd}")
+
+    if (fanmode == "circulate") {
+        data = [hvac_mode: "fan_only"]
+        executeCommand(ch, "set_hvac_mode", data)
+    }
+    else {    
+        data = [fan_mode: fanmode]
+        executeCommand(ch, "set_fan_mode", data)
+    }
 }
 
-def componentsetPresetMode(ch, presetmode){
-    if (logEnable) log.info("received preset mode request from ${ch.label}")
-    state.id = state.id + 1
-    entity = ch.name
-    domain = entity.tokenize(".")[0]
-    messUpd = JsonOutput.toJson([id: state.id, type: "call_service", domain: "${domain}", service: "set_preset_mode", service_data: [entity_id: "${entity}", preset_mode: "${presetmode}"]])
-    if (logEnable) log.debug("messUpd = ${messUpd}")
-    interfaces.webSocket.sendMessage("${messUpd}")
+def componentAuto(ch)
+{
+    componentSetThermostatMode(ch, "auto")
 }
 
-def componentsetSwingMode(ch, swingmode){
-    if (logEnable) log.info("received swing mode request from ${ch.label}")
-    state.id = state.id + 1
-    entity = ch.name
-    domain = entity.tokenize(".")[0]
-    messUpd = JsonOutput.toJson([id: state.id, type: "call_service", domain: "${domain}", service: "set_swing_mode", service_data: [entity_id: "${entity}", swing_mode: "${swingmode}"]])
-    if (logEnable) log.debug("messUpd = ${messUpd}")
-    interfaces.webSocket.sendMessage("${messUpd}")
+def componentCool(ch)
+{
+    componentSetThermostatMode(ch, "cool")
+}
+
+def componentEmergencyHeat(ch)
+{
+    componentSetThermostatMode(ch, "emergencyHeat")
+}
+
+def componentFanAuto(ch)
+{
+    componentSetThermostatMode(ch, "auto")
+}
+
+def componentFanCirculate(ch)
+{
+    componentSetThermostatFanMode(ch, "circulate")
+}
+
+def componentFanOn(ch)
+{
+    componentSetThermostatFanMode(ch, "on")
+}
+
+def componentHeat(ch)
+{
+    componentSetThermostatMode(ch, "heat")
+}
+
+def componentOffTStat(ch)
+{
+    componentSetThermostatMode(ch, "off")
 }
 
 def closeConnection() {
     if (logEnable) log.debug("Closing connection...")   
     state.wasExpectedClose = true
     interfaces.webSocket.close()
+}
+
+def executeCommand(ch, service, data)
+{    
+    entity = ch?.name
+    domain = entity?.tokenize(".")[0]
+
+    messUpd = [id: state.id, type: "call_service", domain: domain, service: service, service_data : [entity_id: entity] + data]
+    state.id = state.id + 1
+
+    messUpdStr = JsonOutput.toJson(messUpd)
+    if (logEnable) log.debug("messUpdStr = ${messUpdStr}")
+    interfaces.webSocket.sendMessage(messUpdStr)    
 }
 
 def deleteAllChildDevices() {

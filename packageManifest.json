@@ -32,7 +32,14 @@
       "namespace": "community",
       "location": "https://raw.githubusercontent.com/ymerj/HE-HA-control/main/genericComponentPresenceSensor.groovy",
       "required": false
-    }   
+    },
+    {
+      "id": "0eef3c4e-619c-4f23-94d9-8ff8ae769eb4",
+      "name": "Generic Component Garage Door Control",
+      "namespace": "community",
+      "location": "https://raw.githubusercontent.com/ymerj/HE-HA-control/main/genericComponentGarageDoorControl.groovy",
+      "required": false
+    }
   ],
   "apps": [
     {

@@ -59,7 +59,7 @@
 * 0.1.36 2021-12-14 Yves Mercier       Improved event type
 * 0.1.37 2021-12-26 gabriel_kpk        Added support for Climate domain
 * 0.1.38 2021-12-29                    Improved Climate support, Code cleanup, Minor decription fixes
-* 0.1.38 2022-01-19 BrenenP            Added support for additional sensors
+* 0.1.39 2022-01-19 BrenenP            Added support for additional sensors
 *
 * Thank you(s):
 */
@@ -338,7 +338,7 @@ def translateSensors(device_class, newVals, friendly, origin)
     return mapping[device_class]
 }
 
-def translateDevices(device_class, newVals, friendly, origin)
+def translateDevices(domain, newVals, friendly, origin)
 {
     def mapping =
         [
@@ -351,7 +351,7 @@ def translateDevices(device_class, newVals, friendly, origin)
             climate: [type: "Generic Component Thermostat",             event: [[name: "thermostatMode", value: newVals[0], descriptionText: "${friendly} is set to ${newVals[0]}"],[name: "temperature", value: newVals[1], descriptionText: "${friendly}'s current temperature is ${newVals[1]} degree"],[name: "coolingSetpoint", value: newVals[2], descriptionText: "${friendly}'s cooling temperature is set to ${newVals[2]} degree"],[name: "heatingSetpoint", value: newVals[2], descriptionText: "${friendly}'s heating temperature is set to ${newVals[2]} degree"],[name: "thermostatFanMode", value: newVals[3], descriptionText: "${friendly}'s fan is set to ${newVals[3]}"],[name: "thermostatSetpoint", value: newVals[2], descriptionText: "${friendly}'s temperature is set to ${newVals[2]} degree"],[name: "thermostatOperatingState", value: newVals[4], descriptionText: "${friendly}'s mode is ${newVals[4]}"],[name: "coolingSetpoint", value: newVals[5], descriptionText: "${friendly}'s cooling temperature is set to ${newVals[5]} degrees"],[name: "heatingSetpoint", value: newVals[6], descriptionText: "${friendly}'s heating temperature is set to ${newVals[6]} degrees"]]]
         ]
 
-    return mapping[device_class]
+    return mapping[domain]
 }
 
 def updateChildDevice(mapping, entity, friendly) {

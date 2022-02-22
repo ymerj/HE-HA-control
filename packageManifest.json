@@ -1,7 +1,7 @@
 {
   "packageName": "HE-HA-control",
   "author": "ymerj",
-  "version": "0.1.38",
+  "version": "0.1.39",
   "minimumHEVersion": "2.1.9",
   "dateReleased": "2021-03-19",
   "drivers": [
@@ -38,6 +38,13 @@
       "name": "Generic Component Garage Door Control",
       "namespace": "community",
       "location": "https://raw.githubusercontent.com/ymerj/HE-HA-control/main/genericComponentGarageDoorControl.groovy",
+      "required": false
+    },
+    {
+      "id": "6ae357fa-2751-4eea-a765-5378ace0b225",
+      "name": "Generic Component Battery",
+      "namespace": "community",
+      "location": "https://raw.githubusercontent.com/ymerj/HE-HA-control/main/genericComponentBattery.groovy",
       "required": false
     }
   ],

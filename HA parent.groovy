@@ -60,6 +60,7 @@
 * 0.1.37 2021-12-26 gabriel_kpk        Added support for Climate domain
 * 0.1.38 2021-12-29                    Improved Climate support, Code cleanup, Minor decription fixes
 * 0.1.39 2022-01-19 BrenenP            Added support for additional sensors
+* 0.1.40 2022-02-23 tomw               Added support for Energy sensor
 *
 * Thank you(s):
 */
@@ -333,6 +334,7 @@ def translateSensors(device_class, newVals, friendly, origin)
             pressure: [type: "Generic Component Pressure Sensor",       event: [[name: "pressure", value: newVals[0], descriptionText:"${friendly} pressure is ${newVals[0]}"]], namespace: "community"],
             temperature: [type: "Generic Component Temperature Sensor", event: [[name: "temperature", value: newVals[0], descriptionText:"${friendly} temperature is ${newVals[0]}"]]],
             voltage: [type: "Generic Component Voltage Sensor",         event: [[name: "voltage", value: newVals[0], descriptionText:"${friendly} voltage is ${newVals[0]}"]]],
+            energy: [type: "Generic Component Energy Meter",            event: [[name: "energy", value: newVals[0], descriptionText:"${friendly} energy is ${newVals[0]}"]]],
         ]
 
     return mapping[device_class]

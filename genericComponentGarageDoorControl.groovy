@@ -19,6 +19,7 @@ limitations under the License.
 Change history:
 
 0.1.32 - tomw - initial version
+0.1.40 - tomw - Added ContactSensor emulation
 
 */
 
@@ -26,6 +27,7 @@ metadata
 {
     definition(name: "Generic Component Garage Door Control", namespace: "community", author: "community", importUrl: "https://raw.githubusercontent.com/ymerj/HE-HA-control/main/genericComponentGarageDoorControl.groovy")
     {
+        capability "ContactSensor"
         capability "GarageDoorControl"
         capability "Refresh"
     }
@@ -52,6 +54,10 @@ void parse(List<Map> description) {
         if (it.name in ["door"]) {
             if (txtEnable) log.info it.descriptionText
             sendEvent(it)
+            
+            // emulate contact sensor that mirrors door state
+            //  note: any status other than "closed" will be treated as "open"
+            sendEvent(name: "contact", value: (it.value == "closed") ? "closed" : "open")
         }
     }
 }

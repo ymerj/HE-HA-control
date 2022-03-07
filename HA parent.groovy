@@ -196,7 +196,7 @@ def parse(String description) {
                 if (!(choices.contains(speed)))
                     {
                     if (logEnable) log.info "Invalid fan speed received - ${speed}"
-                    speed = "medium"
+                    speed = null
                     }
                 def percentage = response?.event?.data?.new_state?.attributes?.percentage
                 switch (percentage.toInteger()) {
@@ -220,6 +220,7 @@ def parse(String description) {
                 newVals += speed
                 newVals += percentage
                 mapping = translateDevices(domain, newVals, friendly, origin)
+		if (!speed) mapping.event.remove(1)
                 if (mapping) updateChildDevice(mapping, entity, friendly)
                 break
             case "cover":

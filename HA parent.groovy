@@ -191,7 +191,13 @@ def parse(String description) {
         
         switch (domain) {
             case "fan":
-                def speed = response?.event?.data?.new_state?.attributes?.speed
+                def speed = response?.event?.data?.new_state?.attributes?.speed.toLowerCase()
+                choices =  ["low","medium-low","medium","medium-high","high","auto"]
+                if (!(choices.contains(speed)))
+                    {
+                    if (logEnable) log.info "Invalid fan speed received - ${speed}"
+                    speed = "medium"
+                    }
                 def percentage = response?.event?.data?.new_state?.attributes?.percentage
                 switch (percentage.toInteger()) {
                     case 0: 

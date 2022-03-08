@@ -61,6 +61,7 @@
 * 0.1.38 2021-12-29                    Improved Climate support, Code cleanup, Minor decription fixes
 * 0.1.39 2022-01-19 BrenenP            Added support for additional sensors
 * 0.1.40 2022-02-23 tomw               Added support for Energy sensor
+* 0.1.41 2022-03-08 Yves Mercier       Validate Fan speed
 *
 * Thank you(s):
 */
@@ -191,7 +192,13 @@ def parse(String description) {
         
         switch (domain) {
             case "fan":
-                def speed = response?.event?.data?.new_state?.attributes?.speed
+                def speed = response?.event?.data?.new_state?.attributes?.speed.toLowerCase()
+                choices =  ["low","medium-low","medium","medium-high","high","auto"]
+                if (!(choices.contains(speed)))
+                    {
+                    if (logEnable) log.info "Invalid fan speed received - ${speed}"
+                    speed = null
+                    }
                 def percentage = response?.event?.data?.new_state?.attributes?.percentage
                 switch (percentage.toInteger()) {
                     case 0: 
@@ -214,6 +221,7 @@ def parse(String description) {
                 newVals += speed
                 newVals += percentage
                 mapping = translateDevices(domain, newVals, friendly, origin)
+		if (!speed) mapping.event.remove(1)
                 if (mapping) updateChildDevice(mapping, entity, friendly)
                 break
             case "cover":

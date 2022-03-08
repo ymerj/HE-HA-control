@@ -61,6 +61,7 @@
 * 0.1.38 2021-12-29                    Improved Climate support, Code cleanup, Minor decription fixes
 * 0.1.39 2022-01-19 BrenenP            Added support for additional sensors
 * 0.1.40 2022-02-23 tomw               Added support for Energy sensor
+* 0.1.41 2022-03-08 Yves Mercier       Validate Fan speed
 *
 * Thank you(s):
 */

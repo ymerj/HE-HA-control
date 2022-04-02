@@ -62,6 +62,7 @@
 * 0.1.39 2022-01-19 BrenenP            Added support for additional sensors
 * 0.1.40 2022-02-23 tomw               Added support for Energy sensor
 * 0.1.41 2022-03-08 Yves Mercier       Validate Fan speed
+* 0.1.42 2022-04-02 tomw               Added support for input_boolean
 *
 * Thank you(s):
 */
@@ -238,7 +239,8 @@ def parse(String description) {
                 mapping = translateDevices(domain, newVals, friendly, origin)
                 if (mapping) updateChildDevice(mapping, entity, friendly)
                 break
-            case "switch":            
+            case "switch":
+            case "input_boolean":
                 mapping = translateDevices(domain, newVals, friendly, origin)
                 if (mapping) updateChildDevice(mapping, entity, friendly)
                 break
@@ -358,7 +360,9 @@ def translateDevices(domain, newVals, friendly, origin)
             cover: [type: "Generic Component Garage Door Control",      event: [[name: "door", value: newVals[0] ?: "unknown", type: origin, descriptionText:"${friendly} was turned ${newVals[0]} [${origin}]"]], namespace: "community"],
             light: [type: "Generic Component Dimmer",                   event: [[name: "switch", value: newVals[0], type: origin, descriptionText:"${friendly} was turned ${newVals[0]} [${origin}]"],[name: "level", value: newVals[1], type: origin, descriptionText:"${friendly} level was set to ${newVals[1]} [${origin}]"]]],
             lock: [type: "Generic Component Lock",                      event: [[name: "lock", value: newVals[0] ?: "unknown", type: origin, descriptionText:"${friendly} was turned ${newVals[0]} [${origin}]"]]],
-            climate: [type: "Generic Component Thermostat",             event: [[name: "thermostatMode", value: newVals[0], descriptionText: "${friendly} is set to ${newVals[0]}"],[name: "temperature", value: newVals[1], descriptionText: "${friendly}'s current temperature is ${newVals[1]} degree"],[name: "coolingSetpoint", value: newVals[2], descriptionText: "${friendly}'s cooling temperature is set to ${newVals[2]} degree"],[name: "heatingSetpoint", value: newVals[2], descriptionText: "${friendly}'s heating temperature is set to ${newVals[2]} degree"],[name: "thermostatFanMode", value: newVals[3], descriptionText: "${friendly}'s fan is set to ${newVals[3]}"],[name: "thermostatSetpoint", value: newVals[2], descriptionText: "${friendly}'s temperature is set to ${newVals[2]} degree"],[name: "thermostatOperatingState", value: newVals[4], descriptionText: "${friendly}'s mode is ${newVals[4]}"],[name: "coolingSetpoint", value: newVals[5], descriptionText: "${friendly}'s cooling temperature is set to ${newVals[5]} degrees"],[name: "heatingSetpoint", value: newVals[6], descriptionText: "${friendly}'s heating temperature is set to ${newVals[6]} degrees"]]]
+            climate: [type: "Generic Component Thermostat",             event: [[name: "thermostatMode", value: newVals[0], descriptionText: "${friendly} is set to ${newVals[0]}"],[name: "temperature", value: newVals[1], descriptionText: "${friendly}'s current temperature is ${newVals[1]} degree"],[name: "coolingSetpoint", value: newVals[2], descriptionText: "${friendly}'s cooling temperature is set to ${newVals[2]} degree"],[name: "heatingSetpoint", value: newVals[2], descriptionText: "${friendly}'s heating temperature is set to ${newVals[2]} degree"],[name: "thermostatFanMode", value: newVals[3], descriptionText: "${friendly}'s fan is set to ${newVals[3]}"],[name: "thermostatSetpoint", value: newVals[2], descriptionText: "${friendly}'s temperature is set to ${newVals[2]} degree"],[name: "thermostatOperatingState", value: newVals[4], descriptionText: "${friendly}'s mode is ${newVals[4]}"],[name: "coolingSetpoint", value: newVals[5], descriptionText: "${friendly}'s cooling temperature is set to ${newVals[5]} degrees"],[name: "heatingSetpoint", value: newVals[6], descriptionText: "${friendly}'s heating temperature is set to ${newVals[6]} degrees"]]],
+            input_boolean: [type: "Generic Component Switch",           event: [[name: "switch", value: newVals[0], type: origin, descriptionText:"${friendly} was turned ${newVals[0]} [${origin}]"]]],
+
         ]
 
     return mapping[domain]

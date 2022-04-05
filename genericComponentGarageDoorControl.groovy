@@ -56,8 +56,10 @@ void parse(List<Map> description) {
             sendEvent(it)
             
             // emulate contact sensor that mirrors door state
-            //  note: any status other than "closed" will be treated as "open"
-            sendEvent(name: "contact", value: (it.value == "closed") ? "closed" : "open")
+            //  note: any status other than "closed" will be treated as "open". ignore sending event if device becomes unavailable
+            if (it.value != "unavailable"){
+                sendEvent(name: "contact", value: (it.value == "closed") ? "closed" : "open") 
+            } 
         }
     }
 }

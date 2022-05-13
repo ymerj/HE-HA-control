@@ -63,6 +63,7 @@
 * 0.1.40 2022-02-23 tomw               Added support for Energy sensor
 * 0.1.41 2022-03-08 Yves Mercier       Validate Fan speed
 * 0.1.42 2022-04-02 tomw               Added support for input_boolean
+* 0.1.43 2022-05-10 tomw               Added support for Curtain device_class
 *
 * Thank you(s):
 */
@@ -226,11 +227,13 @@ def parse(String description) {
                 if (mapping) updateChildDevice(mapping, entity, friendly)
                 break
             case "cover":
-                if(!(["garage"].contains(device_class)))
-                {
-                    // only support "garage" device_class for "cover" domain
-                    return
-                }
+                // we need to get "current_position" out of the state, if it's there
+                //   note that any additional attributes will use different offsets in the translateCovers mapping
+                def pos = response?.event?.data?.new_state?.attributes?.current_position?.toInteger()
+                newVals += pos                
+                mapping = translateCovers(device_class, newVals, friendly, origin)
+                if (mapping) updateChildDevice(mapping, entity, friendly)
+                break
             case "lock":
                 mapping = translateDevices(domain, newVals, friendly, origin)
                 if (mapping) updateChildDevice(mapping, entity, friendly)
@@ -350,6 +353,23 @@ def translateSensors(device_class, newVals, friendly, origin)
     return mapping[device_class]
 }
 
+def translateCovers(device_class, newVals, friendly, origin)
+{
+    def mapping =
+        [
+            curtain: [type: "Generic Component Window Shade",           
+                      event:
+                      [
+                          [name: "windowShade", value: newVals[0] ?: "unknown", type: origin, descriptionText:"${friendly} was turned ${newVals[0]} [${origin}]"],
+                          [name: "position", value: (null != newVals?.getAt(1)) ? newVals[1] : "unknown", type: origin, descriptionText:"${friendly} was turned ${newVals[1]} [${origin}]"]
+                      ],
+                      namespace: "community"],
+            garage: [type: "Generic Component Garage Door Control",     event: [[name: "door", value: newVals[0] ?: "unknown", type: origin, descriptionText:"${friendly} was turned ${newVals[0]} [${origin}]"]], namespace: "community"]           
+        ]
+
+    return mapping[device_class]
+}
+
 def translateDevices(domain, newVals, friendly, origin)
 {
     def mapping =
@@ -357,7 +377,6 @@ def translateDevices(domain, newVals, friendly, origin)
             fan: [type: "Generic Component Fan Control",                event: [[name: "switch", value: newVals[0], type: origin, descriptionText:"${friendly} was turned ${newVals[0]} [${origin}]"],[name: "speed", value: newVals[1], type: origin, descriptionText:"${friendly} speed was set to ${newVals[1]} [${origin}]"],[name: "level", value: newVals[2], type: origin, descriptionText:"${friendly} level was set to ${newVals[2]} [${origin}]"]]],
             switch: [type: "Generic Component Switch",                  event: [[name: "switch", value: newVals[0], type: origin, descriptionText:"${friendly} was turned ${newVals[0]} [${origin}]"]]],
             device_tracker: [type: "Generic Component Presence Sensor", event: [[name: "presence", value: newVals[0] == "home" ? "present":"not present", descriptionText:"${friendly} is updated"]], namespace: "community"],
-            cover: [type: "Generic Component Garage Door Control",      event: [[name: "door", value: newVals[0] ?: "unknown", type: origin, descriptionText:"${friendly} was turned ${newVals[0]} [${origin}]"]], namespace: "community"],
             light: [type: "Generic Component Dimmer",                   event: [[name: "switch", value: newVals[0], type: origin, descriptionText:"${friendly} was turned ${newVals[0]} [${origin}]"],[name: "level", value: newVals[1], type: origin, descriptionText:"${friendly} level was set to ${newVals[1]} [${origin}]"]]],
             lock: [type: "Generic Component Lock",                      event: [[name: "lock", value: newVals[0] ?: "unknown", type: origin, descriptionText:"${friendly} was turned ${newVals[0]} [${origin}]"]]],
             climate: [type: "Generic Component Thermostat",             event: [[name: "thermostatMode", value: newVals[0], descriptionText: "${friendly} is set to ${newVals[0]}"],[name: "temperature", value: newVals[1], descriptionText: "${friendly}'s current temperature is ${newVals[1]} degree"],[name: "coolingSetpoint", value: newVals[2], descriptionText: "${friendly}'s cooling temperature is set to ${newVals[2]} degree"],[name: "heatingSetpoint", value: newVals[2], descriptionText: "${friendly}'s heating temperature is set to ${newVals[2]} degree"],[name: "thermostatFanMode", value: newVals[3], descriptionText: "${friendly}'s fan is set to ${newVals[3]}"],[name: "thermostatSetpoint", value: newVals[2], descriptionText: "${friendly}'s temperature is set to ${newVals[2]} degree"],[name: "thermostatOperatingState", value: newVals[4], descriptionText: "${friendly}'s mode is ${newVals[4]}"],[name: "coolingSetpoint", value: newVals[5], descriptionText: "${friendly}'s cooling temperature is set to ${newVals[5]} degrees"],[name: "heatingSetpoint", value: newVals[6], descriptionText: "${friendly}'s heating temperature is set to ${newVals[6]} degrees"]]],
@@ -534,12 +553,29 @@ void componentOpen(ch) {
     operateCover(ch, "open")
 }
 
-void operateCover(ch, op){
+void operateCover(ch, op) {
     if (logEnable) log.info("received ${op} request from ${ch.label}")
 
     service = op + "_cover"
     data = [:]
     executeCommand(ch, service, data)
+}
+
+void componentSetPosition(ch, pos) {
+    
+    executeCommand(ch, "set_cover_position", [position: pos])
+}
+
+void componentStartPositionChange(ch, dir) {
+    
+    if(["open", "close"].contains(dir)) {
+        operateCover(ch, dir)
+    }
+}
+
+void componentStopPositionChange(ch) {
+    
+    operateCover(ch, "stop")
 }
 
 void componentLock(ch) {

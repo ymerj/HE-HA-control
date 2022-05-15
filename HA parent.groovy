@@ -64,6 +64,7 @@
 * 0.1.41 2022-03-08 Yves Mercier       Validate Fan speed
 * 0.1.42 2022-04-02 tomw               Added support for input_boolean
 * 0.1.43 2022-05-10 tomw               Added support for Curtain device_class
+* 0.1.44 2022-05-15 tomw               Added support for Shade device_class
 *
 * Thank you(s):
 */
@@ -354,17 +355,23 @@ def translateSensors(device_class, newVals, friendly, origin)
 }
 
 def translateCovers(device_class, newVals, friendly, origin)
-{
+{    
+    def typicalCover =
+        [
+            type: "Generic Component Window Shade",
+            event:
+            [
+                [name: "windowShade", value: newVals[0] ?: "unknown", type: origin, descriptionText:"${friendly} was turned ${newVals[0]} [${origin}]"],
+                [name: "position", value: (null != newVals?.getAt(1)) ? newVals[1] : "unknown", type: origin, descriptionText:"${friendly} was turned ${newVals[1]} [${origin}]"]
+            ],
+            namespace: "community"
+        ]
+    
     def mapping =
         [
-            curtain: [type: "Generic Component Window Shade",           
-                      event:
-                      [
-                          [name: "windowShade", value: newVals[0] ?: "unknown", type: origin, descriptionText:"${friendly} was turned ${newVals[0]} [${origin}]"],
-                          [name: "position", value: (null != newVals?.getAt(1)) ? newVals[1] : "unknown", type: origin, descriptionText:"${friendly} was turned ${newVals[1]} [${origin}]"]
-                      ],
-                      namespace: "community"],
-            garage: [type: "Generic Component Garage Door Control",     event: [[name: "door", value: newVals[0] ?: "unknown", type: origin, descriptionText:"${friendly} was turned ${newVals[0]} [${origin}]"]], namespace: "community"]           
+            curtain: typicalCover,
+            garage: [type: "Generic Component Garage Door Control",     event: [[name: "door", value: newVals[0] ?: "unknown", type: origin, descriptionText:"${friendly} was turned ${newVals[0]} [${origin}]"]], namespace: "community"],
+            shade: typicalCover
         ]
 
     return mapping[device_class]

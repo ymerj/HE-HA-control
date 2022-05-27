@@ -24,7 +24,7 @@ Change history:
 
 metadata
 {
-    definition(name: "Generic Component Battery", namespace: "community", author: "community", importUrl: "https://raw.githubusercontent.com/ymerj/HE-HA-control/main/genericComponentIlluminanceSensor.groovy")
+    definition(name: "Generic Component Battery", namespace: "community", author: "community", importUrl: "https://raw.githubusercontent.com/ymerj/HE-HA-control/main/genericComponentBattery.groovy")
     {
         capability "Battery"
         capability "Refresh"

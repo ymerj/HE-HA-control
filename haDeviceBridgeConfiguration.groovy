@@ -22,7 +22,7 @@
 * 0.1.22     2021-02-24 tomw               Optional configuration app to selectively filter out Home Assistant devices
 * 0.1.23     2021-02-25 Dan Ogorchock      Switched logic from Exclude to Include to make more intuitive.  Sorted Device List.
 * 0.1.32     2021-09-27 kaimyn             Add option to use HTTPS support in configuration app
-* 0.1.45     2022-06-06 tomw               Added confirmation message before select/de-select all operations
+* 0.1.45     2022-06-06 tomw               Added confirmation step before completing select/de-select all
 */
 
 definition(

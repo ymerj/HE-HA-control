@@ -22,6 +22,7 @@
 * 0.1.22     2021-02-24 tomw               Optional configuration app to selectively filter out Home Assistant devices
 * 0.1.23     2021-02-25 Dan Ogorchock      Switched logic from Exclude to Include to make more intuitive.  Sorted Device List.
 * 0.1.32     2021-09-27 kaimyn             Add option to use HTTPS support in configuration app
+* 0.1.45     2022-06-06 tomw               Added confirmation step before completing select/de-select all
 */
 
 definition(
@@ -70,7 +71,7 @@ def mainPage2(params)
     {
         if(params?.runDiscovery)
         {
-            state.entityList = [:]            
+            state.entityList = [:]
             def domain
             // query HA to get entity_id list
             def resp = httpGetExec(genParamsMain("states"))
@@ -98,19 +99,51 @@ def mainPage2(params)
         section
         {
             input name: "includeList", type: "enum", title: "Select any devices to <b>include</b> from Home Assistant Device Bridge", options: state.entityList, required: true, multiple: true
-            input name: "selectAll", type: "bool", title: "Select all devices?", defaultValue: false, submitOnChange: true
-            input name: "clearAll", type: "bool", title: "De-select all devices?", defaultValue: false, submitOnChange: true
+            
+            if(selectAll)
+            {
+                // selectAll was pushed, and this page was reloaded to get to this point
+                //
+                // this gives the user a "confirm" step to avoid any accidental changes to the list
+                app.updateSetting("selectAll", false)
+                input name: "selectAllForReal", type: "bool", title: "CLICK AGAIN to confirm select all", defaultValue: false, submitOnChange: true
+            }
+            else
+            {
+                // this page was either loaded for the first time OR reloaded by pushing selectAllForReal
+                //
+                // this step is actually selecting all (if appropriate) and then presenting the normal selectAll experience 
+                if(selectAllForReal)
+                {
+                    app.updateSetting("selectAllForReal", false)
+                    app.updateSetting("includeList", state.entityList.keySet().toList())
+                }
+                
+                input name: "selectAll", type: "bool", title: "Select all devices?", defaultValue: false, submitOnChange: true
+            }
+            
+            if(clearAll)
+            {
+                // see explanation of this code in the selectAll case above
+                app.updateSetting("clearAll", false)
+                input name: "clearAllForReal", type: "bool", title: "CLICK AGAIN to confirm de-select all", defaultValue: false, submitOnChange: true
+            }
+            else
+            {
+                // see explanation of this code in the selectAll case above
+                if(clearAllForReal)
+                {
+                    app.updateSetting("clearAllForReal", false)
+                    app.updateSetting("includeList", [])
+                }
+                
+                input name: "clearAll", type: "bool", title: "De-select all devices?", defaultValue: false, submitOnChange: true
+            }
         }
         
         section
         {
             href(page: "mainPage1", title: "<b>Return to previous page</b>", description: "")
-        }
-        
-        if(selectAll)
-        {
-            app.updateSetting("includeList", state.entityList.keySet().toList())
-            app.updateSetting("selectAll", false)            
         }
         
         if(clearAll)

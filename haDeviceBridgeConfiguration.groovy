@@ -23,6 +23,7 @@
 * 0.1.23     2021-02-25 Dan Ogorchock      Switched logic from Exclude to Include to make more intuitive.  Sorted Device List.
 * 0.1.32     2021-09-27 kaimyn             Add option to use HTTPS support in configuration app
 * 0.1.45     2022-06-06 tomw               Added confirmation step before completing select/de-select all
+* 0.1.46     2022-07-04 tomw               Advanced configuration - manual add/remove of devices; option to disable filtering; unused child cleanup
 */
 
 definition(
@@ -44,7 +45,7 @@ preferences
 
 def mainPage()
 {
-    dynamicPage(name: "mainPage", title: "", install: false, uninstall: true)
+    dynamicPage(name: "mainPage", title: "", install: true, uninstall: true)
     {
         section("<b>Home Assistant Device Bridge</b>")
         {
@@ -161,10 +162,31 @@ def checkIfFiltered(entity)
 {
     if(enableFiltering || (null == enableFiltering))
     {
-        return !(includeList?.contains(entity) || accessCustomFilter("get")?.contains(entity))
+        return shouldFilter(entity)
     }
     
     return false
+}
+
+def shouldFilter(entity)
+{
+    return !(includeList?.contains(entity) || accessCustomFilter("get")?.contains(entity))    
+}
+
+def cullGrandchildren()
+{
+    // remove all child devices that aren't currently on either filtering list
+    
+    def ch = getChild()
+    
+    ch?.getChildDevices()?.each()
+    {
+        def entity = it.getDeviceNetworkId()?.tokenize("-")?.getAt(1)        
+        if(shouldFilter(entity))
+        {
+            ch.removeChild(entity)
+        }
+    }
 }
 
 def accessCustomFilter(op, val = null)
@@ -217,18 +239,30 @@ def advOptionsPage()
             accessCustomFilter("clear")
         }        
         app.updateSetting("eId", "")
-
-        section
+        
+        if(cleanupUnused)
+        {
+            app.updateSetting("cleanupUnused", false)
+            cullGrandchildren()
+        }
+        
+        section(hideable: true, hidden: false, title: "Entity filtering options")
         {
             input("enableFiltering", "bool", title: "Only pass through user-selected and manually-added entities? (disable this option to pass all through)<br><br>", defaultValue: true, submitOnChange: true)
         }
+        
         section(hideable: true, hidden: false, title: "Manually add an entity to be included")
         {
             paragraph "<b>Manually added entities:</b> ${accessCustomFilter("get")}"
             input name: "eId", type: "text", title: "Entity ID", description: "ID"
             input name: "clickToAdd", type: "bool", title: "Add entity to filtered list", defaultValue: false, submitOnChange: true
             input name: "clickToRemove", type: "bool", title: "Remove entity from filtered list", defaultValue: false, submitOnChange: true
-            input name: "removeAll", type: "bool", title: "Remove all that were manually added? (use carefully!)", defaultValue: false, submitOnChange: true
+            input name: "removeAll", type: "bool", title: "Remove all that were manually added to filtered list? (use carefully!)", defaultValue: false, submitOnChange: true
+        }
+        
+        section(hideable: true, hidden: false, title: "System administration options")
+        {
+            input name: "cleanupUnused", type: "bool", title: "Remove all child devices that are not currently either user-selected or manually-added (use carefully!)", defaultValue: false, submitOnChange: true
         }
         
         linkToMain()
@@ -245,7 +279,7 @@ def logDebug(msg)
 
 def installed()
 {
-    def ch = getChildDevice("HE-HA-control")
+    def ch = getChild()
     if(!ch)
     {
         ch = addChildDevice("ymerj", "HomeAssistant Hub Parent", "HE-HA-control", [name: "Home Assistant Device Bridge", label: "Home Assistant Device Bridge (${ip})", isComponent: false])
@@ -261,6 +295,11 @@ def installed()
 
         ch.updated()
     }
+}
+
+def getChild()
+{
+    return getChildDevice("HE-HA-control")
 }
 
 def uninstalled()

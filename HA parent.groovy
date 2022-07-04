@@ -65,6 +65,7 @@
 * 0.1.42 2022-04-02 tomw               Added support for input_boolean
 * 0.1.43 2022-05-10 tomw               Added support for Curtain device_class
 * 0.1.44 2022-05-15 tomw               Added support for Shade device_class
+* 0.1.46 2022-07-04 tomw               Advanced configuration - manual add/remove of devices; option to disable filtering; unused child cleanup
 *
 * Thank you(s):
 */
@@ -269,7 +270,7 @@ def parse(String description) {
                 def fan_mode = response?.event?.data?.new_state?.attributes?.fan_mode
                 def thermostat_mode = response?.event?.data?.new_state?.state
             	def target_temp_high = response?.event?.data?.new_state?.attributes?.target_temp_high
-		def target_temp_low = response?.event?.data?.new_state?.attributes?.target_temp_low
+                def target_temp_low = response?.event?.data?.new_state?.attributes?.target_temp_low
                 switch (fan_mode)
                 {
                     case "off":

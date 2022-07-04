@@ -167,7 +167,6 @@ def reconnectWebSocket() {
     runIn(state.reconnectDelay, initialize)
 }
 
-
 def parse(String description) {
     if (logEnable) log.debug("parse(): description = ${description}")
     def response = null;
@@ -182,8 +181,7 @@ def parse(String description) {
         def entity = response?.event?.data?.entity_id
         
         // check whether we have a parent, and search its includeList for devices to process
-        def includeList = getParent()?.includeList
-        if(includeList && !includeList?.contains(entity)) return
+        if(getParent()?.checkIfFiltered(entity)) return
         
         def domain = entity?.tokenize(".")?.getAt(0)
         def device_class = response?.event?.data?.new_state?.attributes?.device_class
@@ -195,7 +193,7 @@ def parse(String description) {
         
         switch (domain) {
             case "fan":
-                def speed = response?.event?.data?.new_state?.attributes?.speed.toLowerCase()
+                def speed = response?.event?.data?.new_state?.attributes?.speed?.toLowerCase()
                 choices =  ["low","medium-low","medium","medium-high","high","auto"]
                 if (!(choices.contains(speed)))
                     {

@@ -23,6 +23,7 @@
 * 0.1.23     2021-02-25 Dan Ogorchock      Switched logic from Exclude to Include to make more intuitive.  Sorted Device List.
 * 0.1.32     2021-09-27 kaimyn             Add option to use HTTPS support in configuration app
 * 0.1.45     2022-06-06 tomw               Added confirmation step before completing select/de-select all
+* 0.1.46     2022-07-04 tomw               Advanced configuration - manual add/remove of devices; option to disable filtering; unused child cleanup
 */
 
 definition(
@@ -37,15 +38,16 @@ definition(
 
 preferences
 {
-    page(name: "mainPage1")
-    page(name: "mainPage2")
+    page(name: "mainPage")
+    page(name: "discoveryPage")
+    page(name: "advOptionsPage")
 }
 
-def mainPage1()
+def mainPage()
 {
-    dynamicPage(name: "mainPage1", title: "", install: false, uninstall: true)
+    dynamicPage(name: "mainPage", title: "", install: true, uninstall: true)
     {
-        section("Home Assistant Device Bridge")
+        section("<b>Home Assistant Device Bridge</b>")
         {
             input ("ip", "text", title: "Home Assistant IP Address", description: "HomeAssistant IP Address", required: true)
             input ("port", "text", title: "Home Assistant Port", description: "HomeAssistant Port Number", required: true, defaultValue: "8123")
@@ -55,9 +57,10 @@ def mainPage1()
             input name: "enableLogging", type: "bool", title: "Enable debug logging?", defaultValue: false, required: true
             
         }
-        section("Please note, it may take some time to retrieve all entities from Home Assistant.")
+        section("<b>Configuration options:</b>")
         {
-            href(page: "mainPage2", title: "<b>Discover and select devices</b>", description: "Query Home Assistant for all currently configured devices.  Please select which entities to Import to Hubitat.", params: [runDiscovery : true])
+            href(page: "discoveryPage", title: "<b>Discover and select devices</b>", description: "Query Home Assistant for all currently configured devices.  Then select which entities to Import to Hubitat.", params: [runDiscovery : true])
+            href(page: "advOptionsPage", title: "<b>Configure advanced options</b>", description: "Advanced options for manual configuration")
         }
         section("App Name") {
             label title: "Optionally assign a custom name for this app", required: false
@@ -65,9 +68,17 @@ def mainPage1()
     }
 }
 
-def mainPage2(params)
+def linkToMain()
 {
-    dynamicPage(name: "mainPage2", title: "", install: true, uninstall: true)
+    section
+    {
+        href(page: "mainPage", title: "<b>Return to previous page</b>", description: "")
+    }
+}
+
+def discoveryPage(params)
+{
+    dynamicPage(name: "discoveryPage", title: "", install: true, uninstall: true)
     {
         if(params?.runDiscovery)
         {
@@ -87,18 +98,14 @@ def mainPage2(params)
                         state.entityList.put(it.entity_id, "${it.attributes?.friendly_name} (${it.entity_id})")
                     }
                 }
+
                 state.entityList = state.entityList.sort { it.value }
             }
         }
         
-//        section
-//        {
-//            paragraph "<b>Discovered devices:</b> ${(!state?.entityList?.isEmpty() && state?.entityList) ? state.entityList.toString() : "none"}"
-//        }
-        
         section
         {
-            input name: "includeList", type: "enum", title: "Select any devices to <b>include</b> from Home Assistant Device Bridge", options: state.entityList, required: true, multiple: true
+            input name: "includeList", type: "enum", title: "Select any devices to <b>include</b> from Home Assistant Device Bridge", options: state.entityList, required: false, multiple: true
             
             if(selectAll)
             {
@@ -141,16 +148,124 @@ def mainPage2(params)
             }
         }
         
-        section
-        {
-            href(page: "mainPage1", title: "<b>Return to previous page</b>", description: "")
-        }
+        linkToMain()
         
         if(clearAll)
         {
             app.updateSetting("includeList", [])
             app.updateSetting("clearAll", false)
         }
+    }
+}
+
+def checkIfFiltered(entity)
+{
+    if(enableFiltering || (null == enableFiltering))
+    {
+        return shouldFilter(entity)
+    }
+    
+    return false
+}
+
+def shouldFilter(entity)
+{
+    return !(includeList?.contains(entity) || accessCustomFilter("get")?.contains(entity))    
+}
+
+def cullGrandchildren()
+{
+    // remove all child devices that aren't currently on either filtering list
+    
+    def ch = getChild()
+    
+    ch?.getChildDevices()?.each()
+    {
+        def entity = it.getDeviceNetworkId()?.tokenize("-")?.getAt(1)        
+        if(shouldFilter(entity))
+        {
+            ch.removeChild(entity)
+        }
+    }
+}
+
+def accessCustomFilter(op, val = null)
+{
+    if(!["add", "del", "clear", "get"].contains(op))
+    {
+        return
+    }
+    
+    def list = state.customFilterList ?: []
+    
+    switch(op)
+    {
+        case "add":
+            !list.contains(val.toString()) ? ((val?.toString()) ? list.add(val.toString()) : null) : null
+            break
+        case "del":
+            list.remove(val.toString())
+            break
+        case "clear":
+            list.clear()
+            break
+        case "get":
+            return list
+            break
+    }
+    
+    state.customFilterList = list
+}
+
+def advOptionsPage()
+{
+    dynamicPage(name: "advOptionsPage", title: "", install: true, uninstall: true)
+    {
+        if(clickToAdd)
+        {
+            app.updateSetting("clickToAdd", false)
+            accessCustomFilter("add", eId)
+        }
+        
+        if(clickToRemove)
+        {
+            app.updateSetting("clickToRemove", false)
+            accessCustomFilter("del", eId)
+        }
+        
+        if(removeAll)
+        {
+            app.updateSetting("removeAll", false)
+            accessCustomFilter("clear")
+        }        
+        app.updateSetting("eId", "")
+        
+        if(cleanupUnused)
+        {
+            app.updateSetting("cleanupUnused", false)
+            cullGrandchildren()
+        }
+        
+        section(hideable: true, hidden: false, title: "Entity filtering options")
+        {
+            input("enableFiltering", "bool", title: "Only pass through user-selected and manually-added entities? (disable this option to pass all through)<br><br>", defaultValue: true, submitOnChange: true)
+        }
+        
+        section(hideable: true, hidden: false, title: "Manually add an entity to be included")
+        {
+            paragraph "<b>Manually added entities:</b> ${accessCustomFilter("get")}"
+            input name: "eId", type: "text", title: "Entity ID", description: "ID"
+            input name: "clickToAdd", type: "bool", title: "Add entity to filtered list", defaultValue: false, submitOnChange: true
+            input name: "clickToRemove", type: "bool", title: "Remove entity from filtered list", defaultValue: false, submitOnChange: true
+            input name: "removeAll", type: "bool", title: "Remove all that were manually added to filtered list? (use carefully!)", defaultValue: false, submitOnChange: true
+        }
+        
+        section(hideable: true, hidden: false, title: "System administration options")
+        {
+            input name: "cleanupUnused", type: "bool", title: "Remove all child devices that are not currently either user-selected or manually-added (use carefully!)", defaultValue: false, submitOnChange: true
+        }
+        
+        linkToMain()
     }
 }
 
@@ -164,7 +279,7 @@ def logDebug(msg)
 
 def installed()
 {
-    def ch = getChildDevice("HE-HA-control")
+    def ch = getChild()
     if(!ch)
     {
         ch = addChildDevice("ymerj", "HomeAssistant Hub Parent", "HE-HA-control", [name: "Home Assistant Device Bridge", label: "Home Assistant Device Bridge (${ip})", isComponent: false])
@@ -180,6 +295,11 @@ def installed()
 
         ch.updated()
     }
+}
+
+def getChild()
+{
+    return getChildDevice("HE-HA-control")
 }
 
 def uninstalled()

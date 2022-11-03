@@ -1,6 +1,6 @@
 /*
 
-Copyright 2021
+Copyright 2022
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -18,13 +18,13 @@ limitations under the License.
 
 Change history:
 
-0.1.13- @tomw - initial version
+0.1- @mboisson - initial version
 
 */
 
 metadata
 {
-    definition(name: "Generic Component Volatile Organic Compounds Sensor", namespace: "community", author: "community", importUrl: "https://raw.githubusercontent.com/ymerj/HE-HA-control/main/genericComponentVolatileOrganicCompoundsSensor.groovy")
+    definition(name: "Generic Component Volatile Organic Compounds Sensor", namespace: "community", author: "community", importUrl: "https://raw.githubusercontent.com/mboisson/HE-HA-control/airthings/genericComponentVolatileOrganicCompoundsSensor.groovy")
     {
         capability "Refresh"
     }

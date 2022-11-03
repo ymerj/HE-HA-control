@@ -26,12 +26,12 @@ metadata
 {
     definition(name: "Generic Component Volatile Organic Compounds Sensor", namespace: "community", author: "community", importUrl: "https://raw.githubusercontent.com/ymerj/HE-HA-control/main/genericComponentVolatileOrganicCompoundsSensor.groovy")
     {
-        capability "VolatileOrganicCompoundsMeasurement"
         capability "Refresh"
     }
     preferences {
         input name: "txtEnable", type: "bool", title: "Enable descriptionText logging", defaultValue: true
     }
+    attribute "voc", "number"
 }
 
 void updated() {
@@ -45,12 +45,18 @@ void installed() {
     refresh()
 }
 
+void updateAttr(String aKey, aValue, String aUnit = ""){
+    sendEvent(name:aKey, value:aValue, unit:aUnit)
+}
+
 void parse(String description) { log.warn "parse(String description) not implemented" }
 
 void parse(List<Map> description) {
     description.each {
         if (it.name in ["volatile_organic_compounds"]) {
             if (txtEnable) log.info it.descriptionText
+            unit="ppb"
+            updateAttr("voc", it.value, unit)
             sendEvent(it)
         }
     }

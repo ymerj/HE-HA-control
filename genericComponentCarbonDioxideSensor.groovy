@@ -47,10 +47,16 @@ void installed() {
 
 void parse(String description) { log.warn "parse(String description) not implemented" }
 
+void updateAttr(String aKey, aValue, String aUnit = ""){
+    sendEvent(name:aKey, value:aValue, unit:aUnit)
+}
+
 void parse(List<Map> description) {
     description.each {
         if (it.name in ["carbon_dioxide"]) {
             if (txtEnable) log.info it.descriptionText
+            unit="ppm"
+            updateAttr("carbonDioxide", it.value, unit)
             sendEvent(it)
         }
     }

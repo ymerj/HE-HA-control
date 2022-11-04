@@ -187,6 +187,10 @@ def parse(String description) {
         def domain = entity?.tokenize(".")?.getAt(0)
         def device_class = response?.event?.data?.new_state?.attributes?.device_class
         def friendly = response?.event?.data?.new_state?.attributes?.friendly_name
+		def unit_of_measurement = response?.event?.data?.new_state?.attributes?.unit_of_measurement
+		// there is no such device_class, we need to infer from the units
+		if (!device_class && unit_of_measurement in ["Bq/m³"]) device_class = "radon_short_term_average"
+
         newVals << response?.event?.data?.new_state?.state
         def mapping = null
         
@@ -345,6 +349,9 @@ def translateSensors(device_class, newVals, friendly, origin)
             battery: [type: "Generic Component Battery",                event: [[name: "battery", value: newVals[0], descriptionText:"${friendly} battery is ${newVals[0]}%"]], namespace: "community"],
             power: [type: "Generic Component Power Meter",              event: [[name: "power", value: newVals[0], descriptionText:"${friendly} power is ${newVals[0]}"]]],
             pressure: [type: "Generic Component Pressure Sensor",       event: [[name: "pressure", value: newVals[0], descriptionText:"${friendly} pressure is ${newVals[0]}"]], namespace: "community"],
+            carbon_dioxide: [type: "Generic Component Carbon Dioxide Sensor",       event: [[name: "carbon_dioxide", value: newVals[0], descriptionText:"${friendly} carbon_dioxide is ${newVals[0]}"]], namespace: "community"],
+            volatile_organic_compounds: [type: "Generic Component Volatile Organic Compounds Sensor",       event: [[name: "volatile_organic_compounds", value: newVals[0], descriptionText:"${friendly} volatile_organic_compounds is ${newVals[0]}"]], namespace: "community"],
+            radon_short_term_average: [type: "Generic Component Radon Short Term Average Sensor",       event: [[name: "radon_1_day_average", value: newVals[0], descriptionText:"${friendly} radon_1_day_average is ${newVals[0]}"]], namespace: "community"],
             temperature: [type: "Generic Component Temperature Sensor", event: [[name: "temperature", value: newVals[0], descriptionText:"${friendly} temperature is ${newVals[0]}"]]],
             voltage: [type: "Generic Component Voltage Sensor",         event: [[name: "voltage", value: newVals[0], descriptionText:"${friendly} voltage is ${newVals[0]}"]]],
             energy: [type: "Generic Component Energy Meter",            event: [[name: "energy", value: newVals[0], descriptionText:"${friendly} energy is ${newVals[0]}"]]],

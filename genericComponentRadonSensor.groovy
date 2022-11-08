@@ -24,14 +24,14 @@ Change history:
 
 metadata
 {
-    definition(name: "Generic Component Radon Short Term Average Sensor", namespace: "community", author: "community", importUrl: "https://raw.githubusercontent.com/ymerj/HE-HA-control/main/genericComponentRadonShortTermAvgSensor.groovy")
+    definition(name: "Generic Component Radon Sensor", namespace: "community", author: "community", importUrl: "https://raw.githubusercontent.com/ymerj/HE-HA-control/main/genericComponentRadonSensor.groovy")
     {
         capability "Refresh"
     }
     preferences {
         input name: "txtEnable", type: "bool", title: "Enable descriptionText logging", defaultValue: true
     }
-    attribute "radonShortTermAvg", "number"
+    attribute "radon", "number"
 }
 
 void updated() {
@@ -53,10 +53,10 @@ void parse(String description) { log.warn "parse(String description) not impleme
 
 void parse(List<Map> description) {
     description.each {
-        if (it.name in ["radon_1_day_average"]) {
+        if (it.name in ["radon"]) {
             if (txtEnable) log.info it.descriptionText
             unit="ppb"
-            updateAttr("radonShortTermAvg", it.value, unit)
+            updateAttr("radon", it.value, unit)
             sendEvent(it)
         }
     }

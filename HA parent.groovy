@@ -425,7 +425,7 @@ def translateLight(domain, newVals, friendly, origin, lightType)
         }
     if (lightType == "bulb")
         {
-        mapping = [type: "Generic Component RGBW", event: [[name: "switch", value: newVals[0], type: origin, descriptionText:"${friendly} was turned ${newVals[0]} [${origin}]"],[name: "level", value: newVals[1], type: origin, descriptionText:"${friendly} level was set to ${newVals[1]}"],[name: "hue", value: newVals[2], descriptionText:"${friendly} hue was set to ${newVals[2]}"],[name: "saturation", value: newVals[3], descriptionText:"${friendly} saturation was set to ${newVals[3]}"]]]
+        mapping = [type: "Generic Component RGB", event: [[name: "switch", value: newVals[0], type: origin, descriptionText:"${friendly} was turned ${newVals[0]} [${origin}]"],[name: "level", value: newVals[1], type: origin, descriptionText:"${friendly} level was set to ${newVals[1]}"],[name: "hue", value: newVals[2], descriptionText:"${friendly} hue was set to ${newVals[2]}"],[name: "saturation", value: newVals[3], descriptionText:"${friendly} saturation was set to ${newVals[3]}"]]]
         }
 
     return mapping

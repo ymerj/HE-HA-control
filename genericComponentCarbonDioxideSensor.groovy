@@ -18,7 +18,7 @@ limitations under the License.
 
 Change history:
 
-0.1 - @mboisson - initial version
+0.1.47 - mboisson - initial version
 
 */
 

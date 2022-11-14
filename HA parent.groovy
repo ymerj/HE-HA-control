@@ -265,7 +265,7 @@ def parse(String description) {
                 if (sat) sat = Math.round((sat.toInteger()))
                 newVals += sat
                 mapping = translateLight(domain, newVals, friendly, origin, lightType)
-                if (newVals[0] == "off")
+                if (newVals[0] == "off") //remove updates not provided with the HA 'off' event json data
                     {
                     if (lightType == "bulb")
                         {

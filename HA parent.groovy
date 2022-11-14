@@ -67,6 +67,7 @@
 * 0.1.44 2022-05-15 tomw               Added support for Shade device_class
 * 0.1.46 2022-07-04 tomw               Advanced configuration - manual add/remove of devices; option to disable filtering; unused child cleanup
 * 0.1.47 2022-11-03 mboisson           Added support for Carbon Dioxide, Radon, and Volatile Organic Compounds sensors
+* 0.1.48 2022-11-14 Yves Mercier       Added minimal RGB light support (no CT)
 *
 * Thank you(s):
 */

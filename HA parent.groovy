@@ -253,29 +253,27 @@ def parse(String description) {
                 if (mapping) updateChildDevice(mapping, entity, friendly)
                 break
             case "light":
-                def colorMode = response?.event?.data?.new_state?.attributes?.color_mode
-                if (newVals[0] == "off")
-                    {
-                    domain = "switch"
-                    mapping = translateDevices(domain, newVals, friendly, origin)
-                    if (mapping) updateChildDevice(mapping, entity, friendly)
-                    break
-                    }
-		def level = response?.event?.data?.new_state?.attributes?.brightness
+                def level = response?.event?.data?.new_state?.attributes?.brightness
                 if (level) level = Math.round((level.toInteger() * 100 / 255))
                 newVals += level
-                if (colorMode == "brightness") lightType = "dimmer"
-                else
-                    {
-                    def hue = response?.event?.data?.new_state?.attributes?.hs_color.getAt(0)
-                    if (hue) hue = Math.round((hue.toInteger() * 100 / 360))
-                    newVals += hue
-                    def sat = response?.event?.data?.new_state?.attributes?.hs_color.getAt(1)
-                    if (sat) sat = Math.round((sat.toInteger()))
-                    newVals += sat
-                    lightType = "bulb"
-                    }
+                def colorMode = response?.event?.data?.new_state?.attributes?.supported_color_modes
+                def lightType = colorMode.disjoint(["hs", "rgb", "rgbw", "rgbww", "xy", "ct"]) ? "dimmer" : "bulb"
+                def hue = response?.event?.data?.new_state?.attributes?.hs_color?.getAt(0)
+                if (hue) hue = Math.round((hue.toInteger() * 100 / 360))
+                newVals += hue
+                def sat = response?.event?.data?.new_state?.attributes?.hs_color?.getAt(1)
+                if (sat) sat = Math.round((sat.toInteger()))
+                newVals += sat
                 mapping = translateLight(domain, newVals, friendly, origin, lightType)
+                if (newVals[0] == "off")
+                    {
+                    if (lightType == "bulb")
+                        {
+                        mapping.event.remove(3)
+                        mapping.event.remove(2)
+                        }
+                    mapping.event.remove(1)
+                    }
                 if (mapping) updateChildDevice(mapping, entity, friendly)
                 break
             case "binary_sensor":

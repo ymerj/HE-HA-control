@@ -258,7 +258,7 @@ def parse(String description) {
                 if (level) level = Math.round((level.toInteger() * 100 / 255))
                 newVals += level
                 def colorMode = response?.event?.data?.new_state?.attributes?.supported_color_modes
-                def lightType = colorMode.disjoint(["hs", "rgb", "rgbw", "rgbww", "xy", "ct"]) ? "dimmer" : "bulb"
+                def lightType = colorMode?.disjoint(["hs", "rgb", "rgbw", "rgbww", "xy", "ct"]) ? "dimmer" : "bulb"
                 def hue = response?.event?.data?.new_state?.attributes?.hs_color?.getAt(0)
                 if (hue) hue = Math.round((hue.toInteger() * 100 / 360))
                 newVals += hue

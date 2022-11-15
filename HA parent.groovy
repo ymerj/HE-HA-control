@@ -67,6 +67,7 @@
 * 0.1.44 2022-05-15 tomw               Added support for Shade device_class
 * 0.1.46 2022-07-04 tomw               Advanced configuration - manual add/remove of devices; option to disable filtering; unused child cleanup
 * 0.1.47 2022-11-03 mboisson           Added support for Carbon Dioxide, Radon, and Volatile Organic Compounds sensors
+* 0.1.48 2022-11-14 Yves Mercier       Added minimal RGB light support (no CT)
 *
 * Thank you(s):
 */
@@ -183,7 +184,7 @@ def parse(String description) {
         def entity = response?.event?.data?.entity_id
         
         // check whether we have a parent, and search its includeList for devices to process
-        if(getParent()?.checkIfFiltered(entity)) return
+        if (getParent()?.checkIfFiltered(entity)) return
         
         def domain = entity?.tokenize(".")?.getAt(0)
         def device_class = response?.event?.data?.new_state?.attributes?.device_class
@@ -228,7 +229,7 @@ def parse(String description) {
                 newVals += speed
                 newVals += percentage
                 mapping = translateDevices(domain, newVals, friendly, origin)
-		if (!speed) mapping.event.remove(1)
+                if (!speed) mapping.event.remove(1)
                 if (mapping) updateChildDevice(mapping, entity, friendly)
                 break
             case "cover":
@@ -256,8 +257,25 @@ def parse(String description) {
                 def level = response?.event?.data?.new_state?.attributes?.brightness
                 if (level) level = Math.round((level.toInteger() * 100 / 255))
                 newVals += level
-                mapping = translateDevices(domain, newVals, friendly, origin)
-                if (!level) mapping.event.remove(1) //remove the level update since it is not provided with the HA 'off' event json data
+                def colorMode = []
+                colorMode = response?.event?.data?.new_state?.attributes?.supported_color_modes
+                def lightType = colorMode?.disjoint(["hs", "rgb", "rgbw", "rgbww", "xy", "ct"]) ? "dimmer" : "bulb"
+                def hue = response?.event?.data?.new_state?.attributes?.hs_color?.getAt(0)
+                if (hue) hue = Math.round((hue.toInteger() * 100 / 360))
+                newVals += hue
+                def sat = response?.event?.data?.new_state?.attributes?.hs_color?.getAt(1)
+                if (sat) sat = Math.round((sat.toInteger()))
+                newVals += sat
+                mapping = translateLight(domain, newVals, friendly, origin, lightType)
+                if (newVals[0] == "off") //remove updates not provided with the HA 'off' event json data
+                    {
+                    if (lightType == "bulb")
+                        {
+                        mapping.event.remove(3)
+                        mapping.event.remove(2)
+                        }
+                    mapping.event.remove(1)
+                    }
                 if (mapping) updateChildDevice(mapping, entity, friendly)
                 break
             case "binary_sensor":
@@ -286,7 +304,6 @@ def parse(String description) {
                     default:
                     	fan_mode = "on"
                 }
-                    	
                 switch (thermostat_mode)
                 {
                     case "fan_only":
@@ -299,14 +316,13 @@ def parse(String description) {
                     case "auto":
                        return
                 }
-                
                 newVals[0] = thermostat_mode
                 newVals += current_temperature
                 newVals += target_temperature
                 newVals += fan_mode
                 newVals += hvac_action
             	newVals += target_temp_high
-		newVals += target_temp_low
+                newVals += target_temp_low
                 mapping = translateDevices(domain, newVals, friendly, origin)
                 if (mapping) updateChildDevice(mapping, entity, friendly) 
                 break
@@ -392,16 +408,29 @@ def translateDevices(domain, newVals, friendly, origin)
             fan: [type: "Generic Component Fan Control",                event: [[name: "switch", value: newVals[0], type: origin, descriptionText:"${friendly} was turned ${newVals[0]} [${origin}]"],[name: "speed", value: newVals[1], type: origin, descriptionText:"${friendly} speed was set to ${newVals[1]} [${origin}]"],[name: "level", value: newVals[2], type: origin, descriptionText:"${friendly} level was set to ${newVals[2]} [${origin}]"]]],
             switch: [type: "Generic Component Switch",                  event: [[name: "switch", value: newVals[0], type: origin, descriptionText:"${friendly} was turned ${newVals[0]} [${origin}]"]]],
             device_tracker: [type: "Generic Component Presence Sensor", event: [[name: "presence", value: newVals[0] == "home" ? "present":"not present", descriptionText:"${friendly} is updated"]], namespace: "community"],
-            light: [type: "Generic Component Dimmer",                   event: [[name: "switch", value: newVals[0], type: origin, descriptionText:"${friendly} was turned ${newVals[0]} [${origin}]"],[name: "level", value: newVals[1], type: origin, descriptionText:"${friendly} level was set to ${newVals[1]} [${origin}]"]]],
             lock: [type: "Generic Component Lock",                      event: [[name: "lock", value: newVals[0] ?: "unknown", type: origin, descriptionText:"${friendly} was turned ${newVals[0]} [${origin}]"]]],
             climate: [type: "Generic Component Thermostat",             event: [[name: "thermostatMode", value: newVals[0], descriptionText: "${friendly} is set to ${newVals[0]}"],[name: "temperature", value: newVals[1], descriptionText: "${friendly}'s current temperature is ${newVals[1]} degree"],[name: "coolingSetpoint", value: newVals[2], descriptionText: "${friendly}'s cooling temperature is set to ${newVals[2]} degree"],[name: "heatingSetpoint", value: newVals[2], descriptionText: "${friendly}'s heating temperature is set to ${newVals[2]} degree"],[name: "thermostatFanMode", value: newVals[3], descriptionText: "${friendly}'s fan is set to ${newVals[3]}"],[name: "thermostatSetpoint", value: newVals[2], descriptionText: "${friendly}'s temperature is set to ${newVals[2]} degree"],[name: "thermostatOperatingState", value: newVals[4], descriptionText: "${friendly}'s mode is ${newVals[4]}"],[name: "coolingSetpoint", value: newVals[5], descriptionText: "${friendly}'s cooling temperature is set to ${newVals[5]} degrees"],[name: "heatingSetpoint", value: newVals[6], descriptionText: "${friendly}'s heating temperature is set to ${newVals[6]} degrees"]]],
             input_boolean: [type: "Generic Component Switch",           event: [[name: "switch", value: newVals[0], type: origin, descriptionText:"${friendly} was turned ${newVals[0]} [${origin}]"]]],
-
         ]
 
     return mapping[domain]
 }
 
+def translateLight(domain, newVals, friendly, origin, lightType)
+{
+    def mapping = []
+    if (lightType == "dimmer")
+        {
+        mapping = [type: "Generic Component Dimmer", event: [[name: "switch", value: newVals[0], type: origin, descriptionText:"${friendly} was turned ${newVals[0]} [${origin}]"],[name: "level", value: newVals[1], type: origin, descriptionText:"${friendly} level was set to ${newVals[1]} [${origin}]"]]]
+        }
+    if (lightType == "bulb")
+        {
+        mapping = [type: "Generic Component RGB", event: [[name: "switch", value: newVals[0], type: origin, descriptionText:"${friendly} was turned ${newVals[0]} [${origin}]"],[name: "level", value: newVals[1], type: origin, descriptionText:"${friendly} level was set to ${newVals[1]}"],[name: "hue", value: newVals[2], descriptionText:"${friendly} hue was set to ${newVals[2]}"],[name: "saturation", value: newVals[3], descriptionText:"${friendly} saturation was set to ${newVals[3]}"]]]
+        }
+
+    return mapping
+}
+   
 def updateChildDevice(mapping, entity, friendly) {
     def ch = createChild(mapping.type, entity, friendly, mapping.namespace)
     if (!ch) {

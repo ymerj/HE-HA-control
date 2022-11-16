@@ -531,6 +531,26 @@ def componentSetColorTemperature(ch, colortemperature, level, transition=1){
     executeCommand(ch, "turn_on", data)
 }
 
+def componentSetHue(ch, hue, transition=1)
+    {
+    if (logEnable) log.info("received setHue request from ${ch.label}")
+    
+    convertedHue = Math.round(hue * 360/100)
+    
+    data = [brightness_pct: "${ch.currentValue("level")}", hs_color: ["${convertedHue}", "${ch.currentValue("saturation")}"], transition: "${transition}"]
+    executeCommand(ch, "turn_on", data)
+}
+
+def componentSetSaturation(ch, saturation, transition=1)
+    {
+    if (logEnable) log.info("received setSaturation request from ${ch.label}")
+    
+    convertedHue = Math.round(ch.currentValue("hue") * 360/100)
+    
+    data = [brightness_pct: "${ch.currentValue("level")}", hs_color: ["${convertedHue}", "${saturation}"], transition: "${transition}"]
+    executeCommand(ch, "turn_on", data)
+}
+
 def componentSetSpeed(ch, speed) {
     if (logEnable) log.info("received setSpeed request from ${ch.label}, with speed = ${speed}")
     int percentage = 0

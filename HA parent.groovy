@@ -189,15 +189,8 @@ def parse(String description) {
         def domain = entity?.tokenize(".")?.getAt(0)
         def device_class = response?.event?.data?.new_state?.attributes?.device_class
         def friendly = response?.event?.data?.new_state?.attributes?.friendly_name
-        def unit_of_measurement = response?.event?.data?.new_state?.attributes?.unit_of_measurement
-        // if there is no device_class, we need to infer from the units
-        if (!device_class) {
-            if (unit_of_measurement in ["Bq/m³"]) device_class = "radon"
-            else device_class = "unknown"
-        }
 
         newVals << response?.event?.data?.new_state?.state
-        newVals << unit_of_measurement
         def mapping = null
         
         if (logEnable) log.debug "parse: domain: ${domain}, device_class: ${device_class}, entity: ${entity}, newVals: ${newVals}, friendly: ${friendly}"
@@ -287,6 +280,14 @@ def parse(String description) {
                 if (mapping) updateChildDevice(mapping, entity, friendly)
                 break
             case "sensor":
+				def unit_of_measurement = response?.event?.data?.new_state?.attributes?.unit_of_measurement
+				// if there is no device_class, we need to infer from the units
+				if (!device_class) {
+					if (unit_of_measurement in ["Bq/m³"]) device_class = "radon"
+					else device_class = "unknown"
+				}
+				newVals << unit_of_measurement
+				
                 mapping = translateSensors(device_class, newVals, friendly, origin)
                 if (mapping) updateChildDevice(mapping, entity, friendly)
                 break

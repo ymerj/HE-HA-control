@@ -32,6 +32,7 @@ metadata
         input name: "txtEnable", type: "bool", title: "Enable descriptionText logging", defaultValue: true
     }
     attribute "value", "number"
+    attribute "valueStr", "string"
     attribute "unit", "string"
 }
 
@@ -57,8 +58,8 @@ void parse(List<Map> description) {
         if (it.name in ["unknown"]) {
             if (txtEnable) log.info it.descriptionText
             updateAttr("value", it.value, it.unit_of_measurement)
+            updateAttr("valueStr", it.value, it.unit_of_measurement)
             updateAttr("unit", it.unit_of_measurement)
-//            sendEvent(it)
         }
     }
 }

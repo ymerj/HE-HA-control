@@ -68,6 +68,7 @@
 * 0.1.46 2022-07-04 tomw               Advanced configuration - manual add/remove of devices; option to disable filtering; unused child cleanup
 * 0.1.47 2022-11-03 mboisson           Added support for Carbon Dioxide, Radon, and Volatile Organic Compounds sensors
 * 0.1.48 2022-11-14 Yves Mercier       Added minimal RGB light support (no CT)
+* 0.1.49 2022-11-16 mboisson           Sensor units and support for "unknown" sensor types
 *
 * Thank you(s):
 */
@@ -280,12 +281,13 @@ def parse(String description) {
                 if (mapping) updateChildDevice(mapping, entity, friendly)
                 break
             case "sensor":
-				def unit_of_measurement = response?.event?.data?.new_state?.attributes?.unit_of_measurement
-				// if there is no device_class, we need to infer from the units
-				if (!device_class) {
-					if (unit_of_measurement in ["Bq/m³"]) device_class = "radon"
-					else device_class = "unknown"
-				}
+                def unit_of_measurement = response?.event?.data?.new_state?.attributes?.unit_of_measurement
+                if (!device_class)
+                {
+                    // if there is no device_class, we need to infer from the units
+                    if (unit_of_measurement in ["Bq/m³"]) device_class = "radon"
+                    else device_class = "unknown"
+                }
 				newVals << unit_of_measurement
 				
                 mapping = translateSensors(device_class, newVals, friendly, origin)

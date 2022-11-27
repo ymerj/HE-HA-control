@@ -53,6 +53,34 @@
       "namespace": "community",
       "location": "https://raw.githubusercontent.com/ymerj/HE-HA-control/main/genericComponentWindowShade.groovy",
       "required": false
+    },
+    {
+      "id": "d31cc626-0afe-4ad5-a512-f5782358bf8b",
+      "name": "Generic Component Carbon Dioxide Sensor",
+      "namespace": "community",
+      "location": "https://raw.githubusercontent.com/ymerj/HE-HA-control/main/genericComponentCarbonDioxideSensor.groovy",
+      "required": false
+    },
+    {
+      "id": "ae0a3a97-fa06-44e8-9ac7-4351e1f20652",
+      "name": "Generic Component Radon Sensor",
+      "namespace": "community",
+      "location": "https://raw.githubusercontent.com/ymerj/HE-HA-control/main/genericComponentRadonSensor.groovy",
+      "required": false
+    },
+    {
+      "id": "c555e878-9cc9-4d40-8cc6-1dc114973f47",
+      "name": "Generic Component Unknown Sensor",
+      "namespace": "community",
+      "location": "https://raw.githubusercontent.com/ymerj/HE-HA-control/main/genericComponentUnknownSensor.groovy",
+      "required": false
+    },
+    {
+      "id": "2d33dbee-1d47-4dcf-be36-5f71ae1c9997",
+      "name": "Generic Component Volatile Organic Compounds Sensor",
+      "namespace": "community",
+      "location": "https://raw.githubusercontent.com/ymerj/HE-HA-control/main/genericComponentVolatileOrganicCompoundsSensor.groovy",
+      "required": false
     }
   ],
   "apps": [

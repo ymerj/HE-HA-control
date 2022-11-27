@@ -68,6 +68,7 @@
 * 0.1.46 2022-07-04 tomw               Advanced configuration - manual add/remove of devices; option to disable filtering; unused child cleanup
 * 0.1.47 2022-11-03 mboisson           Added support for Carbon Dioxide, Radon, and Volatile Organic Compounds sensors
 * 0.1.48 2022-11-14 Yves Mercier       Added minimal RGB light support (no CT)
+* 0.1.49 2022-11-16 mboisson           Sensor units and support for "unknown" sensor types
 *
 * Thank you(s):
 */
@@ -189,9 +190,6 @@ def parse(String description) {
         def domain = entity?.tokenize(".")?.getAt(0)
         def device_class = response?.event?.data?.new_state?.attributes?.device_class
         def friendly = response?.event?.data?.new_state?.attributes?.friendly_name
-        def unit_of_measurement = response?.event?.data?.new_state?.attributes?.unit_of_measurement
-        // if there is no device_class, we need to infer from the units
-        if (!device_class && unit_of_measurement in ["Bq/m³"]) device_class = "radon"
 
         newVals << response?.event?.data?.new_state?.state
         def mapping = null
@@ -283,6 +281,15 @@ def parse(String description) {
                 if (mapping) updateChildDevice(mapping, entity, friendly)
                 break
             case "sensor":
+                def unit_of_measurement = response?.event?.data?.new_state?.attributes?.unit_of_measurement
+                if (!device_class)
+                {
+                    // if there is no device_class, we need to infer from the units
+                    if (unit_of_measurement in ["Bq/m³"]) device_class = "radon"
+                    else device_class = "unknown"
+                }
+				newVals << unit_of_measurement
+				
                 mapping = translateSensors(device_class, newVals, friendly, origin)
                 if (mapping) updateChildDevice(mapping, entity, friendly)
                 break
@@ -361,19 +368,20 @@ def translateSensors(device_class, newVals, friendly, origin)
 {
     def mapping =
         [
-            humidity: [type: "Generic Component Humidity Sensor",             event: [[name: "humidity", value: newVals[0], descriptionText:"${friendly} humidity is ${newVals[0]}"]]],
-            illuminance: [type: "Generic Component Illuminance Sensor",       event: [[name: "illuminance", value: newVals[0], descriptionText:"${friendly} illuminance is ${newVals[0]}"]], namespace: "community"],
+            humidity: [type: "Generic Component Humidity Sensor",             event: [[name: "humidity", value: newVals[0], descriptionText:"${friendly} humidity is ${newVals[0]} ${newVals[1]}"]]],
+            illuminance: [type: "Generic Component Illuminance Sensor",       event: [[name: "illuminance", value: newVals[0], descriptionText:"${friendly} illuminance is ${newVals[0]} ${newVals[1]}"]], namespace: "community"],
             battery: [type: "Generic Component Battery",                      event: [[name: "battery", value: newVals[0], descriptionText:"${friendly} battery is ${newVals[0]}%"]], namespace: "community"],
-            power: [type: "Generic Component Power Meter",                    event: [[name: "power", value: newVals[0], descriptionText:"${friendly} power is ${newVals[0]}"]]],
+            power: [type: "Generic Component Power Meter",                    event: [[name: "power", value: newVals[0], descriptionText:"${friendly} power is ${newVals[0]} ${newVals[1]}"]]],
             pressure: [type: "Generic Component Pressure Sensor",             event: [[name: "pressure", value: newVals[0], descriptionText:"${friendly} pressure is ${newVals[0]}"]], namespace: "community"],
-            carbon_dioxide: [type: "Generic Component Carbon Dioxide Sensor", event: [[name: "carbon_dioxide", value: newVals[0], descriptionText:"${friendly} carbon_dioxide is ${newVals[0]}"]], namespace: "community"],
+            carbon_dioxide: [type: "Generic Component Carbon Dioxide Sensor", event: [[name: "carbon_dioxide", value: newVals[0], descriptionText:"${friendly} carbon_dioxide is ${newVals[0]} ${newVals[1]}"]], namespace: "community"],
             volatile_organic_compounds: [type: "Generic Component Volatile Organic Compounds Sensor",
-                                                                              event: [[name: "volatile_organic_compounds", value: newVals[0], descriptionText:"${friendly} volatile_organic_compounds is ${newVals[0]}"]], namespace: "community"],
-            radon: [type: "Generic Component Radon Sensor",                   event: [[name: "radon", value: newVals[0], descriptionText:"${friendly} radon is ${newVals[0]}"]], namespace: "community"],
-            temperature: [type: "Generic Component Temperature Sensor",       event: [[name: "temperature", value: newVals[0], descriptionText:"${friendly} temperature is ${newVals[0]}"]]],
-            voltage: [type: "Generic Component Voltage Sensor",               event: [[name: "voltage", value: newVals[0], descriptionText:"${friendly} voltage is ${newVals[0]}"]]],
-            energy: [type: "Generic Component Energy Meter",                  event: [[name: "energy", value: newVals[0], descriptionText:"${friendly} energy is ${newVals[0]}"]]],
-        ]
+                                                                              event: [[name: "volatile_organic_compounds", value: newVals[0], descriptionText:"${friendly} volatile_organic_compounds is ${newVals[0]} ${newVals[1]}"]], namespace: "community"],
+            radon: [type: "Generic Component Radon Sensor",                   event: [[name: "radon", value: newVals[0], descriptionText:"${friendly} radon is ${newVals[0]} ${newVals[1]}"]], namespace: "community"],
+            temperature: [type: "Generic Component Temperature Sensor",       event: [[name: "temperature", value: newVals[0], descriptionText:"${friendly} temperature is ${newVals[0]} ${newVals[1]}"]]],
+            voltage: [type: "Generic Component Voltage Sensor",               event: [[name: "voltage", value: newVals[0], descriptionText:"${friendly} voltage is ${newVals[0]} ${newVals[1]}"]]],
+            energy: [type: "Generic Component Energy Meter",                  event: [[name: "energy", value: newVals[0], descriptionText:"${friendly} energy is ${newVals[0]} ${newVals[1]}"]]],
+            unknown: [type: "Generic Component Unknown Sensor",               event: [[name: "unknown", value: newVals[0], unit_of_measurement: newVals[1], descriptionText:"${friendly} unknown is ${newVals[0]} ${newVals[1]}"]], namespace: "community"],
+	]
 
     return mapping[device_class]
 }

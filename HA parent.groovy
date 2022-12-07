@@ -193,7 +193,7 @@ def parse(String description) {
         def domain = entity?.tokenize(".")?.getAt(0)
         def device_class = response?.event?.data?.new_state?.attributes?.device_class
         def friendly = response?.event?.data?.new_state?.attributes?.friendly_name
-      
+
         newVals << response?.event?.data?.new_state?.state
         def mapping = null
         

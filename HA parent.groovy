@@ -179,7 +179,6 @@ def parse(String description) {
     try{
         response = new groovy.json.JsonSlurper().parseText(description)
         if (response.type != "event") return
-        if (response?.event?.data?.new_state?.state == "unavailable") return
         
         def origin = "physical"
         if (response.event.context.user_id) origin = "digital"

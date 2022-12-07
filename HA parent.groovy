@@ -193,7 +193,7 @@ def parse(String description) {
         def device_class = response?.event?.data?.new_state?.attributes?.device_class
         def friendly = response?.event?.data?.new_state?.attributes?.friendly_name
 
-        if ((["unknown", "unavailable"].contains(response?.event?.data?.new_state?.state))  && ignoreForeignEvents) { return }
+        if ((["unknown", "unavailable"].contains(response?.event?.data?.new_state?.state)) && ignoreForeignEvents) { return }
         
         newVals << response?.event?.data?.new_state?.state
         def mapping = null

@@ -179,6 +179,7 @@ def parse(String description) {
     try{
         response = new groovy.json.JsonSlurper().parseText(description)
         if (response.type != "event") return
+        if ((["unknown", "unavailable"].contains(response?.event?.data?.new_state?.state)) && ignoreForeignEvents) return
         
         def origin = "physical"
         if (response.event.context.user_id) origin = "digital"
@@ -192,9 +193,7 @@ def parse(String description) {
         def domain = entity?.tokenize(".")?.getAt(0)
         def device_class = response?.event?.data?.new_state?.attributes?.device_class
         def friendly = response?.event?.data?.new_state?.attributes?.friendly_name
-
-        if ((["unknown", "unavailable"].contains(response?.event?.data?.new_state?.state)) && ignoreForeignEvents) { return }
-        
+      
         newVals << response?.event?.data?.new_state?.state
         def mapping = null
         

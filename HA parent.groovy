@@ -69,6 +69,7 @@
 * 0.1.47 2022-11-03 mboisson           Added support for Carbon Dioxide, Radon, and Volatile Organic Compounds sensors
 * 0.1.48 2022-11-14 Yves Mercier       Added minimal RGB light support (no CT)
 * 0.1.49 2022-11-16 mboisson           Sensor units and support for "unknown" sensor types
+* 0.1.50 2022-12-06 Yves Mercier       Improved support for lights and added option to ignore unavailable state
 *
 * Thank you(s):
 */
@@ -94,7 +95,8 @@ metadata {
         input ("token", "text", title: "Token", description: "HomeAssistant Long-Lived Access Token", required: true)
         input ("secure", "bool", title: "Require secure connection (https)", defaultValue: false)
         input ("logEnable", "bool", title: "Enable debug logging", defaultValue: true)
-        input ("txtEnable", "bool", title: "Enable description text logging", defaultValue: true)        
+        input ("txtEnable", "bool", title: "Enable description text logging", defaultValue: true)
+        input ("ignoreForeignEvents", "bool", title: "Disregard Unknown and Unavailable states", defaultValue: false)
     }
 }
 
@@ -177,6 +179,7 @@ def parse(String description) {
     try{
         response = new groovy.json.JsonSlurper().parseText(description)
         if (response.type != "event") return
+        if ((["unknown", "unavailable"].contains(response?.event?.data?.new_state?.state?.toLowerCase())) && ignoreForeignEvents) return
         
         def origin = "physical"
         if (response.event.context.user_id) origin = "digital"
@@ -255,24 +258,38 @@ def parse(String description) {
                 def level = response?.event?.data?.new_state?.attributes?.brightness
                 if (level) level = Math.round((level.toInteger() * 100 / 255))
                 newVals += level
-                def colorMode = []
-                colorMode = response?.event?.data?.new_state?.attributes?.supported_color_modes
-                def lightType = colorMode?.disjoint(["hs", "rgb", "rgbw", "rgbww", "xy", "ct"]) ? "dimmer" : "bulb"
+                def lightType = []
+                lightType = response?.event?.data?.new_state?.attributes?.supported_color_modes
+                switch (lightType)
+                    {
+                    case {it.intersect(["rgbww", "rgbw"])}:
+                        device_class = "rgbw"
+                        break
+                    case {it.intersect(["hs", "rgb", "xy"])}:
+                        device_class = "rgb"
+                        break
+                    case {it.intersect(["color_temp"])}:
+                        device_class = "ct"
+                        break
+                    default:
+                        device_class = "dimmer"
+                    }
                 def hue = response?.event?.data?.new_state?.attributes?.hs_color?.getAt(0)
-                if (hue) hue = Math.round((hue.toInteger() * 100 / 360))
+                if (hue) hue = Math.round(hue.toInteger() * 100 / 360)
                 newVals += hue
                 def sat = response?.event?.data?.new_state?.attributes?.hs_color?.getAt(1)
-                if (sat) sat = Math.round((sat.toInteger()))
+                if (sat) sat = Math.round(sat.toInteger())
                 newVals += sat
-                mapping = translateLight(domain, newVals, friendly, origin, lightType)
+                def ct = response?.event?.data?.new_state?.attributes?.color_temp
+                if (ct) ct = Math.round(1000000/ct)
+                newVals += ct
+                mapping = translateLight(device_class, newVals, friendly, origin)
                 if (newVals[0] == "off") //remove updates not provided with the HA 'off' event json data
-                    {
-                    if (lightType == "bulb")
-                        {
-                        mapping.event.remove(3)
-                        mapping.event.remove(2)
-                        }
-                    mapping.event.remove(1)
+                   {
+                   for(int i in (mapping.event.size - 1)..1) 
+                       {
+                       mapping.event.remove(i)
+                       }  
                     }
                 if (mapping) updateChildDevice(mapping, entity, friendly)
                 break
@@ -424,19 +441,17 @@ def translateDevices(domain, newVals, friendly, origin)
     return mapping[domain]
 }
 
-def translateLight(domain, newVals, friendly, origin, lightType)
+def translateLight(device_class, newVals, friendly, origin)
 {
-    def mapping = []
-    if (lightType == "dimmer")
-        {
-        mapping = [type: "Generic Component Dimmer", event: [[name: "switch", value: newVals[0], type: origin, descriptionText:"${friendly} was turned ${newVals[0]} [${origin}]"],[name: "level", value: newVals[1], type: origin, descriptionText:"${friendly} level was set to ${newVals[1]} [${origin}]"]]]
-        }
-    if (lightType == "bulb")
-        {
-        mapping = [type: "Generic Component RGB", event: [[name: "switch", value: newVals[0], type: origin, descriptionText:"${friendly} was turned ${newVals[0]} [${origin}]"],[name: "level", value: newVals[1], type: origin, descriptionText:"${friendly} level was set to ${newVals[1]}"],[name: "hue", value: newVals[2], descriptionText:"${friendly} hue was set to ${newVals[2]}"],[name: "saturation", value: newVals[3], descriptionText:"${friendly} saturation was set to ${newVals[3]}"]]]
-        }
+    def mapping =
+        [
+            rgbw: [type: "Generic Component RGBW",                      event: [[name: "switch", value: newVals[0], type: origin, descriptionText:"${friendly} was turned ${newVals[0]} [${origin}]"],[name: "level", value: newVals[1], type: origin, descriptionText:"${friendly} level was set to ${newVals[1]}"],[name: "hue", value: newVals[2], descriptionText:"${friendly} hue was set to ${newVals[2]}"],[name: "saturation", value: newVals[3], descriptionText:"${friendly} saturation was set to ${newVals[3]}"],[name: "colorTemparature", value: newVals[4], descriptionText:"${friendly} color temperature was set to ${newVals[4]}°K"]]],
+            rgb: [type: "Generic Component RGB",                        event: [[name: "switch", value: newVals[0], type: origin, descriptionText:"${friendly} was turned ${newVals[0]} [${origin}]"],[name: "level", value: newVals[1], type: origin, descriptionText:"${friendly} level was set to ${newVals[1]}"],[name: "hue", value: newVals[2], descriptionText:"${friendly} hue was set to ${newVals[2]}"],[name: "saturation", value: newVals[3], descriptionText:"${friendly} saturation was set to ${newVals[3]}"]]],
+            ct: [type: "Generic Component CT",                          event: [[name: "switch", value: newVals[0], type: origin, descriptionText:"${friendly} was turned ${newVals[0]} [${origin}]"],[name: "level", value: newVals[1], type: origin, descriptionText:"${friendly} level was set to ${newVals[1]}"],[name: "colorTemparature", value: newVals[2], descriptionText:"${friendly} color temperature was set to ${newVals[2]}°K"]]],
+            dimmer: [type: "Generic Component Dimmer",                  event: [[name: "switch", value: newVals[0], type: origin, descriptionText:"${friendly} was turned ${newVals[0]} [${origin}]"],[name: "level", value: newVals[1], type: origin, descriptionText:"${friendly} level was set to ${newVals[1]} [${origin}]"]]],
+        ]
 
-    return mapping
+    return mapping[device_class]
 }
    
 def updateChildDevice(mapping, entity, friendly) {
@@ -783,6 +798,16 @@ def componentHeat(ch)
 def componentOffTStat(ch)
 {
     componentSetThermostatMode(ch, "off")
+}
+
+def componentStartLevelChange(ch)
+{
+    log.warn ("Start level change not supported")
+}
+
+def componentStopLevelChange(ch)
+{
+    log.warn ("Stop level change not supported")
 }
 
 def closeConnection() {

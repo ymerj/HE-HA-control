@@ -258,9 +258,9 @@ def parse(String description) {
                 def level = response?.event?.data?.new_state?.attributes?.brightness
                 if (level) level = Math.round((level.toInteger() * 100 / 255))
                 newVals += level
-                def colorMode = []
-                colorMode = response?.event?.data?.new_state?.attributes?.supported_color_modes
-                switch (colorMode)
+                def lightType = []
+                lightType = response?.event?.data?.new_state?.attributes?.supported_color_modes
+                switch (lightType)
                     {
                     case {it.intersect(["rgbww", "rgbw"])}:
                         device_class = "rgbw"

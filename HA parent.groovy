@@ -800,6 +800,16 @@ def componentOffTStat(ch)
     componentSetThermostatMode(ch, "off")
 }
 
+def componentStartLevelChange(ch)
+{
+    log.warn ("Start level change not supported")
+}
+
+def componentStopLevelChange(ch)
+{
+    log.warn ("Stop level change not supported")
+}
+
 def closeConnection() {
     if (logEnable) log.debug("Closing connection...")   
     state.wasExpectedClose = true

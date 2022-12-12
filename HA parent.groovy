@@ -264,19 +264,15 @@ def parse(String description) {
                     {
                     case {it.intersect(["rgbww", "rgbw"])}:
                         device_class = "rgbw"
-                        lightType = 4
                         break
                     case {it.intersect(["hs", "rgb", "xy"])}:
                         device_class = "rgb"
-                        lightType = 3
                         break
                     case {it.intersect(["color_temp"])}:
                         device_class = "ct"
-                        lightType = 2
                         break
                     default:
                         device_class = "dimmer"
-                        lightType = 1
                     }
                 def hue = response?.event?.data?.new_state?.attributes?.hs_color?.getAt(0)
                 if (hue) hue = Math.round(hue.toInteger() * 100 / 360)
@@ -290,7 +286,7 @@ def parse(String description) {
                 mapping = translateLight(device_class, newVals, friendly, origin)
                 if (newVals[0] == "off") //remove updates not provided with the HA 'off' event json data
                    {
-                   for(int i in lightType..1) 
+                   for(int i in (mapping.event.size - 1)..1) 
                        {
                        mapping.event.remove(i)
                        }  

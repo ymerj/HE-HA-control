@@ -538,7 +538,8 @@ def componentSetLevel(ch, level, transition=1){
     }
 }
 
-def componentSetColor(ch, color, transition=1){
+def componentSetColor(ch, color, transition=1)
+    {
     if (logEnable) log.info("received setColor request from ${ch.label}")
 
     convertedHue = Math.round(color.hue * 360/100)
@@ -547,13 +548,14 @@ def componentSetColor(ch, color, transition=1){
     executeCommand(ch, "turn_on", data)
 }
 
-def componentSetColorTemperature(ch, colortemperature, level, transition=1){
+def componentSetColorTemperature(ch, colortemperature, level, transition=1)
+    {
     if (logEnable) log.info("received setColorTemperature request from ${ch.label}")
 
     if (!level) level = ch.currentValue("level")
     if (!transition) transition = 1
 
-    data = [brightness_pct: "${level}", kelvin: "${colortemperature}", transition: "${transition}"]
+    data = [brightness_pct: "${level}", color_temp_kelvin: "${colortemperature}", transition: "${transition}"]
     executeCommand(ch, "turn_on", data)
 }
 

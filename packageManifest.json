@@ -73,7 +73,7 @@
       "name": "Generic Component Unknown Sensor",
       "namespace": "community",
       "location": "https://raw.githubusercontent.com/ymerj/HE-HA-control/main/genericComponentUnknownSensor.groovy",
-      "required": false
+      "required": true
     },
     {
       "id": "2d33dbee-1d47-4dcf-be36-5f71ae1c9997",

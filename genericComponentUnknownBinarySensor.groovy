@@ -20,9 +20,11 @@ metadata
     {
         capability "Refresh"
     }
-    preferences {
+    preferences
+    {
         input name: "txtEnable", type: "bool", title: "Enable descriptionText logging", defaultValue: true
     }
+    attribute "report", "string"
 }
 
 void updated() {

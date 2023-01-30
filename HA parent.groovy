@@ -295,10 +295,7 @@ def parse(String description) {
                 if (mapping) updateChildDevice(mapping, entity, friendly)
                 break
             case "binary_sensor":
-                if (!device_class)
-		{
-			device_class = "unknown"
-		}
+                if (!device_class) device_class = "unknown"
                 mapping = translateBinarySensors(device_class, newVals, friendly, origin)
                 if (mapping) updateChildDevice(mapping, entity, friendly)
                 break

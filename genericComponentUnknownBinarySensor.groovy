@@ -44,7 +44,7 @@ void parse(List<Map> description) {
     description.each {
         if (it.name in ["unknown"]) {
             if (txtEnable) log.info it.descriptionText
-            updateAttr("report", it.value)
+            sendEvent(name: "report", value: it.value, description: it.descriptionText)
         }
     }
 }

@@ -381,8 +381,8 @@ def translateBinarySensors(device_class, newVals, friendly, origin)
             presence: [type: "Generic Component Presence Sensor",       event: [[name: "presence", value: newVals[0] == "on" ? "present":"not present", descriptionText:"${friendly} is ${newVals[0] == 'on' ? 'present':'not present'}"]], namespace: "community"],
             smoke: [type: "Generic Component Smoke Detector",           event: [[name: "smoke", value: newVals[0] == "on" ? "detected":"clear", descriptionText:"${friendly} is ${newVals[0] == 'on' ? 'detected':'clear'}"]]],
             vibration: [type: "Generic Component Acceleration Sensor",  event: [[name: "acceleration", value: newVals[0] == "on" ? """active""":"""inactive""", descriptionText:"${friendly} is ${newVals[0] == 'on' ? 'active':'inactive'}"]]],
-            unknown: [type: "Generic Component Unknown Binary Sensor",  event: [[name: "unknown", value: newVals[0], descriptionText:"${friendly} is ${newVals[0]"]]],
-	    window: [type: "Generic Component Contact Sensor",          event: [[name: "contact", value: newVals[0] == "on" ? "open":"closed", descriptionText:"${friendly} is ${newVals[0] == 'on' ? 'open':'closed'}"]]],
+            unknown: [type: "Generic Component Unknown Binary Sensor",  event: [[name: "unknown", value: newVals[0], descriptionText:"${friendly} is ${newVals[0]}"]]],
+            window: [type: "Generic Component Contact Sensor",          event: [[name: "contact", value: newVals[0] == "on" ? "open":"closed", descriptionText:"${friendly} is ${newVals[0] == 'on' ? 'open':'closed'}"]]],
         ]
 
     return mapping[device_class]

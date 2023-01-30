@@ -70,6 +70,7 @@
 * 0.1.48 2022-11-14 Yves Mercier       Added minimal RGB light support (no CT)
 * 0.1.49 2022-11-16 mboisson           Sensor units and support for "unknown" sensor types
 * 0.1.50 2022-12-06 Yves Mercier       Improved support for lights and added option to ignore unavailable state
+* 0.1.51 2023-01-30 Yves Mercier       Added support for "unknown" binary sensor and timestamp sensor
 *
 * Thank you(s):
 */

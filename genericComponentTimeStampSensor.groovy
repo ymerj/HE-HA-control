@@ -25,6 +25,8 @@ metadata
         input name: "txtEnable", type: "bool", title: "Enable descriptionText logging", defaultValue: true
     }
     attribute "timestamp", "string"
+    attribute "date", "string"
+    attribute "time", "string"
 }
 
 void updated() {
@@ -45,6 +47,9 @@ void parse(List<Map> description) {
         if (it.name in ["timestamp"]) {
             if (txtEnable) log.info it.descriptionText
             sendEvent(it)
+            def valuedate = Date.parse("yyyy-MM-dd'T'HH:mm:ssXXX", it.value)
+            sendEvent(name: "date", value: valuedate)
+            sendEvent(name: "time", value: valuedate)
         }
     }
 }

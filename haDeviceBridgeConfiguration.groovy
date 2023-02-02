@@ -210,9 +210,9 @@ def advOptionsPage()
         {
             paragraph "<b>Manually added entities:</b> ${accessCustomFilter("get")}"
             input name: "eId", type: "text", title: "Entity ID", description: "ID"
-            input(name: "clickToAdd", type: "button", title: "Add entity to filtered list", width:2)
-            input(name: "clickToRemove", type: "button", title: "Remove entity from filtered list", width:2)
-            input(name: "removeAll", type: "button", title: "Remove all that were manually added to filtered list? (use carefully!)")
+            input(name: "clickToAdd", type: "button", title: "Add entity to list", width:2)
+            input(name: "clickToRemove", type: "button", title: "Remove entity from list", width:2)
+            input(name: "removeAll", type: "button", title: "Remove all that were manually added to list? (use carefully!)")
         }
         
         section(hideable: true, hidden: false, title: "System administration options")

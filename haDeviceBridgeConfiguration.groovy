@@ -24,6 +24,7 @@
 * 0.1.32     2021-09-27 kaimyn             Add option to use HTTPS support in configuration app
 * 0.1.45     2022-06-06 tomw               Added confirmation step before completing select/de-select all
 * 0.1.46     2022-07-04 tomw               Advanced configuration - manual add/remove of devices; option to disable filtering; unused child cleanup
+* 0.1.52     2023-02-02 tomw               UI improvements for app usability
 */
 
 definition(
@@ -105,56 +106,10 @@ def discoveryPage(params)
         
         section
         {
-            input name: "includeList", type: "enum", title: "Select any devices to <b>include</b> from Home Assistant Device Bridge", options: state.entityList, required: false, multiple: true
-            
-            if(selectAll)
-            {
-                // selectAll was pushed, and this page was reloaded to get to this point
-                //
-                // this gives the user a "confirm" step to avoid any accidental changes to the list
-                app.updateSetting("selectAll", false)
-                input name: "selectAllForReal", type: "bool", title: "CLICK AGAIN to confirm select all", defaultValue: false, submitOnChange: true
-            }
-            else
-            {
-                // this page was either loaded for the first time OR reloaded by pushing selectAllForReal
-                //
-                // this step is actually selecting all (if appropriate) and then presenting the normal selectAll experience 
-                if(selectAllForReal)
-                {
-                    app.updateSetting("selectAllForReal", false)
-                    app.updateSetting("includeList", state.entityList.keySet().toList())
-                }
-                
-                input name: "selectAll", type: "bool", title: "Select all devices?", defaultValue: false, submitOnChange: true
-            }
-            
-            if(clearAll)
-            {
-                // see explanation of this code in the selectAll case above
-                app.updateSetting("clearAll", false)
-                input name: "clearAllForReal", type: "bool", title: "CLICK AGAIN to confirm de-select all", defaultValue: false, submitOnChange: true
-            }
-            else
-            {
-                // see explanation of this code in the selectAll case above
-                if(clearAllForReal)
-                {
-                    app.updateSetting("clearAllForReal", false)
-                    app.updateSetting("includeList", [])
-                }
-                
-                input name: "clearAll", type: "bool", title: "De-select all devices?", defaultValue: false, submitOnChange: true
-            }
+            input name: "includeList", type: "enum", title: "Select any devices to <b>include</b> from Home Assistant Device Bridge", options: state.entityList, required: false, multiple: true, offerAll: true
         }
         
         linkToMain()
-        
-        if(clearAll)
-        {
-            app.updateSetting("includeList", [])
-            app.updateSetting("clearAll", false)
-        }
     }
 }
 
@@ -221,29 +176,29 @@ def advOptionsPage()
 {
     dynamicPage(name: "advOptionsPage", title: "", install: true, uninstall: true)
     {
-        if(clickToAdd)
+        if(wasButtonPushed("clickToAdd"))
         {
-            app.updateSetting("clickToAdd", false)
             accessCustomFilter("add", eId)
+            clearButtonPushed()
         }
         
-        if(clickToRemove)
+        if(wasButtonPushed("clickToRemove"))
         {
-            app.updateSetting("clickToRemove", false)
             accessCustomFilter("del", eId)
+            clearButtonPushed()
         }
         
-        if(removeAll)
+        if(wasButtonPushed("removeAll"))
         {
-            app.updateSetting("removeAll", false)
             accessCustomFilter("clear")
+            clearButtonPushed()
         }        
         app.updateSetting("eId", "")
         
-        if(cleanupUnused)
+        if(wasButtonPushed("cleanupUnused"))
         {
-            app.updateSetting("cleanupUnused", false)
             cullGrandchildren()
+            clearButtonPushed()
         }
         
         section(hideable: true, hidden: false, title: "Entity filtering options")
@@ -255,14 +210,14 @@ def advOptionsPage()
         {
             paragraph "<b>Manually added entities:</b> ${accessCustomFilter("get")}"
             input name: "eId", type: "text", title: "Entity ID", description: "ID"
-            input name: "clickToAdd", type: "bool", title: "Add entity to filtered list", defaultValue: false, submitOnChange: true
-            input name: "clickToRemove", type: "bool", title: "Remove entity from filtered list", defaultValue: false, submitOnChange: true
-            input name: "removeAll", type: "bool", title: "Remove all that were manually added to filtered list? (use carefully!)", defaultValue: false, submitOnChange: true
+            input(name: "clickToAdd", type: "button", title: "Add entity to filtered list", width:2)
+            input(name: "clickToRemove", type: "button", title: "Remove entity from filtered list", width:2)
+            input(name: "removeAll", type: "button", title: "Remove all that were manually added to filtered list? (use carefully!)")
         }
         
         section(hideable: true, hidden: false, title: "System administration options")
         {
-            input name: "cleanupUnused", type: "bool", title: "Remove all child devices that are not currently either user-selected or manually-added (use carefully!)", defaultValue: false, submitOnChange: true
+            input(name: "cleanupUnused", type: "button", title: "Remove all child devices that are not currently either user-selected or manually-added (use carefully!)")
         }
         
         linkToMain()
@@ -318,6 +273,27 @@ def deleteChildren()
 def updated()
 {
     installed()
+}
+
+void appButtonHandler(btn)
+{
+    // flag button pushed and let pages sort it out
+    setButtonPushed(btn)
+}
+
+def setButtonPushed(btn)
+{
+    state.button = [btn: btn]
+}
+
+def wasButtonPushed(btn)
+{
+    return state.button?.btn == btn
+}
+
+def clearButtonPushed()
+{
+    state.remove("button")
 }
 
 def genParamsMain(suffix, body = null)

@@ -12,6 +12,7 @@ limitations under the License.
 -------------------------------------------
 Change history:
 0.1.51- Yves Mercier - initial version
+0.1.52- Yves Mercier - added button capability for use as trigger with RM
 */
 
 metadata
@@ -19,6 +20,7 @@ metadata
     definition(name: "Generic Component TimeStamp Sensor", namespace: "community", author: "community", importUrl: "https://raw.githubusercontent.com/ymerj/HE-HA-control/main/genericComponentTimeStampSensor.groovy")
     {
         capability "Refresh"
+        capability "PushableButton"
     }
     preferences 
     {
@@ -26,12 +28,12 @@ metadata
     }
     attribute "timestamp", "string"
     attribute "date", "string"
-    attribute "time", "string"
 }
 
 void updated() {
     log.info "Updated..."
     log.warn "description logging is: ${txtEnable == true}"
+    sendEvent(name: "numberOfButtons", value: 1, displayed: false)
 }
 
 void installed() {
@@ -47,13 +49,17 @@ void parse(List<Map> description) {
         if (it.name in ["timestamp"]) {
             if (txtEnable) log.info it.descriptionText
             sendEvent(it)
-            def valuedate = Date.parse("yyyy-MM-dd'T'HH:mm:ssXXX", it.value)
-            sendEvent(name: "date", value: valuedate)
-            sendEvent(name: "time", value: valuedate)
+            def activation = Date.parse("yyyy-MM-dd'T'HH:mm:ssXXX", it.value)
+            sendEvent(name: "date", value: activation)
+            runOnce(activation, push, [overwrite: true])
         }
     }
 }
 
+def push(bn = 1) {
+    sendEvent(name: "pushed", value: "1", descriptionText: "${device.label} timestamp reached", isStateChange: true)
+}
+            
 void refresh() {
     parent?.componentRefresh(this.device)
 }

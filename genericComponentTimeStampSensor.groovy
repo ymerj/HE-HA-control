@@ -26,7 +26,7 @@ metadata
     preferences 
     {
         input name: "txtEnable", type: "bool", title: "Enable descriptionText logging", defaultValue: true
-        input name: "pushRequired", type: "bool", title: "Enable push button event at the time reported", defaultValue: true
+        input name: "pushRequired", type: "bool", title: "Enable pushed button event at the time reported", defaultValue: true
     }
     attribute "timestamp", "string"
     attribute "date", "string"

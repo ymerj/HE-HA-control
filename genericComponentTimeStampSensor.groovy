@@ -85,3 +85,7 @@ def offline() {
 def online() {
     sendEvent(name: "healthStatus", value: "online")
 }
+
+def ping() {
+    refresh()
+}

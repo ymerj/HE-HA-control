@@ -21,6 +21,7 @@ metadata
     {
         capability "Refresh"
         capability "PushableButton"
+        capability "Health Check"
     }
     preferences 
     {
@@ -28,6 +29,7 @@ metadata
     }
     attribute "timestamp", "string"
     attribute "date", "string"
+    attribute "healthStatus", "enum", ["offline", "online"]
 }
 
 void updated() {
@@ -48,6 +50,7 @@ void parse(List<Map> description) {
     description.each {
         if (it.name in ["timestamp"]) {
             if (txtEnable) log.info it.descriptionText
+            it.value == "unavailable" ? offline():online()
             sendEvent(it)
             scheduleFutureBtnPush(it.value)
         }
@@ -73,4 +76,12 @@ def scheduleFutureBtnPush(future) {
     
 void refresh() {
     parent?.componentRefresh(this.device)
+}
+
+def offline() {
+    sendEvent(name: "healthStatus", value: "offline")
+}
+
+def online() {
+    sendEvent(name: "healthStatus", value: "online")
 }

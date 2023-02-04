@@ -12,7 +12,7 @@ limitations under the License.
 -------------------------------------------
 Change history:
 0.1.51- Yves Mercier - initial version
-0.1.52- Yves Mercier - added button capability for use as trigger with RM
+0.1.52- Yves Mercier - added button and health capability
 */
 
 metadata
@@ -50,7 +50,7 @@ void parse(List<Map> description) {
     description.each {
         if (it.name in ["timestamp"]) {
             if (txtEnable) log.info it.descriptionText
-            it.value == "unavailable" ? offline():online()
+            it.value == "unavailable" ? offline() : online()
             sendEvent(it)
             scheduleFutureBtnPush(it.value)
         }

@@ -187,7 +187,7 @@ def parse(String description) {
         
         def newVals = []
         def entity = response?.event?.data?.entity_id
-	def time_fired = response?.event?.context?.time_fired
+	def time_fired = response?.event?.time_fired
         
         // check whether we have a parent, and search its includeList for devices to process
         if (getParent()?.checkIfFiltered(entity)) return
@@ -406,7 +406,7 @@ def translateSensors(device_class, newVals, friendly, origin)
             voltage: [type: "Generic Component Voltage Sensor",               event: [[name: "voltage", value: newVals[0], descriptionText:"${friendly} voltage is ${newVals[0]} ${newVals[1]}"]]],
             energy: [type: "Generic Component Energy Meter",                  event: [[name: "energy", value: newVals[0], descriptionText:"${friendly} energy is ${newVals[0]} ${newVals[1]}"]]],
 	    unknown: [type: "Generic Component Unknown Sensor",               event: [[name: "unknown", value: newVals[0], unit_of_measurement: newVals[1], descriptionText:"${friendly} unknown is ${newVals[0]} ${newVals[1]}"]], namespace: "community"],
-            timestamp: [type: "Generic Component TimeStamp Sensor",           event: [[name: "timestamp", value: newVals[0], descriptionText:"${friendly} time is ${newVals[0]}"]],[name: "timesfired", value: newVals[1], descriptionText:"${friendly} context time was ${newVals[1]}"] namespace: "community"],
+            timestamp: [type: "Generic Component TimeStamp Sensor",           event: [[name: "timestamp", value: newVals[0], descriptionText:"${friendly} time is ${newVals[0]}"],[name: "timefired", value: newVals[1], descriptionText:"${friendly} context time was ${newVals[1]}"]], namespace: "community"],
 	]
 
     return mapping[device_class]

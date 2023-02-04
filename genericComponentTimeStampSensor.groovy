@@ -26,6 +26,7 @@ metadata
     preferences 
     {
         input name: "txtEnable", type: "bool", title: "Enable descriptionText logging", defaultValue: true
+        input name: "pushRequired", type: "bool", title: "Enable push button event at the time reported", defaultValue: true
     }
     attribute "timestamp", "string"
     attribute "date", "string"
@@ -52,7 +53,7 @@ void parse(List<Map> description) {
             if (txtEnable) log.info it.descriptionText
             it.value == "unavailable" ? offline() : online()
             sendEvent(it)
-            scheduleFutureBtnPush(it.value)
+            if (pushRequired) scheduleFutureBtnPush(it.value)
         }
     }
 }

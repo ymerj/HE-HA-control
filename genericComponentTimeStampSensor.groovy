@@ -28,6 +28,7 @@ metadata
     }
     attribute "timestamp", "string"
     attribute "date", "string"
+    attribute "health", "string"
 }
 
 void updated() {
@@ -49,17 +50,21 @@ void parse(List<Map> description) {
         if (it.name in ["timestamp"]) {
             if (txtEnable) log.info it.descriptionText
             sendEvent(it)
-            def activation = Date.parse("yyyy-MM-dd'T'HH:mm:ssXXX", it.value)
-            sendEvent(name: "date", value: activation)
-            runOnce(activation, push, [overwrite: true])
+            scheduleFutureBtnPush(it.value)
         }
     }
 }
 
 def push(bn = 1) {
-    sendEvent(name: "pushed", value: "1", descriptionText: "${device.label} timestamp reached", isStateChange: true)
+    sendEvent(name: "pushed", value: bn, descriptionText: "${device.label} timestamp reached", isStateChange: true)
 }
-            
+
+def scheduleFutureBtnPush(future) {
+    def activation = Date.parse("yyyy-MM-dd'T'HH:mm:ssXXX", future)
+    sendEvent(name: "date", value: activation)
+    runOnce(activation, push, [overwrite: true])
+}   
+    
 void refresh() {
     parent?.componentRefresh(this.device)
 }

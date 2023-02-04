@@ -60,12 +60,14 @@ def push(bn = 1) {
 
 def scheduleFutureBtnPush(future) {
     try {
-        def activation = Date.parse("yyyy-MM-dd'T'HH:mm:ssXXX", future)
+        // def activation = Date.parse("yyyy-MM-dd'T'HH:mm:ssXXX", future)
+        date activation = toDateTime(future)
         sendEvent(name: "date", value: activation)
         runOnce(activation, push, [overwrite: true])
     }
     catch(e) {
-        log.error("Parsing error: ${e}")
+        log.error("Error: ${e}")
+        sendEvent(name: "date", value: "invalid")
     }
 }   
     

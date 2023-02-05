@@ -12,6 +12,7 @@ limitations under the License.
 -------------------------------------------
 Change history:
 0.1.51- Yves Mercier - initial version
+0.1.52- Yves Mercier - added button and health capability
 */
 
 metadata
@@ -19,24 +20,29 @@ metadata
     definition(name: "Generic Component TimeStamp Sensor", namespace: "community", author: "community", importUrl: "https://raw.githubusercontent.com/ymerj/HE-HA-control/main/genericComponentTimeStampSensor.groovy")
     {
         capability "Refresh"
+        capability "PushableButton"
+        capability "Health Check"
     }
     preferences 
     {
         input name: "txtEnable", type: "bool", title: "Enable descriptionText logging", defaultValue: true
+        input name: "pushRequired", type: "bool", title: "Enable pushed button event at the time reported", defaultValue: true
     }
     attribute "timestamp", "string"
     attribute "date", "string"
-    attribute "time", "string"
+    attribute "healthStatus", "enum", ["offline", "online"]
 }
 
 void updated() {
     log.info "Updated..."
-    log.warn "description logging is: ${txtEnable == true}"
+    log.warn "description logging is ${txtEnable == true}, button event is ${pushRequired == true}"
+    sendEvent(name: "numberOfButtons", value: 1, displayed: false)
 }
 
 void installed() {
     log.info "Installed..."
     device.updateSetting("txtEnable",[type:"bool",value:true])
+    updated()
     refresh()
 }
 
@@ -46,14 +52,41 @@ void parse(List<Map> description) {
     description.each {
         if (it.name in ["timestamp"]) {
             if (txtEnable) log.info it.descriptionText
+            it.value == "unavailable" ? offline() : online()
             sendEvent(it)
-            def valuedate = Date.parse("yyyy-MM-dd'T'HH:mm:ssXXX", it.value)
-            sendEvent(name: "date", value: valuedate)
-            sendEvent(name: "time", value: valuedate)
+            if (pushRequired) scheduleFutureBtnPush(it.value)
         }
     }
 }
 
+def push(bn = 1) {
+    sendEvent(name: "pushed", value: bn, descriptionText: "${device.label} timestamp reached", isStateChange: true)
+}
+
+def scheduleFutureBtnPush(future) {
+    try {
+        def activation = toDateTime(future)
+        sendEvent(name: "date", value: activation)
+        runOnce(activation, push, [overwrite: true])
+    }
+    catch(e) {
+        log.error("Error: ${e}")
+        sendEvent(name: "date", value: "invalid")
+    }
+}   
+    
 void refresh() {
     parent?.componentRefresh(this.device)
+}
+
+def offline() {
+    sendEvent(name: "healthStatus", value: "offline")
+}
+
+def online() {
+    sendEvent(name: "healthStatus", value: "online")
+}
+
+def ping() {
+    refresh()
 }

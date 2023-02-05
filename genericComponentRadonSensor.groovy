@@ -27,11 +27,13 @@ metadata
     definition(name: "Generic Component Radon Sensor", namespace: "community", author: "community", importUrl: "https://raw.githubusercontent.com/ymerj/HE-HA-control/main/genericComponentRadonSensor.groovy")
     {
         capability "Refresh"
+        capability "Health Check"
     }
     preferences {
         input name: "txtEnable", type: "bool", title: "Enable descriptionText logging", defaultValue: true
     }
     attribute "radon", "number"
+    attribute "healthStatus", "enum", ["offline", "online"]
 }
 
 void updated() {
@@ -55,6 +57,7 @@ void parse(List<Map> description) {
     description.each {
         if (it.name in ["radon"]) {
             if (txtEnable) log.info it.descriptionText
+            it.value == "unavailable" ? offline() : online()
             unit="ppb"
             updateAttr("radon", it.value, unit)
             sendEvent(it)
@@ -64,4 +67,16 @@ void parse(List<Map> description) {
 
 void refresh() {
     parent?.componentRefresh(this.device)
+}
+
+def offline() {
+    sendEvent(name: "healthStatus", value: "offline")
+}
+
+def online() {
+    sendEvent(name: "healthStatus", value: "online")
+}
+
+void ping() {
+    refresh()
 }

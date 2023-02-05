@@ -35,7 +35,7 @@ metadata
 
 void updated() {
     log.info "Updated..."
-    log.warn "description logging is: ${txtEnable == true}"
+    log.warn "description logging is ${txtEnable == true}, button event is ${pushRequired == true}"
     sendEvent(name: "numberOfButtons", value: 1, displayed: false)
 }
 

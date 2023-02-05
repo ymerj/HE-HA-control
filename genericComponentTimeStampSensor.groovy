@@ -64,8 +64,7 @@ def push(bn = 1) {
 
 def scheduleFutureBtnPush(future) {
     try {
-        // def activation = Date.parse("yyyy-MM-dd'T'HH:mm:ssXXX", future)
-        date activation = toDateTime(future)
+        def activation = toDateTime(future)
         sendEvent(name: "date", value: activation)
         runOnce(activation, push, [overwrite: true])
     }

@@ -27,6 +27,7 @@ metadata
     definition(name: "Generic Component Unknown Sensor", namespace: "community", author: "community", importUrl: "https://raw.githubusercontent.com/ymerj/HE-HA-control/main/genericComponentUnknownSensor.groovy")
     {
         capability "Refresh"
+        capability "Health Check"
     }
     preferences {
         input name: "txtEnable", type: "bool", title: "Enable descriptionText logging", defaultValue: true
@@ -34,6 +35,7 @@ metadata
     attribute "value", "number"
     attribute "valueStr", "string"
     attribute "unit", "string"
+    attribute "healthStatus", "enum", ["offline", "online"]
 }
 
 void updated() {
@@ -57,6 +59,7 @@ void parse(List<Map> description) {
     description.each {
         if (it.name in ["unknown"]) {
             if (txtEnable) log.info it.descriptionText
+            it.value == "unavailable" ? offline() : online()
             updateAttr("value", it.value, it.unit_of_measurement)
             updateAttr("valueStr", it.value, it.unit_of_measurement)
             updateAttr("unit", it.unit_of_measurement)
@@ -66,4 +69,16 @@ void parse(List<Map> description) {
 
 void refresh() {
     parent?.componentRefresh(this.device)
+}
+
+def offline() {
+    sendEvent(name: "healthStatus", value: "offline")
+}
+
+def online() {
+    sendEvent(name: "healthStatus", value: "online")
+}
+
+void ping() {
+    refresh()
 }

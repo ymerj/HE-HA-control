@@ -20,6 +20,7 @@ Change history:
 
 0.1.32 - tomw - initial version
 0.1.40 - tomw - Added ContactSensor emulation
+0.1.52 - Yves mercier - Add health check capability
 
 */
 

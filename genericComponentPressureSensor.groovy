@@ -19,6 +19,7 @@ limitations under the License.
 Change history:
 
 0.1.13- @tomw - initial version
+0.1.52 - Yves mercier - Add health check capability
 
 */
 

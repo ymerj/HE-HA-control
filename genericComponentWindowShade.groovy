@@ -19,6 +19,7 @@ limitations under the License.
 Change history:
 
 0.1.43 - tomw - Initial Release
+0.1.52 - Yves mercier - Add health check capability
 
 */
 
@@ -28,10 +29,12 @@ metadata
     {
         capability "WindowShade"
         capability "Refresh"
+        capability "Health Check"
     }
     preferences {
         input name: "txtEnable", type: "bool", title: "Enable descriptionText logging", defaultValue: true
     }
+    attribute "healthStatus", "enum", ["offline", "online"]
 }
 
 void updated() {
@@ -51,6 +54,7 @@ void parse(List<Map> description) {
     description.each {
         if (it.name in ["position", "windowShade"]) {
             if (txtEnable) log.info it.descriptionText
+            it.value == "unavailable" ? offline() : online()
             sendEvent(it)
         }
     }
@@ -78,4 +82,16 @@ void startPositionChange(direction) {
 
 void stopPositionChange() {
     parent?.componentStopPositionChange(this.device)
+}
+
+def offline() {
+    sendEvent(name: "healthStatus", value: "offline")
+}
+
+def online() {
+    sendEvent(name: "healthStatus", value: "online")
+}
+
+void ping() {
+    refresh()
 }

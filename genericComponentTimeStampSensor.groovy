@@ -42,6 +42,7 @@ void updated() {
 void installed() {
     log.info "Installed..."
     device.updateSetting("txtEnable",[type:"bool",value:true])
+    device.updateSetting("pushRequired",[type:"bool",value:true])
     updated()
     refresh()
 }
@@ -52,7 +53,7 @@ void parse(List<Map> description) {
     description.each {
         if (it.name in ["timestamp"]) {
             if (txtEnable) log.info it.descriptionText
-            it.value == "unavailable" ? offline() : online()
+            sendEvent(name: "healthStatus", value: it.value == "unavailable" ? "offline" : "online")
             sendEvent(it)
             if (pushRequired) scheduleFutureBtnPush(it.value)
         }
@@ -77,14 +78,6 @@ def scheduleFutureBtnPush(future) {
     
 void refresh() {
     parent?.componentRefresh(this.device)
-}
-
-def offline() {
-    sendEvent(name: "healthStatus", value: "offline")
-}
-
-def online() {
-    sendEvent(name: "healthStatus", value: "online")
 }
 
 def ping() {

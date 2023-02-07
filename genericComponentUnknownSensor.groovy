@@ -19,7 +19,7 @@ limitations under the License.
 Change history:
 
 0.1.49 - mboisson - initial version
-0.1.52 - Yves mercier - Add health check capability
+0.1.52 - Yves Mercier - Add health check capability
 
 */
 
@@ -60,7 +60,7 @@ void parse(List<Map> description) {
     description.each {
         if (it.name in ["unknown"]) {
             if (txtEnable) log.info it.descriptionText
-            it.value == "unavailable" ? offline() : online()
+            sendEvent(name: "healthStatus", value: it.value == "unavailable" ? "offline" : "online")
             updateAttr("value", it.value, it.unit_of_measurement)
             updateAttr("valueStr", it.value, it.unit_of_measurement)
             updateAttr("unit", it.unit_of_measurement)
@@ -70,14 +70,6 @@ void parse(List<Map> description) {
 
 void refresh() {
     parent?.componentRefresh(this.device)
-}
-
-def offline() {
-    sendEvent(name: "healthStatus", value: "offline")
-}
-
-def online() {
-    sendEvent(name: "healthStatus", value: "online")
 }
 
 void ping() {

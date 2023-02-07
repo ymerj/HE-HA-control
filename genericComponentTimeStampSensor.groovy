@@ -42,6 +42,7 @@ void updated() {
 void installed() {
     log.info "Installed..."
     device.updateSetting("txtEnable",[type:"bool",value:true])
+    device.updateSetting("pushRequired",[type:"bool",value:true])
     updated()
     refresh()
 }

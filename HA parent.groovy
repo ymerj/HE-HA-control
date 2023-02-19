@@ -71,6 +71,7 @@
 * 0.1.49 2022-11-16 mboisson           Sensor units and support for "unknown" sensor types
 * 0.1.50 2022-12-06 Yves Mercier       Improved support for lights and added option to ignore unavailable state
 * 0.1.51 2023-01-30 Yves Mercier       Added support for "unknown" binary sensor and timestamp sensor
+* 0.1.53 2023-02-19 Yves Mercier       fix a typo and refine support for lights (CT)
 *
 * Thank you(s):
 */
@@ -259,31 +260,31 @@ def parse(String description) {
                 def level = response?.event?.data?.new_state?.attributes?.brightness
                 if (level) level = Math.round((level.toInteger() * 100 / 255))
                 newVals += level
+                def hue = response?.event?.data?.new_state?.attributes?.hs_color?.getAt(0)
+                if (hue) hue = Math.round(hue.toInteger() * 100 / 360)
+                def sat = response?.event?.data?.new_state?.attributes?.hs_color?.getAt(1)
+                if (sat) sat = Math.round(sat.toInteger())
+                def ct = response?.event?.data?.new_state?.attributes?.color_temp
+                if (ct) ct = Math.round(1000000/ct)
                 def lightType = []
                 lightType = response?.event?.data?.new_state?.attributes?.supported_color_modes
                 switch (lightType)
                     {
                     case {it.intersect(["rgbww", "rgbw"])}:
                         device_class = "rgbw"
+                        newVals += [hue, sat, ct]
                         break
-                    case {it.intersect(["hs", "rgb", "xy"])}:
+                    case {it.intersect(["hs", "rgb"])}:
                         device_class = "rgb"
+                        newVals += [hue, sat]
                         break
                     case {it.intersect(["color_temp"])}:
                         device_class = "ct"
+                        newVals += ct
                         break
                     default:
                         device_class = "dimmer"
                     }
-                def hue = response?.event?.data?.new_state?.attributes?.hs_color?.getAt(0)
-                if (hue) hue = Math.round(hue.toInteger() * 100 / 360)
-                newVals += hue
-                def sat = response?.event?.data?.new_state?.attributes?.hs_color?.getAt(1)
-                if (sat) sat = Math.round(sat.toInteger())
-                newVals += sat
-                def ct = response?.event?.data?.new_state?.attributes?.color_temp
-                if (ct) ct = Math.round(1000000/ct)
-                newVals += ct
                 mapping = translateLight(device_class, newVals, friendly, origin)
                 if (newVals[0] == "off") //remove updates not provided with the HA 'off' event json data
                    {
@@ -452,7 +453,7 @@ def translateLight(device_class, newVals, friendly, origin)
         [
             rgbw: [type: "Generic Component RGBW",                      event: [[name: "switch", value: newVals[0], type: origin, descriptionText:"${friendly} was turned ${newVals[0]} [${origin}]"],[name: "level", value: newVals[1], type: origin, descriptionText:"${friendly} level was set to ${newVals[1]}"],[name: "hue", value: newVals[2], descriptionText:"${friendly} hue was set to ${newVals[2]}"],[name: "saturation", value: newVals[3], descriptionText:"${friendly} saturation was set to ${newVals[3]}"],[name: "colorTemparature", value: newVals[4], descriptionText:"${friendly} color temperature was set to ${newVals[4]}°K"]]],
             rgb: [type: "Generic Component RGB",                        event: [[name: "switch", value: newVals[0], type: origin, descriptionText:"${friendly} was turned ${newVals[0]} [${origin}]"],[name: "level", value: newVals[1], type: origin, descriptionText:"${friendly} level was set to ${newVals[1]}"],[name: "hue", value: newVals[2], descriptionText:"${friendly} hue was set to ${newVals[2]}"],[name: "saturation", value: newVals[3], descriptionText:"${friendly} saturation was set to ${newVals[3]}"]]],
-            ct: [type: "Generic Component CT",                          event: [[name: "switch", value: newVals[0], type: origin, descriptionText:"${friendly} was turned ${newVals[0]} [${origin}]"],[name: "level", value: newVals[1], type: origin, descriptionText:"${friendly} level was set to ${newVals[1]}"],[name: "colorTemparature", value: newVals[2], descriptionText:"${friendly} color temperature was set to ${newVals[2]}°K"]]],
+            ct: [type: "Generic Component CT",                          event: [[name: "switch", value: newVals[0], type: origin, descriptionText:"${friendly} was turned ${newVals[0]} [${origin}]"],[name: "level", value: newVals[1], type: origin, descriptionText:"${friendly} level was set to ${newVals[1]}"],[name: "colorTemperature", value: newVals[2], descriptionText:"${friendly} color temperature was set to ${newVals[2]}°K"]]],
             dimmer: [type: "Generic Component Dimmer",                  event: [[name: "switch", value: newVals[0], type: origin, descriptionText:"${friendly} was turned ${newVals[0]} [${origin}]"],[name: "level", value: newVals[1], type: origin, descriptionText:"${friendly} level was set to ${newVals[1]} [${origin}]"]]],
         ]
 

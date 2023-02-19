@@ -26,20 +26,18 @@ metadata
     preferences
     {
         input name: "txtEnable", type: "bool", title: "Enable descriptionText logging", defaultValue: true
-        input name: "ignoreForeignEvents", type: "bool", title: "Discard unavailable states", defaultValue: true
     }
     attribute "healthStatus", "enum", ["offline", "online"]
 }
 
 void updated() {
     log.info "Updated..."
-    log.warn "description logging is ${txtEnable == true}, discard unavailable states is ${ignoreForeignEvents == true}"
+    log.warn "description logging is ${txtEnable == true}"
 }
 
 void installed() {
     log.info "Installed..."
     device.updateSetting("txtEnable",[type:"bool",value:true])
-    device.updateSetting("ignoreForeignEvents",[type:"bool",value:true])
     refresh()
 }
 
@@ -50,7 +48,7 @@ void parse(List description) {
         if (it.name in ["switch"]) {
             if (txtEnable) log.info it.descriptionText
             sendEvent(name: "healthStatus", value: it.value == "unavailable" ? "offline" : "online")
-            if (!ignoreForeignEvents || (it.value != "unavailable")) sendEvent(it)
+            if (it.value != "unavailable") sendEvent(it)
         }
     }
 }

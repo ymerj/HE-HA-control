@@ -25,6 +25,7 @@
 * 0.1.45     2022-06-06 tomw               Added confirmation step before completing select/de-select all
 * 0.1.46     2022-07-04 tomw               Advanced configuration - manual add/remove of devices; option to disable filtering; unused child cleanup
 * 0.1.52     2023-02-02 tomw               UI improvements for app usability
+* 0.1.53     2023-02-19 tomw               Allow multiple instances of HADB app to be installed
 */
 
 definition(
@@ -237,7 +238,7 @@ def installed()
     def ch = getChild()
     if(!ch)
     {
-        ch = addChildDevice("ymerj", "HomeAssistant Hub Parent", "HE-HA-control", [name: "Home Assistant Device Bridge", label: "Home Assistant Device Bridge (${ip})", isComponent: false])
+        ch = addChildDevice("ymerj", "HomeAssistant Hub Parent", now().toString(), [name: "Home Assistant Device Bridge", label: "Home Assistant Device Bridge (${ip})", isComponent: false])
     }
     
     if(ch)
@@ -254,7 +255,7 @@ def installed()
 
 def getChild()
 {
-    return getChildDevice("HE-HA-control")
+    return getChildDevices()?.getAt(0)
 }
 
 def uninstalled()
@@ -264,9 +265,9 @@ def uninstalled()
 
 def deleteChildren()
 {
-    for(child in getChildDevices())
+    getChildDevices()?.each
     {
-        deleteChildDevice(child.getDeviceNetworkId())
+        deleteChildDevice(it.getDeviceNetworkId())
     }
 }
 

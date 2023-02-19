@@ -71,6 +71,7 @@
 * 0.1.49 2022-11-16 mboisson           Sensor units and support for "unknown" sensor types
 * 0.1.50 2022-12-06 Yves Mercier       Improved support for lights and added option to ignore unavailable state
 * 0.1.51 2023-01-30 Yves Mercier       Added support for "unknown" binary sensor and timestamp sensor
+* 0.1.53 2023-02-19 Yves Mercier       fix a typo and refine support for lights (CT)
 *
 * Thank you(s):
 */

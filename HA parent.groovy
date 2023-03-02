@@ -71,7 +71,8 @@
 * 0.1.49 2022-11-16 mboisson           Sensor units and support for "unknown" sensor types
 * 0.1.50 2022-12-06 Yves Mercier       Improved support for lights and added option to ignore unavailable state
 * 0.1.51 2023-01-30 Yves Mercier       Added support for "unknown" binary sensor and timestamp sensor
-* 0.1.53 2023-02-19 Yves Mercier       fix a typo and refine support for lights (CT)
+* 0.1.53 2023-02-19 Yves Mercier       Fix a typo and refine support for lights (CT)
+* 0.1.54 2023-03-02 Yves Mercier       Add support for light effects
 *
 * Thank you(s):
 */
@@ -266,10 +267,18 @@ def parse(String description) {
                 if (sat) sat = Math.round(sat.toInteger())
                 def ct = response?.event?.data?.new_state?.attributes?.color_temp
                 if (ct) ct = Math.round(1000000/ct)
+                def effectsList = []
+                effectsList = response?.event?.data?.new_state?.attributes?.effect_list
+                def effectName = response?.event?.data?.new_state?.attributes?.effect
                 def lightType = []
                 lightType = response?.event?.data?.new_state?.attributes?.supported_color_modes
+                if (effectsList) lightType += "rgbwe"
                 switch (lightType)
                     {
+                    case {it.intersect(["rgbwe"])}:
+                        device_class = "rgbwe"
+                        newVals += [hue, sat, ct, effectsList, effectName]
+                        break
                     case {it.intersect(["rgbww", "rgbw"])}:
                         device_class = "rgbw"
                         newVals += [hue, sat, ct]
@@ -451,6 +460,7 @@ def translateLight(device_class, newVals, friendly, origin)
 {
     def mapping =
         [
+            rgbwe: [type: "Generic Component RGBW light effects",       event: [[name: "switch", value: newVals[0], type: origin, descriptionText:"${friendly} was turned ${newVals[0]} [${origin}]"],[name: "level", value: newVals[1], type: origin, descriptionText:"${friendly} level was set to ${newVals[1]}"],[name: "hue", value: newVals[2], descriptionText:"${friendly} hue was set to ${newVals[2]}"],[name: "saturation", value: newVals[3], descriptionText:"${friendly} saturation was set to ${newVals[3]}"],[name: "colorTemparature", value: newVals[4], descriptionText:"${friendly} color temperature was set to ${newVals[4]}°K"],[name: "lightEffects", value: newVals[5]],[name: "effectName", value: newVals[6], descriptionText:"${friendly} effect was set to ${newVals[6]}"]]],
             rgbw: [type: "Generic Component RGBW",                      event: [[name: "switch", value: newVals[0], type: origin, descriptionText:"${friendly} was turned ${newVals[0]} [${origin}]"],[name: "level", value: newVals[1], type: origin, descriptionText:"${friendly} level was set to ${newVals[1]}"],[name: "hue", value: newVals[2], descriptionText:"${friendly} hue was set to ${newVals[2]}"],[name: "saturation", value: newVals[3], descriptionText:"${friendly} saturation was set to ${newVals[3]}"],[name: "colorTemparature", value: newVals[4], descriptionText:"${friendly} color temperature was set to ${newVals[4]}°K"]]],
             rgb: [type: "Generic Component RGB",                        event: [[name: "switch", value: newVals[0], type: origin, descriptionText:"${friendly} was turned ${newVals[0]} [${origin}]"],[name: "level", value: newVals[1], type: origin, descriptionText:"${friendly} level was set to ${newVals[1]}"],[name: "hue", value: newVals[2], descriptionText:"${friendly} hue was set to ${newVals[2]}"],[name: "saturation", value: newVals[3], descriptionText:"${friendly} saturation was set to ${newVals[3]}"]]],
             ct: [type: "Generic Component CT",                          event: [[name: "switch", value: newVals[0], type: origin, descriptionText:"${friendly} was turned ${newVals[0]} [${origin}]"],[name: "level", value: newVals[1], type: origin, descriptionText:"${friendly} level was set to ${newVals[1]}"],[name: "colorTemperature", value: newVals[2], descriptionText:"${friendly} color temperature was set to ${newVals[2]}°K"]]],
@@ -487,7 +497,7 @@ def removeChild(entity){
 def componentOn(ch){
     if (logEnable) log.info("received on request from ${ch.label}")
 
-    if (!ch.currentValue("level")) {
+    if (!ch.currentValue("level") || ch.hasCapability("LightEffects")) {
         data = [:]
     }
     else {
@@ -583,6 +593,28 @@ def componentSetSaturation(ch, saturation, transition=1)
     
     data = [brightness_pct: "${ch.currentValue("level")}", hs_color: ["${convertedHue}", "${saturation}"], transition: "${transition}"]
     executeCommand(ch, "turn_on", data)
+}
+
+def componentSetEffect(ch, effectNumber)
+    {
+    if (logEnable) log.info("received setEffect request from ${ch.label}")
+
+    def effectsList = ch.currentValue("lightEffects").tokenize?(',[]')
+    def max = effectsList.size()
+    effectNumber = effectNumber.toInteger()
+    if (effectNumber < 1) effectNumber = 1
+    if (effectNumber > max) effectNumber = max
+        
+    data = [effect: effectsList[effectNumber - 1].trim()]
+    executeCommand(ch, "turn_on", data)
+}
+
+def componentSetNextEffect() {
+    log.warn "setNextEffect not implemented"
+}
+
+def componentSetPreviousEffect() {
+    log.warn "setPreviousEffect not implemented"
 }
 
 def componentSetSpeed(ch, speed) {

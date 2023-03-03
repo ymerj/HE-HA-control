@@ -602,8 +602,7 @@ def componentSetEffect(ch, effectNumber)
     def effectsList = ch.currentValue("lightEffects").tokenize(',[]')
     def max = effectsList.size()
     effectNumber = effectNumber.toInteger()
-    if (effectNumber < 1) effectNumber = 1
-    if (effectNumber > max) effectNumber = max
+    effectNumber = (effectNumber < 1) ? 1 : ((effectNumber > max) ? max : effectNumber)   
         
     data = [effect: effectsList[effectNumber - 1].trim()]
     executeCommand(ch, "turn_on", data)

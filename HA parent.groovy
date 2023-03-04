@@ -305,7 +305,7 @@ def parse(String description) {
                 if (!device_class)
                 {
                     // if there is no device_class, we need to infer from the units
-                    if (unit_of_measurement in ["Bq/m³"]) device_class = "radon"
+                    if (unit_of_measurement in ["Bq/m³","pCi/L"]) device_class = "radon"
                     else device_class = "unknown"
                 }
 				newVals << unit_of_measurement

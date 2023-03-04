@@ -608,11 +608,11 @@ def componentSetEffect(ch, effectNumber)
     executeCommand(ch, "turn_on", data)
 }
 
-def componentSetNextEffect() {
+def componentSetNextEffect(ch) {
     log.warn "setNextEffect not implemented"
 }
 
-def componentSetPreviousEffect() {
+def componentSetPreviousEffect(ch) {
     log.warn "setPreviousEffect not implemented"
 }
 

@@ -599,7 +599,7 @@ def componentSetEffect(ch, effectNumber)
     {
     if (logEnable) log.info("received setEffect request from ${ch.label}")
 
-    def effectsList = ch.currentValue("lightEffects").tokenize(',[]')
+    def effectsList = ch.currentValue("lightEffects")?.tokenize(',[]')
     def max = effectsList.size()
     effectNumber = effectNumber.toInteger()
     effectNumber = (effectNumber < 1) ? 1 : ((effectNumber > max) ? max : effectNumber)   

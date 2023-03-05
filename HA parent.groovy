@@ -23,30 +23,6 @@
 * 0.1.1  2021-02-06 Dan Ogorchock      Added basic support for simple "Light" devices from Home Assistant using Hubitat Generic Component Dimmer driver
 * 0.1.2  2021-02-06 tomw               Added handling for some binary_sensor subtypes based on device_class
 * 0.1.3  2021-02-06 Dan Ogorchock      Bug Fixes 
-3
-*
-4
-* Description:
-5
-* Allow control of HA devices.
-6
-*
-7
-* Required Information:
-8
-* Home Asisstant IP and Port number
-9
-* Home Assistant long term Access Token
-10
-*
-11
-* Features List:
-12
-*
-13
-* Licensing:
-14
-* Copyright 2021 Yves Mercier.
 * 0.1.4  2021-02-06 Yves Mercier       Added version number and import URL
 * 0.1.5  2021-02-06 Dan Ogorchock      Added support for Temperature and Humidity Sensors
 * 0.1.6  2021-02-06 Dan Ogorchock      Corrected open/closed for HA door events

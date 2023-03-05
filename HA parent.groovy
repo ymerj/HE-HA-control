@@ -364,7 +364,6 @@ def parse(String description) {
                 def sourceList = []
                 sourceList = response?.event?.data?.new_state?.attributes?.source_list
                 newVals += [volume, mute, source, sourceList]
-		newVals[0] = (["off", "standby"].contains(newVals[0])) ? "off":"on"
                 mapping = translateDevices(domain, newVals, friendly, origin)
                 if (newVals[0] == "off") //remove updates not provided with the HA 'off' event json data
                    {

@@ -23,6 +23,30 @@
 * 0.1.1  2021-02-06 Dan Ogorchock      Added basic support for simple "Light" devices from Home Assistant using Hubitat Generic Component Dimmer driver
 * 0.1.2  2021-02-06 tomw               Added handling for some binary_sensor subtypes based on device_class
 * 0.1.3  2021-02-06 Dan Ogorchock      Bug Fixes 
+3
+*
+4
+* Description:
+5
+* Allow control of HA devices.
+6
+*
+7
+* Required Information:
+8
+* Home Asisstant IP and Port number
+9
+* Home Assistant long term Access Token
+10
+*
+11
+* Features List:
+12
+*
+13
+* Licensing:
+14
+* Copyright 2021 Yves Mercier.
 * 0.1.4  2021-02-06 Yves Mercier       Added version number and import URL
 * 0.1.5  2021-02-06 Dan Ogorchock      Added support for Temperature and Humidity Sensors
 * 0.1.6  2021-02-06 Dan Ogorchock      Corrected open/closed for HA door events
@@ -353,14 +377,26 @@ def parse(String description) {
                        return
                 }
                 newVals[0] = thermostat_mode
-                newVals += current_temperature
-                newVals += target_temperature
-                newVals += fan_mode
-                newVals += hvac_action
-            	newVals += target_temp_high
-                newVals += target_temp_low
+                newVals += [current_temperature, target_temperature, fan_mode, hvac_action, target_temp_high, target_temp_low]
                 mapping = translateDevices(domain, newVals, friendly, origin)
                 if (mapping) updateChildDevice(mapping, entity, friendly) 
+                break
+            case "media_player":
+                def volume = response?.event?.data?.new_state?.attributes?.volume
+                def mute = response?.event?.data?.new_state?.attributes?.is_volume_muted
+                def source = response?.event?.data?.new_state?.attributes?.source
+                def sourceList = []
+                sourceList = response?.event?.data?.new_state?.attributes?.source_list
+                newVals += [volume, mute, source, sourceList]
+                mapping = translateDevices(domain, newVals, friendly, origin)
+                if (newVals[0] == "off") //remove updates not provided with the HA 'off' event json data
+                   {
+                   for(int i in (mapping.event.size - 1)..1) 
+                       {
+                       mapping.event.remove(i)
+                       }  
+                    }
+                if (mapping) updateChildDevice(mapping, entity, friendly)
                 break
             default:
                 if (logEnable) log.info "No mapping exists for domain: ${domain}, device_class: ${device_class}.  Please contact devs to have this added."
@@ -411,7 +447,7 @@ def translateSensors(device_class, newVals, friendly, origin)
             temperature: [type: "Generic Component Temperature Sensor",       event: [[name: "temperature", value: newVals[0], descriptionText:"${friendly} temperature is ${newVals[0]} ${newVals[1]}"]]],
             voltage: [type: "Generic Component Voltage Sensor",               event: [[name: "voltage", value: newVals[0], descriptionText:"${friendly} voltage is ${newVals[0]} ${newVals[1]}"]]],
             energy: [type: "Generic Component Energy Meter",                  event: [[name: "energy", value: newVals[0], descriptionText:"${friendly} energy is ${newVals[0]} ${newVals[1]}"]]],
-	    unknown: [type: "Generic Component Unknown Sensor",               event: [[name: "unknown", value: newVals[0], unit_of_measurement: newVals[1], descriptionText:"${friendly} unknown is ${newVals[0]} ${newVals[1]}"]], namespace: "community"],
+	        unknown: [type: "Generic Component Unknown Sensor",               event: [[name: "unknown", value: newVals[0], unit_of_measurement: newVals[1], descriptionText:"${friendly} unknown is ${newVals[0]} ${newVals[1]}"]], namespace: "community"],
             timestamp: [type: "Generic Component TimeStamp Sensor",           event: [[name: "timestamp", value: newVals[0], descriptionText:"${friendly} time is ${newVals[0]}"]], namespace: "community"],
 	]
 
@@ -446,10 +482,11 @@ def translateDevices(domain, newVals, friendly, origin)
     def mapping =
         [
             fan: [type: "Generic Component Fan Control",                event: [[name: "switch", value: newVals[0], type: origin, descriptionText:"${friendly} was turned ${newVals[0]} [${origin}]"],[name: "speed", value: newVals[1], type: origin, descriptionText:"${friendly} speed was set to ${newVals[1]} [${origin}]"],[name: "level", value: newVals[2], type: origin, descriptionText:"${friendly} level was set to ${newVals[2]} [${origin}]"]]],
-            switch: [type: "Generic Component Switch",                  event: [[name: "switch", value: newVals[0], type: origin, descriptionText:"${friendly} was turned ${newVals[0]} [${origin}]"]]],
+            switch: [type: "HADB Alternate Component Switch",           event: [[name: "switch", value: newVals[0], type: origin, descriptionText:"${friendly} was turned ${newVals[0]} [${origin}]"]], namespace: "ymerj"],
             device_tracker: [type: "Generic Component Presence Sensor", event: [[name: "presence", value: newVals[0] == "home" ? "present":"not present", descriptionText:"${friendly} is updated"]], namespace: "community"],
             lock: [type: "Generic Component Lock",                      event: [[name: "lock", value: newVals[0] ?: "unknown", type: origin, descriptionText:"${friendly} was turned ${newVals[0]} [${origin}]"]]],
-            climate: [type: "Generic Component Thermostat",             event: [[name: "thermostatMode", value: newVals[0], descriptionText: "${friendly} is set to ${newVals[0]}"],[name: "temperature", value: newVals[1], descriptionText: "${friendly}'s current temperature is ${newVals[1]} degree"],[name: "coolingSetpoint", value: newVals[2], descriptionText: "${friendly}'s cooling temperature is set to ${newVals[2]} degree"],[name: "heatingSetpoint", value: newVals[2], descriptionText: "${friendly}'s heating temperature is set to ${newVals[2]} degree"],[name: "thermostatFanMode", value: newVals[3], descriptionText: "${friendly}'s fan is set to ${newVals[3]}"],[name: "thermostatSetpoint", value: newVals[2], descriptionText: "${friendly}'s temperature is set to ${newVals[2]} degree"],[name: "thermostatOperatingState", value: newVals[4], descriptionText: "${friendly}'s mode is ${newVals[4]}"],[name: "coolingSetpoint", value: newVals[5], descriptionText: "${friendly}'s cooling temperature is set to ${newVals[5]} degrees"],[name: "heatingSetpoint", value: newVals[6], descriptionText: "${friendly}'s heating temperature is set to ${newVals[6]} degrees"]]],
+            climate: [type: "Generic Component Thermostat",             event: [[name: "thermostatMode", value: newVals[0], descriptionText: "${friendly} is set to ${newVals[0]}"],[name: "temperature", value: newVals[1], descriptionText: "${friendly}'s current temperature is ${newVals[1]} degree"],[name: "coolingSetpoint", value: newVals[2], descriptionText: "${friendly} cooling temperature is set to ${newVals[2]} degree"],[name: "heatingSetpoint", value: newVals[2], descriptionText: "${friendly} heating temperature is set to ${newVals[2]} degree"],[name: "thermostatFanMode", value: newVals[3], descriptionText: "${friendly} fan is set to ${newVals[3]}"],[name: "thermostatSetpoint", value: newVals[2], descriptionText: "${friendly} temperature is set to ${newVals[2]} degree"],[name: "thermostatOperatingState", value: newVals[4], descriptionText: "${friendly} mode is ${newVals[4]}"],[name: "coolingSetpoint", value: newVals[5], descriptionText: "${friendly} cooling temperature is set to ${newVals[5]} degrees"],[name: "heatingSetpoint", value: newVals[6], descriptionText: "${friendly} heating temperature is set to ${newVals[6]} degrees"]]],
+            media_player: [type: "Generic Component Audio Zone",        event: [[name: "switch", value: newVals[0], type: origin, descriptionText:"${friendly} was turned ${newVals[0]} [${origin}]"],[name: "volume", value: newVals[1] ?: 'unavailable', descriptionText: "${friendly} volume was set to ${newVals[1] ?: 'unavailable'}%"],[name: "mute", value: newVals[2]? "muted":"unmuted", descriptionText: "${friendly} was ${newVals[2]? 'muted':'unmuted'}"],[name: "mediaInputSource", value: newVals[3], descriptionText: "${friendly} source was set to ${newVals[3]}"],[name: "supportedInputs", value: newVals[4]]]],
             input_boolean: [type: "Generic Component Switch",           event: [[name: "switch", value: newVals[0], type: origin, descriptionText:"${friendly} was turned ${newVals[0]} [${origin}]"]]],
         ]
 
@@ -800,6 +837,43 @@ def componentSetThermostatFanMode(ch, fanmode) {
         data = [fan_mode: fanmode]
         executeCommand(ch, "set_fan_mode", data)
     }
+}
+
+def componentSetVolume(ch, volume)
+{
+    volume = volume / 100
+    data = [volume_level: volume]
+    executeCommand(ch, "volume_set", data)
+}
+
+def componentMute(ch)
+{
+    data = [is_volume_muted: "true"]
+    executeCommand(ch, "volume_mute", data)
+}
+
+def componentUnMute(ch)
+{
+    data = [is_volume_muted: "false"]
+    executeCommand(ch, "volume_mute", data)
+}
+
+def componentVolumeUp(ch)
+{
+    data = [:]
+    executeCommand(ch, "volume_up", data)
+}
+
+def componentVolumeDown(ch)
+{
+    data = [:]
+    executeCommand(ch, "volume_down", data)
+}
+
+def componentSetInputSource(ch, source)
+{
+    data = [source: source]
+    executeCommand(ch, "select_source", data)
 }
 
 def componentAuto(ch)

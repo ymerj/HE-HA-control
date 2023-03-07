@@ -143,11 +143,11 @@ void nextTrack() {
     parent?.componentNextTrack(this.device)
 }
 
-void restoreTrack(trackuri) {
+void restoreTrack() {
     parent?.componentRestoreTrack(this.device)
 }
 
-void resumeTrack(trackuri) {
+void resumeTrack() {
     parent?.componentResumeTrack(this.device)
 }
 

@@ -33,6 +33,10 @@ metadata
         capability "MediaInputSource"
         capability "Refresh"
         capability "Health Check"
+        
+        command "playTrack", [[name: "TrackUri", type: "STRING", description: "Music url to play"],[name: "mType", type: "ENUM", constraints: ["music", "video", "tvshow", "episode", "channel", "playlist"], description: "Type of media"]]
+        command "restoreTrack"
+        command "resumeTrack"
     }
     preferences {
         input name: "txtEnable", type: "bool", title: "Enable descriptionText logging", defaultValue: true
@@ -67,7 +71,7 @@ void parse(List<Map> description) {
     }
 }
 
-void refresh() {[${origin}]
+void refresh() {
     parent?.componentRefresh(this.device)
 }
 
@@ -99,7 +103,7 @@ void setVolume(volume) {
     parent?.componentSetVolume(this.device, volume)
 }
 
-void setLevel(level) {setTrack(trackuri)
+void setLevel(level) {
     parent?.componentSetVolume(this.device, volume)
 }
 
@@ -107,8 +111,8 @@ void supportedInputs(sourceList) {
     parent?.componentSupportedInputs(this.device, sourceList)
 }
 
-void mediaInputSource(source) {
-    parent?.componentMediaInputSource(this.device, source)
+void setInputSource(source) {
+    parent?.componentSetInputSource(this.device, source)
 }
 
 void pause() {
@@ -128,7 +132,7 @@ void playText(text) {
 }
 
 void playTrack(trackuri) {
-    parent?.componentPlayTrack(this.device, trackuri)
+    parent?.componentPlayTrack(this.device, trackuri, mType)
 }
 
 void previousTrack() {
@@ -140,11 +144,11 @@ void nextTrack() {
 }
 
 void restoreTrack(trackuri) {
-    parent?.componentRestoreTrack(this.device, trackuri)
+    parent?.componentRestoreTrack(this.device)
 }
 
 void resumeTrack(trackuri) {
-    parent?.componentResumeTrack(this.device, trackuri)
+    parent?.componentResumeTrack(this.device)
 }
 
 void setTrack(trackuri) {

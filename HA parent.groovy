@@ -423,7 +423,7 @@ def translateSensors(device_class, newVals, friendly, origin)
             temperature: [type: "Generic Component Temperature Sensor",       event: [[name: "temperature", value: newVals[0], descriptionText:"${friendly} temperature is ${newVals[0]} ${newVals[1]}"]]],
             voltage: [type: "Generic Component Voltage Sensor",               event: [[name: "voltage", value: newVals[0], descriptionText:"${friendly} voltage is ${newVals[0]} ${newVals[1]}"]]],
             energy: [type: "Generic Component Energy Meter",                  event: [[name: "energy", value: newVals[0], descriptionText:"${friendly} energy is ${newVals[0]} ${newVals[1]}"]]],
-            unknown: [type: "Generic Component Unknown Sensor",               event: [[name: "unknown", value: newVals[0], unit_of_measurement: newVals[1], descriptionText:"${friendly} unknown is ${newVals[0]} ${newVals[1]}"]], namespace: "community"],
+	        unknown: [type: "Generic Component Unknown Sensor",               event: [[name: "unknown", value: newVals[0], unit_of_measurement: newVals[1], descriptionText:"${friendly} unknown is ${newVals[0]} ${newVals[1]}"]], namespace: "community"],
             timestamp: [type: "Generic Component TimeStamp Sensor",           event: [[name: "timestamp", value: newVals[0], descriptionText:"${friendly} time is ${newVals[0]}"]], namespace: "community"],
 	]
 
@@ -462,7 +462,7 @@ def translateDevices(domain, newVals, friendly, origin)
             device_tracker: [type: "Generic Component Presence Sensor", event: [[name: "presence", value: newVals[0] == "home" ? "present":"not present", descriptionText:"${friendly} is updated"]], namespace: "community"],
             lock: [type: "Generic Component Lock",                      event: [[name: "lock", value: newVals[0] ?: "unknown", type: origin, descriptionText:"${friendly} was turned ${newVals[0]} [${origin}]"]]],
             climate: [type: "Generic Component Thermostat",             event: [[name: "thermostatMode", value: newVals[0], descriptionText: "${friendly} is set to ${newVals[0]}"],[name: "temperature", value: newVals[1], descriptionText: "${friendly}'s current temperature is ${newVals[1]} degree"],[name: "coolingSetpoint", value: newVals[2], descriptionText: "${friendly} cooling temperature is set to ${newVals[2]} degree"],[name: "heatingSetpoint", value: newVals[2], descriptionText: "${friendly} heating temperature is set to ${newVals[2]} degree"],[name: "thermostatFanMode", value: newVals[3], descriptionText: "${friendly} fan is set to ${newVals[3]}"],[name: "thermostatSetpoint", value: newVals[2], descriptionText: "${friendly} temperature is set to ${newVals[2]} degree"],[name: "thermostatOperatingState", value: newVals[4], descriptionText: "${friendly} mode is ${newVals[4]}"],[name: "coolingSetpoint", value: newVals[5], descriptionText: "${friendly} cooling temperature is set to ${newVals[5]} degrees"],[name: "heatingSetpoint", value: newVals[6], descriptionText: "${friendly} heating temperature is set to ${newVals[6]} degrees"]]],
-            media_player: [type: "Generic Component Audio Zone",        event: [[name: "switch", value: ["off", "standby"].contains(newVals[0]) ? "off":"on", type: origin, descriptionText:"${friendly} was turned ${["off", "standby"].contains(newVals[0]) ? "off":"on"} [${origin}]"],[name: "volume", value: newVals[1] ?: 'unavailable', descriptionText: "${friendly} volume was set to ${newVals[1] ?: 'unavailable'}%"],[name: "mute", value: newVals[2]? "muted":"unmuted", descriptionText: "${friendly} was ${newVals[2]? 'muted':'unmuted'}"],[name: "mediaInputSource", value: newVals[3], descriptionText: "${friendly} source was set to ${newVals[3]}"],[name: "supportedInputs", value: newVals[4]]]],
+            media_player: [type: "Generic Component Audio Zone",        event: [[name: "switch", value: ["off", "standby"].contains(newVals[0]) ? "off":"on", type: origin, descriptionText:"${friendly} was turned ${["off", "standby"].contains(newVals[0]) ? "off":"on"} [${origin}]"],[name: "status", value: newVals[0], type: origin, descriptionText:"${friendly} status became ${newVals[0]}"],[name: "volume", value: newVals[1] ?: 'unavailable', descriptionText: "${friendly} volume was set to ${newVals[1] ?: 'unavailable'}%"],[name: "mute", value: newVals[2]? "muted":"unmuted", descriptionText: "${friendly} was ${newVals[2]? 'muted':'unmuted'}"],[name: "mediaInputSource", value: newVals[3], descriptionText: "${friendly} source was set to ${newVals[3]}"],[name: "supportedInputs", value: newVals[4]]]],
             input_boolean: [type: "Generic Component Switch",           event: [[name: "switch", value: newVals[0], type: origin, descriptionText:"${friendly} was turned ${newVals[0]} [${origin}]"]]],
         ]
 
@@ -815,6 +815,24 @@ def componentSetThermostatFanMode(ch, fanmode) {
     }
 }
 
+def componentPause(ch)
+{
+    data = [:]
+    executeCommand(ch, "media_pause", data)
+}
+
+def componentPlay(ch)
+{
+    data = [:]
+    executeCommand(ch, "media_play", data)
+}
+
+def componentStop(ch)
+{
+    data = [:]
+    executeCommand(ch, "media_stop", data)
+}
+
 def componentSetVolume(ch, volume)
 {
     volume = volume / 100
@@ -850,6 +868,40 @@ def componentSetInputSource(ch, source)
 {
     data = [source: source]
     executeCommand(ch, "select_source", data)
+}
+
+def componentNextTrack(ch)
+{
+    data = [:]
+    executeCommand(ch, "media_next_track", data)
+}
+
+def componentPreviousTrack(ch)
+{
+    data = [:]
+    executeCommand(ch, "media_previous_track", data)
+}
+
+def componentRestoreTrack(ch) {
+    log.warn "RestoreTrack not supported"
+}
+
+def componentResumeTrack(ch) {
+    log.warn "ResumeTrack not supported"
+}
+
+def componentSetTrack(ch, uri) {
+    log.warn "SetTrack not implemented"
+}
+
+def componentPlayTrack(ch, mUri, mType = "music")
+{
+    data = [media_content_id: mUri, media_content_type: mType, enqueue: "play"]
+    executeCommand(ch, "play_media", data)
+}
+
+def componentPlayText(ch, txt) {
+    log.warn "PlayText not supported"
 }
 
 def componentAuto(ch)

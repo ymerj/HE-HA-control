@@ -131,7 +131,7 @@ void playText(text) {
     parent?.componentStop(this.device, text)
 }
 
-void playTrack(trackuri) {
+void playTrack(trackuri, mType) {
     parent?.componentPlayTrack(this.device, trackuri, mType)
 }
 

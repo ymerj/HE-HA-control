@@ -353,8 +353,15 @@ def parse(String description) {
                        return
                 }
                 newVals[0] = thermostat_mode
-                if (thermostat_mode != "off") newVals += [current_temperature, target_temperature, fan_mode, hvac_action, target_temp_high, target_temp_low]
+                newVals += [current_temperature, target_temperature, fan_mode, hvac_action, target_temp_high, target_temp_low]
                 mapping = translateDevices(domain, newVals, friendly, origin)
+		if (newVals[0] == "off") //remove updates not provided with the HA 'off' event json data
+                   {
+                   for(int i in (mapping.event.size - 1)..1) 
+                       {
+                       mapping.event.remove(i)
+                       }  
+                    }
                 if (mapping) updateChildDevice(mapping, entity, friendly) 
                 break
             case "media_player":

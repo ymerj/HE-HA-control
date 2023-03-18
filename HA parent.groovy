@@ -353,7 +353,7 @@ def parse(String description) {
                        return
                 }
                 newVals[0] = thermostat_mode
-                newVals += [current_temperature, target_temperature, fan_mode, hvac_action, target_temp_high, target_temp_low]
+                if (thermostat_mode != "off") newVals += [current_temperature, target_temperature, fan_mode, hvac_action, target_temp_high, target_temp_low]
                 mapping = translateDevices(domain, newVals, friendly, origin)
                 if (mapping) updateChildDevice(mapping, entity, friendly) 
                 break

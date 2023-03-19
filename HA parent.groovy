@@ -365,7 +365,8 @@ def parse(String description) {
                 if (mapping) updateChildDevice(mapping, entity, friendly) 
                 break
             case "media_player":
-                def volume = response?.event?.data?.new_state?.attributes?.volume
+                def volume = response?.event?.data?.new_state?.attributes?.volume_level
+		if (volume) volume = Math.round(volume *100)
                 def mute = response?.event?.data?.new_state?.attributes?.is_volume_muted
                 def source = response?.event?.data?.new_state?.attributes?.source
                 def sourceList = []
@@ -853,7 +854,7 @@ def componentMute(ch)
     executeCommand(ch, "volume_mute", data)
 }
 
-def componentUnMute(ch)
+def componentUnmute(ch)
 {
     data = [is_volume_muted: "false"]
     executeCommand(ch, "volume_mute", data)

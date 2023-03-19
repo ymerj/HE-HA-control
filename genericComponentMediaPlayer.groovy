@@ -64,7 +64,7 @@ void parse(List<Map> description) {
             sendEvent(name: "healthStatus", value: it.value == "unavailable" ? "offline" : "online")
             sendEvent(it)
         }
-        if (it.name in ["switch", "status", "mute", "volume", "mediaInputSource", "supportedInputs"]) {
+        if (it.name in ["switch", "mute", "volume", "mediaInputSource", "supportedInputs"]) {
             if (txtEnable) log.info it.descriptionText
             sendEvent(it)
         }

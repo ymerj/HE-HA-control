@@ -904,6 +904,8 @@ def componentSetTrack(ch, uri) {
 
 def componentPlayTrack(ch, mUri, mType = "music")
 {
+    if (logEnable) log.info("received playtrack request from ${ch.label}: mUri = ${mUri} mType = ${mType}")
+
     data = [media_content_id: mUri, media_content_type: mType, enqueue: "play"]
     executeCommand(ch, "play_media", data)
 }

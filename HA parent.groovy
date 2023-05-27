@@ -353,13 +353,15 @@ def parse(String description) {
                        return
                 }
                 newVals[0] = thermostat_mode
-                newVals += current_temperature
-                newVals += target_temperature
-                newVals += fan_mode
-                newVals += hvac_action
-            	newVals += target_temp_high
-                newVals += target_temp_low
+                newVals += [current_temperature, target_temperature, fan_mode, hvac_action, target_temp_high, target_temp_low]
                 mapping = translateDevices(domain, newVals, friendly, origin)
+                if (newVals[0] == "off") //remove updates not provided with the HA 'off' event json data
+                   {
+                   for(int i in (mapping.event.size - 1)..1) 
+                       {
+                       mapping.event.remove(i)
+                       }  
+                    }
                 if (mapping) updateChildDevice(mapping, entity, friendly) 
                 break
             default:
@@ -413,6 +415,7 @@ def translateSensors(device_class, newVals, friendly, origin)
             energy: [type: "Generic Component Energy Meter",                  event: [[name: "energy", value: newVals[0], descriptionText:"${friendly} energy is ${newVals[0]} ${newVals[1]}"]]],
 	    unknown: [type: "Generic Component Unknown Sensor",               event: [[name: "unknown", value: newVals[0], unit_of_measurement: newVals[1], descriptionText:"${friendly} unknown is ${newVals[0]} ${newVals[1]}"]], namespace: "community"],
             timestamp: [type: "Generic Component TimeStamp Sensor",           event: [[name: "timestamp", value: newVals[0], descriptionText:"${friendly} time is ${newVals[0]}"]], namespace: "community"],
+	    pm25: [type: "Generic Component Pm25",                            event: [[name: "pm25", value: newVals[0], unit_of_measurement: newVals[1], descriptionText:"${friendly} pm2.5 is ${newVals[0]} ${newVals[1]}"]], namespace: "community"],
 	]
 
     return mapping[device_class]

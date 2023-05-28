@@ -416,7 +416,7 @@ def translateSensors(device_class, newVals, friendly, origin)
             energy: [type: "Generic Component Energy Meter",                  event: [[name: "energy", value: newVals[0], descriptionText:"${friendly} energy is ${newVals[0]} ${newVals[1]}"]]],
             unknown: [type: "Generic Component Unknown Sensor",               event: [[name: "unknown", value: newVals[0], unit_of_measurement: newVals[1], descriptionText:"${friendly} unknown is ${newVals[0]} ${newVals[1]}"]], namespace: "community"],
             timestamp: [type: "Generic Component TimeStamp Sensor",           event: [[name: "timestamp", value: newVals[0], descriptionText:"${friendly} time is ${newVals[0]}"]], namespace: "community"],
-            pm25: [type: "Generic Component Pm25 Sensor",                     event: [[name: "pm25", value: newVals[0], unit: newVals[1], descriptionText:"${friendly} pm2.5 is ${newVals[0]} ${newVals[1]}"]], namespace: "community"],
+            pm25: [type: "Generic Component pm25 Sensor",                     event: [[name: "pm25", value: newVals[0], unit: newVals[1], descriptionText:"${friendly} pm2.5 is ${newVals[0]} ${newVals[1]}"]], namespace: "community"],
 	]
 
     return mapping[device_class]

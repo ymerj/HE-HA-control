@@ -1,7 +1,7 @@
 {
   "packageName": "HE-HA-control",
   "author": "ymerj",
-  "version": "0.1.54",
+  "version": "0.1.55",
   "minimumHEVersion": "2.1.9",
   "dateReleased": "2021-03-19",
   "drivers": [
@@ -87,6 +87,13 @@
       "name": "Generic Component Volatile Organic Compounds Sensor",
       "namespace": "community",
       "location": "https://raw.githubusercontent.com/ymerj/HE-HA-control/main/genericComponentVolatileOrganicCompoundsSensor.groovy",
+      "required": false
+    },
+    {
+      "id": "d31cc626-0afe-4ad5-a512-f5782358bf8d",
+      "name": "Generic Component pm25 Sensor",
+      "namespace": "community",
+      "location": "https://raw.githubusercontent.com/ymerj/HE-HA-control/main/genericComponentpm25Sensor.groovy",
       "required": false
     }
   ],

@@ -24,7 +24,7 @@ Change history:
 
 metadata
     {
-    definition(name: "Generic Component Pm25 Sensor", namespace: "community", author: "community", importUrl: "https://raw.githubusercontent.com/ymerj/HE-HA-control/main/genericComponentPm25Sensor.groovy")
+    definition(name: "Generic Component pm25 Sensor", namespace: "community", author: "community", importUrl: "https://raw.githubusercontent.com/ymerj/HE-HA-control/main/genericComponentpm25Sensor.groovy")
         {
         capability "Refresh"
         capability "Health Check"

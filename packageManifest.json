@@ -88,6 +88,13 @@
       "namespace": "community",
       "location": "https://raw.githubusercontent.com/ymerj/HE-HA-control/main/genericComponentVolatileOrganicCompoundsSensor.groovy",
       "required": false
+    },
+    {
+      "id": "d31cc626-0afe-4ad5-a512-f5782358bf8d",
+      "name": "Generic Component Pm25 Sensor",
+      "namespace": "community",
+      "location": "https://raw.githubusercontent.com/ymerj/HE-HA-control/main/genericComponentPm25Sensor.groovy",
+      "required": false
     }
   ],
   "apps": [

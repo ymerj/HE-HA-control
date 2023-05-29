@@ -53,7 +53,7 @@ void parse(String description) { log.warn "parse(String description) not impleme
 
 void parse(List<Map> description) {
     description.each {
-        if (it.name in ["carbon_dioxide"]) {
+        if (it.name in ["carbonDioxide"]) {
             if (txtEnable) log.info it.descriptionText
             sendEvent(name: "healthStatus", value: it.value == "unavailable" ? "offline" : "online")
             sendEvent(it)

@@ -74,6 +74,7 @@
 * 0.1.53 2023-02-19 Yves Mercier       Fix a typo and refine support for lights (CT)
 * 0.1.54 2023-03-02 Yves Mercier       Add support for light effects
 * 0.1.55 2023-05-27 Yves Mercier       Add support for pm2.5
+* 0.1.56 2023-05-29 Yves Mercier       Various units handling
 *
 * Thank you(s):
 */
@@ -407,7 +408,7 @@ def translateSensors(device_class, newVals, friendly, origin)
             battery: [type: "Generic Component Battery",                      event: [[name: "battery", value: newVals[0], descriptionText:"${friendly} battery is ${newVals[0]}%"]], namespace: "community"],
             power: [type: "Generic Component Power Meter",                    event: [[name: "power", value: newVals[0], descriptionText:"${friendly} power is ${newVals[0]} ${newVals[1]}"]]],
             pressure: [type: "Generic Component Pressure Sensor",             event: [[name: "pressure", value: newVals[0], descriptionText:"${friendly} pressure is ${newVals[0]}"]], namespace: "community"],
-            carbon_dioxide: [type: "Generic Component Carbon Dioxide Sensor", event: [[name: "carbon_dioxide", value: newVals[0], unit: newVals[1], descriptionText:"${friendly} carbon_dioxide is ${newVals[0]} ${newVals[1]}"]], namespace: "community"],
+            carbon_dioxide: [type: "Generic Component Carbon Dioxide Sensor", event: [[name: "carbonDioxide", value: newVals[0], unit: newVals[1], descriptionText:"${friendly} carbon_dioxide is ${newVals[0]} ${newVals[1]}"]], namespace: "community"],
             volatile_organic_compounds: [type: "Generic Component Volatile Organic Compounds Sensor",
                                                                               event: [[name: "volatile_organic_compounds", value: newVals[0], unit: newVals[1], descriptionText:"${friendly} volatile_organic_compounds is ${newVals[0]} ${newVals[1]}"]], namespace: "community"],
             radon: [type: "Generic Component Radon Sensor",                   event: [[name: "radon", value: newVals[0], unit: newVals[1], descriptionText:"${friendly} radon is ${newVals[0]} ${newVals[1]}"]], namespace: "community"],

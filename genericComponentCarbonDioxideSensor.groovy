@@ -20,6 +20,7 @@ Change history:
 
 0.1.47 - mboisson - initial version
 0.1.52 - Yves Mercier - Add health check capability
+0.1.56 - Yves mercier - Refactored to carry over specified units
 
 */
 
@@ -50,17 +51,11 @@ void installed() {
 
 void parse(String description) { log.warn "parse(String description) not implemented" }
 
-void updateAttr(String aKey, aValue, String aUnit = ""){
-    sendEvent(name:aKey, value:aValue, unit:aUnit)
-}
-
 void parse(List<Map> description) {
     description.each {
         if (it.name in ["carbon_dioxide"]) {
             if (txtEnable) log.info it.descriptionText
             sendEvent(name: "healthStatus", value: it.value == "unavailable" ? "offline" : "online")
-            unit="ppm"
-            updateAttr("carbonDioxide", it.value, unit)
             sendEvent(it)
         }
     }

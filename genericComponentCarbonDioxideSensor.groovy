@@ -26,7 +26,7 @@ Change history:
 
 metadata
 {
-    definition(name: "Generic Component Carbon Dioxide Sensor", namespace: "community", author: "community", importUrl: "https://raw.githubusercontent.com/mboisson/HE-HA-control/airthings/genericComponentCarbonDioxideSensor.groovy")
+    definition(name: "Generic Component Carbon Dioxide Sensor", namespace: "community", author: "community", importUrl: "https://raw.githubusercontent.com/ymerj/HE-HA-control/main/genericComponentCarbonDioxideSensor.groovy")
     {
         capability "CarbonDioxideMeasurement"
         capability "Refresh"

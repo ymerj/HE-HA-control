@@ -414,7 +414,7 @@ def translateSensors(device_class, newVals, friendly, origin)
             temperature: [type: "Generic Component Temperature Sensor",       event: [[name: "temperature", value: newVals[0], descriptionText:"${friendly} temperature is ${newVals[0]} ${newVals[1]}"]]],
             voltage: [type: "Generic Component Voltage Sensor",               event: [[name: "voltage", value: newVals[0], descriptionText:"${friendly} voltage is ${newVals[0]} ${newVals[1]}"]]],
             energy: [type: "Generic Component Energy Meter",                  event: [[name: "energy", value: newVals[0], descriptionText:"${friendly} energy is ${newVals[0]} ${newVals[1]}"]]],
-            unknown: [type: "Generic Component Unknown Sensor",               event: [[name: "unknown", value: newVals[0], unit_of_measurement: newVals[1], descriptionText:"${friendly} unknown is ${newVals[0]} ${newVals[1]}"]], namespace: "community"],
+            unknown: [type: "Generic Component Unknown Sensor",               event: [[name: "unknown", value: newVals[0], unit: newVals[1] ?: "", descriptionText:"${friendly} value is ${newVals[0]} ${newVals[1] ?: ''}"]], namespace: "community"],
             timestamp: [type: "Generic Component TimeStamp Sensor",           event: [[name: "timestamp", value: newVals[0], descriptionText:"${friendly} time is ${newVals[0]}"]], namespace: "community"],
             pm25: [type: "Generic Component pm25 Sensor",                     event: [[name: "pm25", value: newVals[0], unit: newVals[1], descriptionText:"${friendly} pm2.5 is ${newVals[0]} ${newVals[1]}"]], namespace: "community"],
 	]

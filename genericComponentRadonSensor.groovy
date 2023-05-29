@@ -20,6 +20,7 @@ Change history:
 
 0.1.47 - mboisson - initial version
 0.1.52 - Yves Mercier - Add health check capability
+0.1.56 - Yves mercier - Refactored to carry over specified units
 
 */
 
@@ -48,10 +49,6 @@ void installed() {
     refresh()
 }
 
-void updateAttr(String aKey, aValue, String aUnit = ""){
-    sendEvent(name:aKey, value:aValue, unit:aUnit)
-}
-
 void parse(String description) { log.warn "parse(String description) not implemented" }
 
 void parse(List<Map> description) {
@@ -59,8 +56,6 @@ void parse(List<Map> description) {
         if (it.name in ["radon"]) {
             if (txtEnable) log.info it.descriptionText
             sendEvent(name: "healthStatus", value: it.value == "unavailable" ? "offline" : "online")
-            unit="ppb"
-            updateAttr("radon", it.value, unit)
             sendEvent(it)
         }
     }

@@ -404,10 +404,10 @@ def translateSensors(device_class, newVals, friendly, origin)
     def mapping =
         [
             humidity: [type: "Generic Component Humidity Sensor",             event: [[name: "humidity", value: newVals[0], descriptionText:"${friendly} humidity is ${newVals[0]} ${newVals[1]}"]]],
-            illuminance: [type: "Generic Component Illuminance Sensor",       event: [[name: "illuminance", value: newVals[0], descriptionText:"${friendly} illuminance is ${newVals[0]} ${newVals[1]}"]], namespace: "community"],
+            illuminance: [type: "Generic Component Illuminance Sensor",       event: [[name: "illuminance", value: newVals[0], unit: newVals[1] ?: "", descriptionText:"${friendly} illuminance is ${newVals[0]} ${newVals[1] ?: ''}"]], namespace: "community"],
             battery: [type: "Generic Component Battery",                      event: [[name: "battery", value: newVals[0], descriptionText:"${friendly} battery is ${newVals[0]}%"]], namespace: "community"],
-            power: [type: "Generic Component Power Meter",                    event: [[name: "power", value: newVals[0], descriptionText:"${friendly} power is ${newVals[0]} ${newVals[1]}"]]],
-            pressure: [type: "Generic Component Pressure Sensor",             event: [[name: "pressure", value: newVals[0], descriptionText:"${friendly} pressure is ${newVals[0]}"]], namespace: "community"],
+            power: [type: "Generic Component Power Meter",                    event: [[name: "power", value: newVals[0], unit: newVals[1] ?: "", descriptionText:"${friendly} power is ${newVals[0]} ${newVals[1] ?: ''}"]]],
+            pressure: [type: "Generic Component Pressure Sensor",             event: [[name: "pressure", value: newVals[0], unit: newVals[1] ?: "", descriptionText:"${friendly} pressure is ${newVals[0]}" ${newVals[1] ?: ''}"]], namespace: "community"],
             carbon_dioxide: [type: "Generic Component Carbon Dioxide Sensor", event: [[name: "carbonDioxide", value: newVals[0], unit: newVals[1] ?: "ppm", descriptionText:"${friendly} carbon_dioxide is ${newVals[0]} ${newVals[1] ?: 'ppm'}"]], namespace: "community"],
             volatile_organic_compounds: [type: "Generic Component Volatile Organic Compounds Sensor",
                                                                               event: [[name: "voc", value: newVals[0], unit: newVals[1] ?: "µg/m³", descriptionText:"${friendly} volatile_organic_compounds is ${newVals[0]} ${newVals[1] ?: 'µg/m³'}"]], namespace: "community"],

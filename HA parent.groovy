@@ -72,9 +72,9 @@
 * 0.1.50 2022-12-06 Yves Mercier       Improved support for lights and added option to ignore unavailable state
 * 0.1.51 2023-01-30 Yves Mercier       Added support for "unknown" binary sensor and timestamp sensor
 * 0.1.53 2023-02-19 Yves Mercier       Fix a typo and refine support for lights (CT)
-* 0.1.54 2023-03-02 Yves Mercier       Add support for light effects
-* 0.1.55 2023-05-27 Yves Mercier       Add support for pm2.5
-* 0.1.56 2023-05-29 Yves Mercier       Various units handling
+* 0.1.54 2023-03-02 Yves Mercier       Added support for light effects
+* 0.1.55 2023-05-27 Yves Mercier       Added support for pm2.5
+* 0.1.56 2023-06-12 Yves Mercier       Modified various sensor units handling
 *
 * Thank you(s):
 */

@@ -19,7 +19,8 @@ limitations under the License.
 Change history:
 
 0.1.49 - mboisson - initial version
-0.1.52 - Yves Mercier - Add health check capability
+0.1.52 - Yves mercier - Add health check capability
+0.1.56 - Yves Mercier - Refactored to handle null units
 
 */
 
@@ -50,10 +51,6 @@ void installed() {
     refresh()
 }
 
-void updateAttr(String aKey, aValue, String aUnit = ""){
-    sendEvent(name:aKey, value:aValue, unit:aUnit)
-}
-
 void parse(String description) { log.warn "parse(String description) not implemented" }
 
 void parse(List<Map> description) {
@@ -61,9 +58,9 @@ void parse(List<Map> description) {
         if (it.name in ["unknown"]) {
             if (txtEnable) log.info it.descriptionText
             sendEvent(name: "healthStatus", value: it.value == "unavailable" ? "offline" : "online")
-            updateAttr("value", it.value, it.unit_of_measurement)
-            updateAttr("valueStr", it.value, it.unit_of_measurement)
-            updateAttr("unit", it.unit_of_measurement)
+            sendEvent(name: "value", value: it.value, unit: it.unit, descriptionText: it.descriptionText)
+            sendEvent(name: "valueStr", value: it.value)
+            sendEvent(name: "unit", value: it.unit ?: "none")
         }
     }
 }

@@ -75,6 +75,7 @@
 * 0.1.54 2023-03-02 Yves Mercier       Added support for light effects
 * 0.1.55 2023-05-27 Yves Mercier       Added support for pm2.5
 * 0.1.56 2023-06-12 Yves Mercier       Modified various sensor units handling
+* 0.1.57 2023-07-18 Yves Mercier       By default map unsuported sensors to unknown
 *
 * Thank you(s):
 */
@@ -307,20 +308,15 @@ def parse(String description) {
                 if (mapping) updateChildDevice(mapping, entity, friendly)
                 break
             case "binary_sensor":
-                if (!device_class) device_class = "unknown"
                 mapping = translateBinarySensors(device_class, newVals, friendly, origin)
                 if (mapping) updateChildDevice(mapping, entity, friendly)
                 break
             case "sensor":
                 def unit_of_measurement = response?.event?.data?.new_state?.attributes?.unit_of_measurement
-                if (!device_class)
-                {
-                    // if there is no device_class, we need to infer from the units
-                    if (unit_of_measurement in ["Bq/m³","pCi/L"]) device_class = "radon"
-                    else device_class = "unknown"
-                }
-				newVals << unit_of_measurement
-				
+		
+                // if there is no device_class, we need to infer from the units
+                if ((!device_class) && (unit_of_measurement in ["Bq/m³","pCi/L"])) device_class = "radon"
+		newVals << unit_of_measurement
                 mapping = translateSensors(device_class, newVals, friendly, origin)
                 if (mapping) updateChildDevice(mapping, entity, friendly)
                 break
@@ -395,7 +391,8 @@ def translateBinarySensors(device_class, newVals, friendly, origin)
             unknown: [type: "Generic Component Unknown Sensor",         event: [[name: "unknown", value: newVals[0], descriptionText:"${friendly} is ${newVals[0]}"]], namespace: "community"],
             window: [type: "Generic Component Contact Sensor",          event: [[name: "contact", value: newVals[0] == "on" ? "open":"closed", descriptionText:"${friendly} is ${newVals[0] == 'on' ? 'open':'closed'}"]]],
         ]
-
+	
+    if (!mapping[device_class]) device_class = "unknown"
     return mapping[device_class]
 }
 
@@ -419,7 +416,8 @@ def translateSensors(device_class, newVals, friendly, origin)
             timestamp: [type: "Generic Component TimeStamp Sensor",           event: [[name: "timestamp", value: newVals[0], descriptionText:"${friendly} time is ${newVals[0]}"]], namespace: "community"],
             pm25: [type: "Generic Component pm25 Sensor",                     event: [[name: "pm25", value: newVals[0], unit: newVals[1] ?: "µg/m³", descriptionText:"${friendly} pm2.5 is ${newVals[0]} ${newVals[1] ?: 'µg/m³'}"]], namespace: "community"],
 	]
-
+	
+    if (!mapping[device_class]) device_class = "unknown"
     return mapping[device_class]
 }
 

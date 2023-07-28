@@ -76,6 +76,7 @@
 * 0.1.55 2023-05-27 Yves Mercier       Added support for pm2.5
 * 0.1.56 2023-06-12 Yves Mercier       Modified various sensor units handling
 * 0.1.57 2023-07-18 Yves Mercier       By default map unsuported sensors to unknown
+* 0.1.58 2023-07-27 Yves Mercier       Add support for number entity
 *
 * Thank you(s):
 */

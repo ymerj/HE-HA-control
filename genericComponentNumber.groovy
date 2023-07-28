@@ -29,7 +29,7 @@ metadata
         capability "Refresh"
         capability "Health Check"
         
-        command "setNumber", [[ name: "newValue", type: "STRING", description: "Define new value" ]]
+        command "setNumber", [[ name: "newValue", type: "NUMBER", description: "Define new value" ]]
     }
     preferences {
         input name: "txtEnable", type: "bool", title: "Enable descriptionText logging", defaultValue: true

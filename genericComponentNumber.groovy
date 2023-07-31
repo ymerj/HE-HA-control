@@ -36,7 +36,7 @@ metadata
     }
     attribute "value", "number"
     attribute "valueStr", "string"
-    // attribute "unit", "string"
+    attribute "unit", "string"
     attribute "healthStatus", "enum", ["offline", "online"]
 }
 
@@ -60,7 +60,7 @@ void parse(List<Map> description) {
             sendEvent(name: "healthStatus", value: it.value == "unavailable" ? "offline" : "online")
             sendEvent(name: "value", value: it.value, unit: it.unit, descriptionText: it.descriptionText)
             sendEvent(name: "valueStr", value: it.value)
-            // sendEvent(name: "unit", value: it.unit ?: "none")
+            sendEvent(name: "unit", value: it.unit ?: "none")
         }
     }
 }

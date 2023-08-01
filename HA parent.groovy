@@ -313,8 +313,11 @@ def parse(String description) {
                 if (mapping) updateChildDevice(mapping, entity, friendly)
                 break
             case "number":
+		def min = response?.event?.data?.new_state?.attributes?.min
+		def max = response?.event?.data?.new_state?.attributes?.max
+		def step = response?.event?.data?.new_state?.attributes?.step
 		def unit_of_measurement = response?.event?.data?.new_state?.attributes?.unit_of_measurement
-		newVals += unit_of_measurement
+		newVals += [unit_of_measurement, min, max, step]
                 mapping = translateDevices(domain, newVals, friendly, origin)
                 if (mapping) updateChildDevice(mapping, entity, friendly)
                 break
@@ -461,7 +464,7 @@ def translateDevices(domain, newVals, friendly, origin)
             lock: [type: "Generic Component Lock",                      event: [[name: "lock", value: newVals[0] ?: "unknown", type: origin, descriptionText:"${friendly} was turned ${newVals[0]} [${origin}]"]]],
             climate: [type: "Generic Component Thermostat",             event: [[name: "thermostatMode", value: newVals[0], descriptionText: "${friendly} is set to ${newVals[0]}"],[name: "temperature", value: newVals[1], descriptionText: "${friendly}'s current temperature is ${newVals[1]} degree"],[name: "coolingSetpoint", value: newVals[2], descriptionText: "${friendly}'s cooling temperature is set to ${newVals[2]} degree"],[name: "heatingSetpoint", value: newVals[2], descriptionText: "${friendly}'s heating temperature is set to ${newVals[2]} degree"],[name: "thermostatFanMode", value: newVals[3], descriptionText: "${friendly}'s fan is set to ${newVals[3]}"],[name: "thermostatSetpoint", value: newVals[2], descriptionText: "${friendly}'s temperature is set to ${newVals[2]} degree"],[name: "thermostatOperatingState", value: newVals[4], descriptionText: "${friendly}'s mode is ${newVals[4]}"],[name: "coolingSetpoint", value: newVals[5], descriptionText: "${friendly}'s cooling temperature is set to ${newVals[5]} degrees"],[name: "heatingSetpoint", value: newVals[6], descriptionText: "${friendly}'s heating temperature is set to ${newVals[6]} degrees"]]],
             input_boolean: [type: "Generic Component Switch",           event: [[name: "switch", value: newVals[0], type: origin, descriptionText:"${friendly} was turned ${newVals[0]} [${origin}]"]]],
-            number: [type: "Generic Component Number",                  event: [[name: "number", value: newVals[0], unit: newVals[1] ?: "", type: origin, descriptionText:"${friendly} was set to ${newVals[0]} ${newVals[1] ?: ''} [${origin}]"]], namespace: "community"],
+            number: [type: "Generic Component Number",                  event: [[name: "number", value: newVals[0], unit: newVals[1] ?: "", type: origin, descriptionText:"${friendly} was set to ${newVals[0]} ${newVals[1] ?: ''} [${origin}]"], [name: "min", value: newVals[2], descriptionText:"${friendly} minimum value is ${newVals[2]}"], [name: "max", value: newVals[3], descriptionText:"${friendly} maximum value is ${newVals[3]}"], [name: "step", value: newVals[4], descriptionText:"${friendly} step is ${newVals[5]}"]], namespace: "community"],
         ]
 
     return mapping[domain]
@@ -735,6 +738,8 @@ void operateLock(ch, op)
 }
 
 def componentSetNumber(ch, newValue) {
+    if newValue < ch.currentValue("min") newValue = ch.currentValue("min")
+    if newValue > ch.currentValue("max") newValue = ch.currentValue("max")
     data = [value: newValue]
     executeCommand(ch, "set_value", data)
 }

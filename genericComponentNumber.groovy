@@ -37,6 +37,9 @@ metadata
     attribute "value", "number"
     attribute "valueStr", "string"
     attribute "unit", "string"
+    attribute "min"
+    attribute "max"
+    attribute "step"
     attribute "healthStatus", "enum", ["offline", "online"]
 }
 

@@ -26,6 +26,7 @@
 * 0.1.46     2022-07-04 tomw               Advanced configuration - manual add/remove of devices; option to disable filtering; unused child cleanup
 * 0.1.52     2023-02-02 tomw               UI improvements for app usability
 * 0.1.53     2023-02-19 tomw               Allow multiple instances of HADB app to be installed
+* 0.1.58     2023-08-02 Yves Mercier       Add support for number domain
 */
 
 definition(

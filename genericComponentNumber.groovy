@@ -64,6 +64,7 @@ void parse(List<Map> description) {
             sendEvent(name: "value", value: it.value, unit: it.unit, descriptionText: it.descriptionText)
             sendEvent(name: "valueStr", value: it.value)
             sendEvent(name: "unit", value: it.unit ?: "none")
+            sendEvent(it)
         }
     }
 }

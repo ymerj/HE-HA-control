@@ -738,6 +738,7 @@ void operateLock(ch, op)
 }
 
 def componentSetNumber(ch, newValue) {
+    newValue = newValue.toInteger() 
     if (newValue < ch.currentValue("min")) newValue = ch.currentValue("min")
     if (newValue > ch.currentValue("max")) newValue = ch.currentValue("max")
     data = [value: newValue]

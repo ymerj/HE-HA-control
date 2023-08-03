@@ -738,8 +738,8 @@ void operateLock(ch, op)
 }
 
 def componentSetNumber(ch, newValue) {
-    if newValue < ch.currentValue("min") newValue = ch.currentValue("min")
-    if newValue > ch.currentValue("max") newValue = ch.currentValue("max")
+    if (newValue < ch.currentValue("min")) newValue = ch.currentValue("min")
+    if (newValue > ch.currentValue("max")) newValue = ch.currentValue("max")
     data = [value: newValue]
     executeCommand(ch, "set_value", data)
 }

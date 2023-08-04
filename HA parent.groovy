@@ -313,11 +313,11 @@ def parse(String description) {
                 if (mapping) updateChildDevice(mapping, entity, friendly)
                 break
             case "number":
-		def min = response?.event?.data?.new_state?.attributes?.min
-		def max = response?.event?.data?.new_state?.attributes?.max
+		def minimum = response?.event?.data?.new_state?.attributes?.min
+		def maximum = response?.event?.data?.new_state?.attributes?.max
 		def step = response?.event?.data?.new_state?.attributes?.step
-		def unit_of_measurement = response?.event?.data?.new_state?.attributes?.unit_of_measurement
-		newVals += [unit_of_measurement, min, max, step]
+		def unit = response?.event?.data?.new_state?.attributes?.unit_of_measurement
+		newVals += [unit, minimum, maximum, step]
                 mapping = translateDevices(domain, newVals, friendly, origin)
                 if (mapping) updateChildDevice(mapping, entity, friendly)
                 break
@@ -739,9 +739,12 @@ void operateLock(ch, op)
 
 def componentSetNumber(ch, newValue) {
     if (logEnable) log.info("received set number to ${newValue} request from ${ch.label}")
+	log.debug "min = ${ch.currentValue('minimum')}"
+	log.debug "max = ${ch.currentValue('maximum')}"
+	log.debug "step = ${ch.currentValue('step')}"
     newValue = newValue.toInteger()
-    // if (newValue < ch.currentValue("min")) newValue = ch.currentValue("min")
-    // if (newValue > ch.currentValue("max")) newValue = ch.currentValue("max")
+    // if (newValue < ch.currentValue("minimum")) newValue = ch.currentValue("minimum")
+    // if (newValue > ch.currentValue("maximum")) newValue = ch.currentValue("maximum")
     data = [value: newValue]
     executeCommand(ch, "set_value", data)
 }

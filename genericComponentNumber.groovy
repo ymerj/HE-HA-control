@@ -61,7 +61,7 @@ void parse(List<Map> description) {
         if (it.name in ["number"]) {
             if (txtEnable) log.info it.descriptionText
             sendEvent(name: "healthStatus", value: it.value == "unavailable" ? "offline" : "online")
-            sendEvent(name: "value", value: it.value, unit: it.unit, descriptionText: it.descriptionText)
+            sendEvent(name: "value", value: it.value)
             sendEvent(name: "valueStr", value: it.value)
             sendEvent(name: "unit", value: it.unit ?: "none")
             sendEvent(it)

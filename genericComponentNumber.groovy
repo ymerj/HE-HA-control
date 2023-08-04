@@ -34,8 +34,7 @@ metadata
     preferences {
         input name: "txtEnable", type: "bool", title: "Enable descriptionText logging", defaultValue: true
     }
-    attribute "value", "number"
-    attribute "valueStr", "string"
+    attribute "number", "number"
     attribute "unit", "string"
     attribute "minimum", "number"
     attribute "maximum", "number"
@@ -58,12 +57,12 @@ void parse(String description) { log.warn "parse(String description) not impleme
 
 void parse(List<Map> description) {
     description.each {
-        if (it.name in ["number"]) {
-            if (txtEnable) log.info it.descriptionText
+        if (it.name in ["number"]){
             sendEvent(name: "healthStatus", value: it.value == "unavailable" ? "offline" : "online")
-            sendEvent(name: "value", value: it.value)
-            sendEvent(name: "valueStr", value: it.value)
             sendEvent(name: "unit", value: it.unit ?: "none")
+        }
+        if (it.name in ["number", "minimum", "maximum", "step"]) {
+            if (txtEnable) log.info it.descriptionText
             sendEvent(it)
         }
     }

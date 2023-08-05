@@ -743,8 +743,8 @@ def componentSetNumber(ch, newValue) {
 	log.debug "max = ${ch.currentValue('maximum')}"
 	log.debug "step = ${ch.currentValue('step')}"
     newValue = newValue.toInteger()
-    // if (newValue < ch.currentValue("minimum")) newValue = ch.currentValue("minimum")
-    // if (newValue > ch.currentValue("maximum")) newValue = ch.currentValue("maximum")
+    if (newValue < ch.currentValue("minimum")) newValue = ch.currentValue("minimum")
+    if (newValue > ch.currentValue("maximum")) newValue = ch.currentValue("maximum")
     data = [value: newValue]
     executeCommand(ch, "set_value", data)
 }

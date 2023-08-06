@@ -739,10 +739,7 @@ void operateLock(ch, op)
 
 def componentSetNumber(ch, newValue) {
     if (logEnable) log.info("received set number to ${newValue} request from ${ch.label}")
-	log.debug "min = ${ch.currentValue('minimum')}"
-	log.debug "max = ${ch.currentValue('maximum')}"
-	log.debug "step = ${ch.currentValue('step')}"
-    newValue = newValue.toInteger()
+    newValue = Math.round(newValue / ch.currentValue("step")) * ch.currentValue("step")
     if (newValue < ch.currentValue("minimum")) newValue = ch.currentValue("minimum")
     if (newValue > ch.currentValue("maximum")) newValue = ch.currentValue("maximum")
     data = [value: newValue]

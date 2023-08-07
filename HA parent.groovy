@@ -76,6 +76,7 @@
 * 0.1.55 2023-05-27 Yves Mercier       Added support for pm2.5
 * 0.1.56 2023-06-12 Yves Mercier       Modified various sensor units handling
 * 0.1.57 2023-07-18 Yves Mercier       By default map unsuported sensors to unknown
+* 0.1.58 2023-07-27 Yves Mercier       Add support for number entity
 *
 * Thank you(s):
 */
@@ -311,6 +312,15 @@ def parse(String description) {
                 mapping = translateBinarySensors(device_class, newVals, friendly, origin)
                 if (mapping) updateChildDevice(mapping, entity, friendly)
                 break
+            case "number":
+		def minimum = response?.event?.data?.new_state?.attributes?.min
+		def maximum = response?.event?.data?.new_state?.attributes?.max
+		def step = response?.event?.data?.new_state?.attributes?.step
+		def unit = response?.event?.data?.new_state?.attributes?.unit_of_measurement
+		newVals += [unit, minimum, maximum, step]
+                mapping = translateDevices(domain, newVals, friendly, origin)
+                if (mapping) updateChildDevice(mapping, entity, friendly)
+                break
             case "sensor":
                 def unit_of_measurement = response?.event?.data?.new_state?.attributes?.unit_of_measurement
 		
@@ -454,6 +464,7 @@ def translateDevices(domain, newVals, friendly, origin)
             lock: [type: "Generic Component Lock",                      event: [[name: "lock", value: newVals[0] ?: "unknown", type: origin, descriptionText:"${friendly} was turned ${newVals[0]} [${origin}]"]]],
             climate: [type: "Generic Component Thermostat",             event: [[name: "thermostatMode", value: newVals[0], descriptionText: "${friendly} is set to ${newVals[0]}"],[name: "temperature", value: newVals[1], descriptionText: "${friendly}'s current temperature is ${newVals[1]} degree"],[name: "coolingSetpoint", value: newVals[2], descriptionText: "${friendly}'s cooling temperature is set to ${newVals[2]} degree"],[name: "heatingSetpoint", value: newVals[2], descriptionText: "${friendly}'s heating temperature is set to ${newVals[2]} degree"],[name: "thermostatFanMode", value: newVals[3], descriptionText: "${friendly}'s fan is set to ${newVals[3]}"],[name: "thermostatSetpoint", value: newVals[2], descriptionText: "${friendly}'s temperature is set to ${newVals[2]} degree"],[name: "thermostatOperatingState", value: newVals[4], descriptionText: "${friendly}'s mode is ${newVals[4]}"],[name: "coolingSetpoint", value: newVals[5], descriptionText: "${friendly}'s cooling temperature is set to ${newVals[5]} degrees"],[name: "heatingSetpoint", value: newVals[6], descriptionText: "${friendly}'s heating temperature is set to ${newVals[6]} degrees"]]],
             input_boolean: [type: "Generic Component Switch",           event: [[name: "switch", value: newVals[0], type: origin, descriptionText:"${friendly} was turned ${newVals[0]} [${origin}]"]]],
+            number: [type: "Generic Component Number",                  event: [[name: "number", value: newVals[0], unit: newVals[1] ?: "", type: origin, descriptionText:"${friendly} was set to ${newVals[0]} ${newVals[1] ?: ''} [${origin}]"],[name: "minimum", value: newVals[2], descriptionText:"${friendly} minimum value is ${newVals[2]}"],[name: "maximum", value: newVals[3], descriptionText:"${friendly} maximum value is ${newVals[3]}"],[name: "step", value: newVals[4], descriptionText:"${friendly} step is ${newVals[4]}"]], namespace: "community"],
         ]
 
     return mapping[domain]
@@ -724,6 +735,15 @@ void operateLock(ch, op)
 
     data = [:]
     executeCommand(ch, op, data)
+}
+
+def componentSetNumber(ch, newValue) {
+    if (logEnable) log.info("received set number to ${newValue} request from ${ch.label}")
+    newValue = Math.round(newValue / ch.currentValue("step")) * ch.currentValue("step")
+    if (newValue < ch.currentValue("minimum")) newValue = ch.currentValue("minimum")
+    if (newValue > ch.currentValue("maximum")) newValue = ch.currentValue("maximum")
+    data = [value: newValue]
+    executeCommand(ch, "set_value", data)
 }
 
 def componentRefresh(ch){

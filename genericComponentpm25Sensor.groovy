@@ -19,6 +19,7 @@ limitations under the License.
 Change history:
 
 0.1.55 - Yves Mercier - initial version
+0.1.59 - Yves Mercier - change healthStatus handling
 
 */
 

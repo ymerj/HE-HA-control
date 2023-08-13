@@ -20,7 +20,7 @@ Change history:
 
 0.1.43 - tomw - Initial Release
 0.1.52 - Yves Mercier - Add health check capability
-0.1.59 - Yves Mercier - change healthStatus handling
+0.1.59 - Yves Mercier - Change healthStatus handling
 
 */
 

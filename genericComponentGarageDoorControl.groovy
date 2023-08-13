@@ -21,6 +21,7 @@ Change history:
 0.1.32 - tomw - initial version
 0.1.40 - tomw - Added ContactSensor emulation
 0.1.52 - Yves Mercier - Add health check capability
+0.1.59 - Yves Mercier - Change healthStatus handling
 
 */
 
@@ -56,13 +57,13 @@ void parse(List<Map> description) {
     description.each {
         if (it.name in ["door"]) {
             if (txtEnable) log.info it.descriptionText
-            sendEvent(name: "healthStatus", value: it.value == "unavailable" ? "offline" : "online")
             sendEvent(it)
-            
             // emulate contact sensor that mirrors door state
-            //  note: any status other than "closed" will be treated as "open". ignore sending event if device becomes unavailable
-            if (it.value != "unavailable"){
-                sendEvent(name: "contact", value: (it.value == "closed") ? "closed" : "open") 
+            // note: any status other than "closed" will be treated as "open". 
+            sendEvent(name: "contact", value: (it.value == "closed") ? "closed" : "open")
+        if (it.name in ["healthStatus"]) {
+            if (txtEnable) log.info it.descriptionText
+            sendEvent(it)
             } 
         }
     }

@@ -21,6 +21,7 @@ Change history:
 0.1.49 - mboisson - initial version
 0.1.52 - Yves mercier - Add health check capability
 0.1.56 - Yves Mercier - Refactored to handle null units
+0.1.59 - Yves Mercier - Change healthStatus handling
 
 */
 
@@ -57,10 +58,12 @@ void parse(List<Map> description) {
     description.each {
         if (it.name in ["unknown"]) {
             if (txtEnable) log.info it.descriptionText
-            sendEvent(name: "healthStatus", value: it.value == "unavailable" ? "offline" : "online")
             sendEvent(name: "value", value: it.value, unit: it.unit, descriptionText: it.descriptionText)
             sendEvent(name: "valueStr", value: it.value)
             sendEvent(name: "unit", value: it.unit ?: "none")
+        if (it.name in ["healthStatus"]) {
+            if (txtEnable) log.info it.descriptionText
+            sendEvent(it)
         }
     }
 }

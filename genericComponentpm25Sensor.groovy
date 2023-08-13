@@ -56,10 +56,9 @@ void parse(List<Map> description)
     {
     description.each
         {
-        if (it.name in ["pm25"])
+        if (it.name in ["pm25", "healthStatus"])
             {
             if (txtEnable) log.info it.descriptionText
-            sendEvent(name: "healthStatus", value: it.value == "unavailable" ? "offline" : "online")
             sendEvent(it)
             }
         }

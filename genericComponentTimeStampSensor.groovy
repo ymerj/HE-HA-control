@@ -56,6 +56,7 @@ void parse(List<Map> description) {
             if (txtEnable) log.info it.descriptionText
             sendEvent(it)
             if (pushRequired) scheduleFutureBtnPush(it.value)
+        }
         if (it.name in ["healthStatus"]) {
             if (txtEnable) log.info it.descriptionText
             sendEvent(it)

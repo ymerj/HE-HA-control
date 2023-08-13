@@ -61,6 +61,7 @@ void parse(List<Map> description) {
             // emulate contact sensor that mirrors door state
             // note: any status other than "closed" will be treated as "open". 
             sendEvent(name: "contact", value: (it.value == "closed") ? "closed" : "open")
+        }
         if (it.name in ["healthStatus"]) {
             if (txtEnable) log.info it.descriptionText
             sendEvent(it)

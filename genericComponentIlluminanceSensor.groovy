@@ -20,6 +20,7 @@ Change history:
 
 0.1.13- @tomw - initial version
 0.1.52 - Yves Mercier - Add health check capability
+0.1.59 - Yves Mercier - Change healthStatus handling
 
 */
 
@@ -52,9 +53,8 @@ void parse(String description) { log.warn "parse(String description) not impleme
 
 void parse(List<Map> description) {
     description.each {
-        if (it.name in ["illuminance"]) {
+        if (it.name in ["illuminance", "healthStatus"]) {
             if (txtEnable) log.info it.descriptionText
-            sendEvent(name: "healthStatus", value: it.value == "unavailable" ? "offline" : "online")
             sendEvent(it)
         }
     }

@@ -21,6 +21,7 @@ Change history:
 0.1.47 - mboisson - initial version
 0.1.52 - Yves Mercier - Add health check capability
 0.1.56 - Yves mercier - Refactored to carry over specified units
+0.1.59 - Yves Mercier - Change healthStatus handling
 
 */
 
@@ -53,9 +54,8 @@ void parse(String description) { log.warn "parse(String description) not impleme
 
 void parse(List<Map> description) {
     description.each {
-        if (it.name in ["carbonDioxide"]) {
+        if (it.name in ["carbonDioxide", "healthStatus"]) {
             if (txtEnable) log.info it.descriptionText
-            sendEvent(name: "healthStatus", value: it.value == "unavailable" ? "offline" : "online")
             sendEvent(it)
         }
     }

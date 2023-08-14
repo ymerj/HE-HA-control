@@ -77,6 +77,7 @@
 * 0.1.56 2023-06-12 Yves Mercier       Modified various sensor units handling
 * 0.1.57 2023-07-18 Yves Mercier       By default map unsuported sensors to unknown
 * 0.1.58 2023-07-27 Yves Mercier       Add support for number entity
+* 0.1.59 2023-08-13 Yves Mercier       Remove unsupported states and change how health status is reported.
 *
 * Thank you(s):
 */
@@ -103,7 +104,6 @@ metadata {
         input ("secure", "bool", title: "Require secure connection (https)", defaultValue: false)
         input ("logEnable", "bool", title: "Enable debug logging", defaultValue: true)
         input ("txtEnable", "bool", title: "Enable description text logging", defaultValue: true)
-        input ("ignoreForeignEvents", "bool", title: "Disregard Unknown and Unavailable states", defaultValue: false)
     }
 }
 
@@ -186,7 +186,6 @@ def parse(String description) {
     try{
         response = new groovy.json.JsonSlurper().parseText(description)
         if (response.type != "event") return
-        if ((["unknown", "unavailable"].contains(response?.event?.data?.new_state?.state?.toLowerCase())) && ignoreForeignEvents) return
         
         def origin = "physical"
         if (response.event.context.user_id) origin = "digital"
@@ -491,6 +490,8 @@ def updateChildDevice(mapping, entity, friendly) {
         return
     }
     else {
+        if (mapping.event[0].value == "unavailable") mapping.event = [[name: "healthStatus", value: "offline", descriptionText:"${friendly} is offline"]]
+        else mapping.event += [name: "healthStatus", value: "online", descriptionText:"${friendly} is online"]
         ch.parse(mapping.event)
     }
 }

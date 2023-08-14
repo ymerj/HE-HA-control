@@ -11,8 +11,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 -------------------------------------------
 Change history:
-0.1.51- Yves Mercier - initial version
-0.1.52- Yves Mercier - added button and health capability
+0.1.51 - Yves Mercier - initial version
+0.1.52 - Yves Mercier - added button and health capability
+0.1.59 - Yves Mercier - Change healthStatus handling
 */
 
 metadata
@@ -53,9 +54,12 @@ void parse(List<Map> description) {
     description.each {
         if (it.name in ["timestamp"]) {
             if (txtEnable) log.info it.descriptionText
-            sendEvent(name: "healthStatus", value: it.value == "unavailable" ? "offline" : "online")
             sendEvent(it)
             if (pushRequired) scheduleFutureBtnPush(it.value)
+        }
+        if (it.name in ["healthStatus"]) {
+            if (txtEnable) log.info it.descriptionText
+            sendEvent(it)
         }
     }
 }

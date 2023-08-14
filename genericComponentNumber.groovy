@@ -19,6 +19,7 @@ limitations under the License.
 Change history:
 
 0.1.58 - Yves Mercier - initial version
+0.1.59 - Yves Mercier - Change healthStatus handling
 
 */
 
@@ -58,10 +59,9 @@ void parse(String description) { log.warn "parse(String description) not impleme
 void parse(List<Map> description) {
     description.each {
         if (it.name in ["number"]){
-            sendEvent(name: "healthStatus", value: it.value == "unavailable" ? "offline" : "online")
             sendEvent(name: "unit", value: it.unit ?: "none")
         }
-        if (it.name in ["number", "minimum", "maximum", "step"]) {
+        if (it.name in ["number", "minimum", "maximum", "step", "healthStatus"]) {
             if (txtEnable) log.info it.descriptionText
             sendEvent(it)
         }

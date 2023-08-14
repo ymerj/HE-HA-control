@@ -65,7 +65,6 @@ void parse(List<Map> description) {
         if (it.name in ["healthStatus"]) {
             if (txtEnable) log.info it.descriptionText
             sendEvent(it)
-            } 
         }
     }
 }

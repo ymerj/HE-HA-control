@@ -78,6 +78,7 @@
 * 0.1.57 2023-07-18 Yves Mercier       By default map unsuported sensors to unknown
 * 0.1.58 2023-07-27 Yves Mercier       Add support for number entity
 * 0.1.59 2023-08-13 Yves Mercier       Remove unsupported states and change how health status is reported.
+* 0.1.60 2013-12-26 Yves Mercier       Handle discrepancy in HA documentation in regard to RGBW implementation.
 *
 * Thank you(s):
 */
@@ -275,6 +276,7 @@ def parse(String description) {
                 def effectName = response?.event?.data?.new_state?.attributes?.effect
                 def lightType = []
                 lightType = response?.event?.data?.new_state?.attributes?.supported_color_modes
+                if ((lightType.intersect(["hs", "rgb"])) && (lightType.contains("color_temp"))) lightType += "rgbw"
                 if (effectsList) lightType += "rgbwe"
                 switch (lightType)
                     {

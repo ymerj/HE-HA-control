@@ -79,7 +79,7 @@
 * 0.1.58 2023-07-27 Yves Mercier       Add support for number entity
 * 0.1.59 2023-08-13 Yves Mercier       Remove unsupported states and change how health status is reported.
 * 0.1.60 2013-12-31 mboisson           Added support for air quality parts
-* 0.1.61 2024-01-02 Yves Mercier       Fix RGBW implementation deviating from HA documentation and add handling of unkown state.
+* 0.1.61 2024-01-02 Yves Mercier       Add alternate RGBW implementation + add handling of unkown state.
 *
 * Thank you(s):
 */

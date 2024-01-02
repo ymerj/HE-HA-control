@@ -78,7 +78,8 @@
 * 0.1.57 2023-07-18 Yves Mercier       By default map unsuported sensors to unknown
 * 0.1.58 2023-07-27 Yves Mercier       Add support for number entity
 * 0.1.59 2023-08-13 Yves Mercier       Remove unsupported states and change how health status is reported.
-* 0.1.60 2013-12-26 Yves Mercier       Handle discrepancy in HA documentation in regard to RGBW implementation.
+* 0.1.60 2013-12-31 mboisson           Added support for air quality parts
+* 0.1.61 2024-01-02 Yves Mercier       Fix RGBW implementation deviating from HA documentation and add handling of unkown state.
 *
 * Thank you(s):
 */
@@ -187,6 +188,7 @@ def parse(String description) {
     try{
         response = new groovy.json.JsonSlurper().parseText(description)
         if (response.type != "event") return
+	if (response?.event?.data?.new_state?.state?.toLowerCase() == "unknown") return
         
         def origin = "physical"
         if (response.event.context.user_id) origin = "digital"
@@ -417,7 +419,9 @@ def translateSensors(device_class, newVals, friendly, origin)
             power: [type: "Generic Component Power Meter",                    event: [[name: "power", value: newVals[0], unit: newVals[1] ?: "W", descriptionText:"${friendly} power is ${newVals[0]} ${newVals[1] ?: 'W'}"]]],
             pressure: [type: "Generic Component Pressure Sensor",             event: [[name: "pressure", value: newVals[0], unit: newVals[1] ?: "", descriptionText:"${friendly} pressure is ${newVals[0]} ${newVals[1] ?: ''}"]], namespace: "community"],
             carbon_dioxide: [type: "Generic Component Carbon Dioxide Sensor", event: [[name: "carbonDioxide", value: newVals[0], unit: newVals[1] ?: "ppm", descriptionText:"${friendly} carbon_dioxide is ${newVals[0]} ${newVals[1] ?: 'ppm'}"]], namespace: "community"],
-            volatile_organic_compounds: [type: "Generic Component Volatile Organic Compounds Sensor",
+            volatile_organic_compounds_parts: [type: "Generic Component Volatile Organic Compounds Sensor",
+                                                                              event: [[name: "voc", value: newVals[0], unit: newVals[1] ?: "ppb", descriptionText:"${friendly} volatile_organic_compounds_parts is ${newVals[0]} ${newVals[1] ?: 'ppb'}"]], namespace: "community"],
+	    volatile_organic_compounds: [type: "Generic Component Volatile Organic Compounds Sensor",
                                                                               event: [[name: "voc", value: newVals[0], unit: newVals[1] ?: "µg/m³", descriptionText:"${friendly} volatile_organic_compounds is ${newVals[0]} ${newVals[1] ?: 'µg/m³'}"]], namespace: "community"],
             radon: [type: "Generic Component Radon Sensor",                   event: [[name: "radon", value: newVals[0], unit: newVals[1], descriptionText:"${friendly} radon is ${newVals[0]} ${newVals[1]}"]], namespace: "community"],
             temperature: [type: "Generic Component Temperature Sensor",       event: [[name: "temperature", value: newVals[0], unit: newVals[1] ?: "°", descriptionText:"${friendly} temperature is ${newVals[0]} ${newVals[1] ?: '°'}"]]],

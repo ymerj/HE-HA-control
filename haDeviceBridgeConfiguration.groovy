@@ -27,6 +27,7 @@
 * 0.1.52     2023-02-02 tomw               UI improvements for app usability
 * 0.1.53     2023-02-19 tomw               Allow multiple instances of HADB app to be installed
 * 0.1.58     2023-08-02 Yves Mercier       Add support for number domain
+* 0.1.62     2023-08-02 Yves Mercier       Add support for input_number domain
 */
 
 definition(
@@ -96,7 +97,7 @@ def discoveryPage(params)
                 resp.data.each
                 {
                     domain = it.entity_id?.tokenize(".")?.getAt(0)
-                    if(["fan", "switch", "light", "binary_sensor", "sensor", "device_tracker", "cover", "lock", "climate", "input_boolean", "number"].contains(domain))
+                    if(["fan", "switch", "light", "binary_sensor", "sensor", "device_tracker", "cover", "lock", "climate", "input_boolean", "number", "input_number"].contains(domain))
                     {
                         state.entityList.put(it.entity_id, "${it.attributes?.friendly_name} (${it.entity_id})")
                     }

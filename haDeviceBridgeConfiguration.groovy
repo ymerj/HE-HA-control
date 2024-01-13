@@ -28,6 +28,7 @@
 * 0.1.53     2023-02-19 tomw               Allow multiple instances of HADB app to be installed
 * 0.1.58     2023-08-02 Yves Mercier       Add support for number domain
 * 0.1.62     2023-08-02 Yves Mercier       Add support for input_number domain
+* 0.1.63     2023-08-02 tomw               Remove entityList state
 */
 
 definition(
@@ -36,6 +37,7 @@ definition(
     author: "tomw",
     description: "",
     category: "Convenience",
+    importUrl: "https://raw.githubusercontent.com/ymerj/HE-HA-control/main/haDeviceBridgeConfiguration.groovy",
     iconUrl: "",
     iconX2Url: "",
     iconX3Url: "")
@@ -253,6 +255,7 @@ def installed()
 
         ch.updated()
     }
+    state.remove("entityList")
 }
 
 def getChild()

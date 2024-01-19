@@ -89,11 +89,11 @@ import groovy.json.JsonSlurper
 import groovy.json.JsonOutput
 
 metadata {
-    definition (name: "HomeAssistant Hub Parent", namespace: "ymerj", author: "Yves Mercier", importUrl: "https://raw.githubusercontent.com/ymerj/HE-HA-control/main/HA%20parent.groovy") {
+    definition (name: "HomeAssistant Hub Parent 2.0", namespace: "ymerj", author: "Yves Mercier", importUrl: "https://raw.githubusercontent.com/ymerj/HE-HA-control/main/HA%20parent.groovy") {
         capability "Initialize"
 
-//        command "createChild", [[ name: "entity", type: "STRING", description: "HomeAssistant Entity ID" ]]
-//        command "removeChild", [[ name: "entity", type: "STRING", description: "HomeAssistant Entity ID" ]]
+        command "createChildTest", [[ name: "entity", type: "STRING", description: "HomeAssistant Entity ID" ]]
+        command "removeChildTest", [[ name: "entity", type: "STRING", description: "HomeAssistant Entity ID" ]]
         command "closeConnection"        
 //        command "deleteAllChildDevices"
         
@@ -108,6 +108,16 @@ metadata {
         input ("logEnable", "bool", title: "Enable debug logging", defaultValue: true)
         input ("txtEnable", "bool", title: "Enable description text logging", defaultValue: true)
     }
+}
+
+def createChildTest(entity){
+	createChild("Generic Component Switch", entity, "test")
+}
+
+def removeChildTest(entity){
+    String thisId = device.id
+    def ch = getChildDevice("${thisId}-${entity}")
+    if (ch) {deleteChildDevice("${thisId}-${entity}")}
 }
 
 def logsOff(){
@@ -132,7 +142,8 @@ def initialize() {
     def connectionType = "ws"
     if (secure) connectionType = "wss"
     auth = '{"type":"auth","access_token":"' + "${token}" + '"}'
-    evenements = '{"id":1,"type":"subscribe_events","event_type":"state_changed"}'
+    // evenements = '{"id":1,"type":"subscribe_events","event_type":"state_changed"}'
+    evenements = '{"id":1,"type":"subscribe_trigger","platform":"state","entity_id":"switch.plafonnier_du_bureau"}'
     try {
         interfaces.webSocket.connect("${connectionType}://${ip}:${port}/api/websocket", ignoreSSLIssues: true)
         interfaces.webSocket.sendMessage("${auth}")
@@ -510,12 +521,6 @@ def createChild(deviceType, entity, friendly, namespace = null)
     def ch = getChildDevice("${device.id}-${entity}")
     if (!ch) ch = addChildDevice(namespace ?: "hubitat", deviceType, "${device.id}-${entity}", [name: "${entity}", label: "${friendly}", isComponent: false])
     return ch
-}
-
-def removeChild(entity){
-    String thisId = device.id
-    def ch = getChildDevice("${thisId}-${entity}")
-    if (ch) {deleteChildDevice("${thisId}-${entity}")}
 }
 
 def componentOn(ch){

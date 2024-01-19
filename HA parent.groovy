@@ -143,7 +143,7 @@ def initialize() {
     if (secure) connectionType = "wss"
     auth = '{"type":"auth","access_token":"' + "${token}" + '"}'
     // evenements = '{"id":1,"type":"subscribe_events","event_type":"state_changed"}'
-    evenements = '{"id":1,"type":"subscribe_trigger",{"platform":"state","entity_id":"switch.plafonnier_du_bureau"}}'
+    evenements = '{"id":1,"type":"subscribe_trigger",trigger:{"platform":"state","entity_id":{"switch.plafonnier_du_bureau","switch.plafonnier_du_salon"}}}'
     try {
         interfaces.webSocket.connect("${connectionType}://${ip}:${port}/api/websocket", ignoreSSLIssues: true)
         interfaces.webSocket.sendMessage("${auth}")

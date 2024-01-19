@@ -143,7 +143,7 @@ def initialize() {
     if (secure) connectionType = "wss"
     auth = '{"type":"auth","access_token":"' + "${token}" + '"}'
     // evenements = '{"id":1,"type":"subscribe_events","event_type":"state_changed"}'
-    evenements = '{"id":1,"type":"subscribe_trigger","platform":"state","entity_id":"switch.plafonnier_du_bureau"}'
+    evenements = '{"id":1,"type":"subscribe_trigger",{"platform":"state","entity_id":"switch.plafonnier_du_bureau"}}'
     try {
         interfaces.webSocket.connect("${connectionType}://${ip}:${port}/api/websocket", ignoreSSLIssues: true)
         interfaces.webSocket.sendMessage("${auth}")
@@ -199,37 +199,39 @@ def parse(String description) {
     def response = null;
     try{
         response = new groovy.json.JsonSlurper().parseText(description)
-        if (response.type != "event") return
-	if (response?.event?.data?.new_state?.state?.toLowerCase() == "unknown") return
+	
+	if (response.type != "event") return
+	if (response?.event?.variables?.trigger?.to_state?.state?.toLowerCase() == "unknown") return
         
         def origin = "physical"
-        if (response.event.context.user_id) origin = "digital"
+        if (response.event?.variables?.trigger?.to_state?.context.user_id) origin = "digital"
         
         def newVals = []
-        def entity = response?.event?.data?.entity_id
+        // def entity = response?.event?.data?.entity_id
+	def entity = response?.event?.variables?.trigger?.entity_id
         
         // check whether we have a parent, and search its includeList for devices to process
         if (getParent()?.checkIfFiltered(entity)) return
         
         def domain = entity?.tokenize(".")?.getAt(0)
-        def device_class = response?.event?.data?.new_state?.attributes?.device_class
-        def friendly = response?.event?.data?.new_state?.attributes?.friendly_name
+        def device_class = response?.event?.variables?.trigger?.to_state?.attributes?.device_class
+        def friendly = response?.event?.variables?.trigger?.to_state?.attributes?.friendly_name
 
-        newVals << response?.event?.data?.new_state?.state
+        newVals << response?.event?.variables?.trigger?.to_state?.state
         def mapping = null
         
         if (logEnable) log.debug "parse: domain: ${domain}, device_class: ${device_class}, entity: ${entity}, newVals: ${newVals}, friendly: ${friendly}"
         
         switch (domain) {
             case "fan":
-                def speed = response?.event?.data?.new_state?.attributes?.speed?.toLowerCase()
+                def speed = response?.event?.variables?.trigger?.to_state?.attributes?.speed?.toLowerCase()
                 choices =  ["low","medium-low","medium","medium-high","high","auto"]
                 if (!(choices.contains(speed)))
                     {
                     if (logEnable) log.info "Invalid fan speed received - ${speed}"
                     speed = null
                     }
-                def percentage = response?.event?.data?.new_state?.attributes?.percentage
+                def percentage = response?.event?.variables?.trigger?.to_state?.attributes?.percentage
                 switch (percentage.toInteger()) {
                     case 0: 
                         speed = "off"
@@ -257,7 +259,7 @@ def parse(String description) {
             case "cover":
                 // we need to get "current_position" out of the state, if it's there
                 //   note that any additional attributes will use different offsets in the translateCovers mapping
-                def pos = response?.event?.data?.new_state?.attributes?.current_position?.toInteger()
+                def pos = response?.event?.variables?.trigger?.to_state?.attributes?.current_position?.toInteger()
                 newVals += pos                
                 mapping = translateCovers(device_class, newVals, friendly, origin)
                 if (mapping) updateChildDevice(mapping, entity, friendly)
@@ -276,20 +278,20 @@ def parse(String description) {
                 if (mapping) updateChildDevice(mapping, entity, friendly)
                 break
             case "light":
-                def level = response?.event?.data?.new_state?.attributes?.brightness
+                def level = response?.event?.variables?.trigger?.to_state?.attributes?.brightness
                 if (level) level = Math.round((level.toInteger() * 100 / 255))
                 newVals += level
-                def hue = response?.event?.data?.new_state?.attributes?.hs_color?.getAt(0)
+                def hue = response?.event?.variables?.trigger?.to_state?.attributes?.hs_color?.getAt(0)
                 if (hue) hue = Math.round(hue.toInteger() * 100 / 360)
-                def sat = response?.event?.data?.new_state?.attributes?.hs_color?.getAt(1)
+                def sat = response?.event?.variables?.trigger?.to_state?.attributes?.hs_color?.getAt(1)
                 if (sat) sat = Math.round(sat.toInteger())
-                def ct = response?.event?.data?.new_state?.attributes?.color_temp
+                def ct = response?.event?.variables?.trigger?.to_state?.attributes?.color_temp
                 if (ct) ct = Math.round(1000000/ct)
                 def effectsList = []
-                effectsList = response?.event?.data?.new_state?.attributes?.effect_list
-                def effectName = response?.event?.data?.new_state?.attributes?.effect
+                effectsList = response?.event?.variables?.trigger?.to_state?.attributes?.effect_list
+                def effectName = response?.event?.variables?.trigger?.to_state?.attributes?.effect
                 def lightType = []
-                lightType = response?.event?.data?.new_state?.attributes?.supported_color_modes
+                lightType = response?.eevent?.variables?.trigger?.to_state?.attributes?.supported_color_modes
                 if ((lightType.intersect(["hs", "rgb"])) && (lightType.contains("color_temp"))) lightType += "rgbw"
                 if (effectsList) lightType += "rgbwe"
                 switch (lightType)
@@ -329,16 +331,16 @@ def parse(String description) {
                 break
             case "input_number":
             case "number":
-		def minimum = response?.event?.data?.new_state?.attributes?.min
-		def maximum = response?.event?.data?.new_state?.attributes?.max
-		def step = response?.event?.data?.new_state?.attributes?.step
-		def unit = response?.event?.data?.new_state?.attributes?.unit_of_measurement
+		def minimum = response?.event?.variables?.trigger?.to_state?.attributes?.min
+		def maximum = response?.event?.variables?.trigger?.to_state?.attributes?.max
+		def step = response?.event?.variables?.trigger?.to_state?.attributes?.step
+		def unit = response?.event?.variables?.trigger?.to_state?.attributes?.unit_of_measurement
 		newVals += [unit, minimum, maximum, step]
                 mapping = translateDevices(domain, newVals, friendly, origin)
                 if (mapping) updateChildDevice(mapping, entity, friendly)
                 break
             case "sensor":
-                def unit_of_measurement = response?.event?.data?.new_state?.attributes?.unit_of_measurement
+                def unit_of_measurement = response?.event?.variables?.trigger?.to_state?.attributes?.unit_of_measurement
 		
                 // if there is no device_class, we need to infer from the units
                 if ((!device_class) && (unit_of_measurement in ["Bq/m³","pCi/L"])) device_class = "radon"
@@ -347,13 +349,13 @@ def parse(String description) {
                 if (mapping) updateChildDevice(mapping, entity, friendly)
                 break
             case "climate":
-                def current_temperature = response?.event?.data?.new_state?.attributes?.current_temperature
-                def hvac_action = response?.event?.data?.new_state?.attributes?.hvac_action
-                def target_temperature = response?.event?.data?.new_state?.attributes?.temperature
-                def fan_mode = response?.event?.data?.new_state?.attributes?.fan_mode
-                def thermostat_mode = response?.event?.data?.new_state?.state
-            	def target_temp_high = response?.event?.data?.new_state?.attributes?.target_temp_high
-                def target_temp_low = response?.event?.data?.new_state?.attributes?.target_temp_low
+                def current_temperature = response?.event?.variables?.trigger?.to_state?.attributes?.current_temperature
+                def hvac_action = response?.event?.variables?.trigger?.to_state?.attributes?.hvac_action
+                def target_temperature = response?.event?.variables?.trigger?.to_state?.attributes?.temperature
+                def fan_mode = response?.event?.variables?.trigger?.to_state?.attributes?.fan_mode
+                def thermostat_mode = response?.event?.variables?.trigger?.to_state?.state
+            	def target_temp_high = response?.event?.variables?.trigger?.to_state?.attributes?.target_temp_high
+                def target_temp_low = response?.event?.variables?.trigger?.to_state?.attributes?.target_temp_low
                 switch (fan_mode)
                 {
                     case "off":

@@ -28,7 +28,8 @@
 * 0.1.53     2023-02-19 tomw               Allow multiple instances of HADB app to be installed
 * 0.1.58     2023-08-02 Yves Mercier       Add support for number domain
 * 0.1.62     2023-08-02 Yves Mercier       Add support for input_number domain
-* 0.1.63     2023-08-02 tomw               Remove entityList state
+* 0.1.63     2024-01-11 tomw               Remove entityList state
+* 2.0        2024-01-20 tomw               Introduce entity subscription model
 */
 
 definition(

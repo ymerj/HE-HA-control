@@ -54,6 +54,11 @@ def mainPage()
 {
     dynamicPage(name: "mainPage", title: "", install: true, uninstall: true)
     {
+        if(wasButtonPushed("cleanupUnused"))
+        {
+            cullGrandchildren()
+            clearButtonPushed()
+        }
         section("<b>Home Assistant Device Bridge</b>")
         {
             input ("ip", "text", title: "Home Assistant IP Address", description: "HomeAssistant IP Address", required: true)
@@ -62,16 +67,20 @@ def mainPage()
             input name: "secure", type: "bool", title: "Require secure connection", defaultValue: false, required: true
             input name: "ignoreSSLIssues", type: "bool", title: "Ignore SSL Issues", defaultValue: false, required: true
             input name: "enableLogging", type: "bool", title: "Enable debug logging?", defaultValue: false, required: true
-            
         }
         section("<b>Configuration options:</b>")
         {
             href(page: "discoveryPage", title: "<b>Discover and select devices</b>", description: "Query Home Assistant for all currently configured devices.  Then select which entities to Import to Hubitat.", params: [runDiscovery : true])
-            href(page: "advOptionsPage", title: "<b>Configure advanced options</b>", description: "Advanced options for manual configuration")
+//            href(page: "advOptionsPage", title: "<b>Configure advanced options</b>", description: "Advanced options for manual configuration")
         }
-        section("App Name") {
+        section("App Name")
+        {
             label title: "Optionally assign a custom name for this app", required: false
-        }        
+        }
+        section("Administration option")
+        {
+            input(name: "cleanupUnused", type: "button", title: "Remove all child devices that are not currently selected (use carefully!)")
+        }
     }
 }
 

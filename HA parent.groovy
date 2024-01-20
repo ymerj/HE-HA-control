@@ -143,9 +143,8 @@ def initialize() {
     if (secure) connectionType = "wss"
     auth = '{"type":"auth","access_token":"' + "${token}" + '"}'
     def filterList = device.getDataValue("filterList")
-    filterList = (new groovy.json.JsonSlurper().parseText(filterList))
-    def subscriptions = "entity_id: " + includeList.join(",entity_id: ")
-    evenements = '{"id":1,"type":"subscribe_trigger","trigger":{"platform":"state","${subscriptions}"}}'
+    def subscriptions = filterList[1..filterList.size()-2].replaceAll('"', "")
+    evenements = '{"id":1,"type":"subscribe_trigger","trigger":{"platform":"state","entity_id":"' + subscriptions + '"}}'
     try {
         interfaces.webSocket.connect("${connectionType}://${ip}:${port}/api/websocket", ignoreSSLIssues: true)
         interfaces.webSocket.sendMessage("${auth}")
@@ -206,7 +205,7 @@ def parse(String description) {
 	if (response?.event?.variables?.trigger?.to_state?.state?.toLowerCase() == "unknown") return
         
         def origin = "physical"
-        if (response.event?.variables?.trigger?.to_state?.context.user_id) origin = "digital"
+        if (response.event?.variables?.trigger?.to_state?.context?.user_id) origin = "digital"
         
         def newVals = []
         // def entity = response?.event?.data?.entity_id
@@ -293,7 +292,7 @@ def parse(String description) {
                 effectsList = response?.event?.variables?.trigger?.to_state?.attributes?.effect_list
                 def effectName = response?.event?.variables?.trigger?.to_state?.attributes?.effect
                 def lightType = []
-                lightType = response?.eevent?.variables?.trigger?.to_state?.attributes?.supported_color_modes
+                lightType = response?.event?.variables?.trigger?.to_state?.attributes?.supported_color_modes
                 if ((lightType.intersect(["hs", "rgb"])) && (lightType.contains("color_temp"))) lightType += "rgbw"
                 if (effectsList) lightType += "rgbwe"
                 switch (lightType)

@@ -208,12 +208,7 @@ def parse(String description) {
         if (response.event?.variables?.trigger?.to_state?.context?.user_id) origin = "digital"
         
         def newVals = []
-        // def entity = response?.event?.data?.entity_id
-	def entity = response?.event?.variables?.trigger?.entity_id
-        
-        // check whether we have a parent, and search its includeList for devices to process
-        //if (getParent()?.checkIfFiltered(entity)) return
-        
+	def entity = response?.event?.variables?.trigger?.entity_id        
         def domain = entity?.tokenize(".")?.getAt(0)
         def device_class = response?.event?.variables?.trigger?.to_state?.attributes?.device_class
         def friendly = response?.event?.variables?.trigger?.to_state?.attributes?.friendly_name

@@ -252,7 +252,9 @@ def installed()
         ch.updateSetting("port", port)
         ch.updateSetting("token", token)
         ch.updateSetting("secure", secure)
-
+        def filterListForChild = new groovy.json.JsonOutput().toJson(includeList)
+        ch.updateDataValue("filterList", filterListForChild)
+        // ch.forceFilterDataRefresh()
         ch.updated()
     }
     state.remove("entityList")

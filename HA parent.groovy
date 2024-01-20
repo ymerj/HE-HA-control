@@ -82,14 +82,13 @@
 * 0.1.61 2024-01-02 Yves Mercier       Add alternate RGBW implementation + add handling of unknown state.
 * 0.1.62 2024-01-10 Yves Mercier       Add input_number support
 * 2.0	 2024-01-20 Yves Mercier       Introduce entity subscription model
-* Thank you(s):
 */
 
 import groovy.json.JsonSlurper
 import groovy.json.JsonOutput
 
 metadata {
-    definition (name: "HomeAssistant Hub Parent 2.0", namespace: "ymerj", author: "Yves Mercier", importUrl: "https://raw.githubusercontent.com/ymerj/HE-HA-control/main/HA%20parent.groovy") {
+    definition (name: "HomeAssistant Hub Parent", namespace: "ymerj", author: "Yves Mercier", importUrl: "https://raw.githubusercontent.com/ymerj/HE-HA-control/main/HA%20parent.groovy") {
         capability "Initialize"
 
        // command "createChildTest", [[ name: "entity", type: "STRING", description: "HomeAssistant Entity ID" ]]

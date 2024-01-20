@@ -71,7 +71,6 @@ def mainPage()
         section("<b>Configuration options:</b>")
         {
             href(page: "discoveryPage", title: "<b>Discover and select devices</b>", description: "Query Home Assistant for all currently configured devices.  Then select which entities to Import to Hubitat.", params: [runDiscovery : true])
-//            href(page: "advOptionsPage", title: "<b>Configure advanced options</b>", description: "Advanced options for manual configuration")
         }
         section("App Name")
         {
@@ -159,86 +158,6 @@ def cullGrandchildren()
     }
 }
 
-def accessCustomFilter(op, val = null)
-{
-    if(!["add", "del", "clear", "get"].contains(op))
-    {
-        return
-    }
-    
-    def list = state.customFilterList ?: []
-    
-    switch(op)
-    {
-        case "add":
-            !list.contains(val.toString()) ? ((val?.toString()) ? list.add(val.toString()) : null) : null
-            break
-        case "del":
-            list.remove(val.toString())
-            break
-        case "clear":
-            list.clear()
-            break
-        case "get":
-            return list
-            break
-    }
-    
-    state.customFilterList = list
-}
-
-def advOptionsPage()
-{
-    dynamicPage(name: "advOptionsPage", title: "", install: true, uninstall: true)
-    {
-        if(wasButtonPushed("clickToAdd"))
-        {
-            accessCustomFilter("add", eId)
-            clearButtonPushed()
-        }
-        
-        if(wasButtonPushed("clickToRemove"))
-        {
-            accessCustomFilter("del", eId)
-            clearButtonPushed()
-        }
-        
-        if(wasButtonPushed("removeAll"))
-        {
-            accessCustomFilter("clear")
-            clearButtonPushed()
-        }        
-        app.updateSetting("eId", "")
-        
-        if(wasButtonPushed("cleanupUnused"))
-        {
-            cullGrandchildren()
-            clearButtonPushed()
-        }
-        
-        section(hideable: true, hidden: false, title: "Entity filtering options")
-        {
-            input("enableFiltering", "bool", title: "Only pass through user-selected and manually-added entities? (disable this option to pass all through)<br><br>", defaultValue: true, submitOnChange: true)
-        }
-        
-        section(hideable: true, hidden: false, title: "Manually add an entity to be included")
-        {
-            paragraph "<b>Manually added entities:</b> ${accessCustomFilter("get")}"
-            input name: "eId", type: "text", title: "Entity ID", description: "ID"
-            input(name: "clickToAdd", type: "button", title: "Add entity to list", width:2)
-            input(name: "clickToRemove", type: "button", title: "Remove entity from list", width:2)
-            input(name: "removeAll", type: "button", title: "Remove all that were manually added to list? (use carefully!)")
-        }
-        
-        section(hideable: true, hidden: false, title: "System administration options")
-        {
-            input(name: "cleanupUnused", type: "button", title: "Remove all child devices that are not currently either user-selected or manually-added (use carefully!)")
-        }
-        
-        linkToMain()
-    }
-}
-
 def logDebug(msg)
 {
     if(enableLogging)
@@ -264,7 +183,6 @@ def installed()
         ch.updateSetting("secure", secure)
         def filterListForChild = includeList?.join(",")
         ch.updateDataValue("filterList", filterListForChild)
-        // ch.forceFilterDataRefresh()
         ch.updated()
     }
     state.remove("entityList")

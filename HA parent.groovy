@@ -142,6 +142,8 @@ def initialize() {
     def connectionType = "ws"
     if (secure) connectionType = "wss"
     auth = '{"type":"auth","access_token":"' + "${token}" + '"}'
+    def filterList = device.getDataValue("filterList")
+    filterList = (new groovy.json.JsonSlurper().parseText(filterList))
     def subscriptions = "entity_id: " + includeList.join(",entity_id: ")
     evenements = '{"id":1,"type":"subscribe_trigger","trigger":{"platform":"state","${subscriptions}"}}'
     try {
@@ -211,7 +213,7 @@ def parse(String description) {
 	def entity = response?.event?.variables?.trigger?.entity_id
         
         // check whether we have a parent, and search its includeList for devices to process
-        if (getParent()?.checkIfFiltered(entity)) return
+        //if (getParent()?.checkIfFiltered(entity)) return
         
         def domain = entity?.tokenize(".")?.getAt(0)
         def device_class = response?.event?.variables?.trigger?.to_state?.attributes?.device_class

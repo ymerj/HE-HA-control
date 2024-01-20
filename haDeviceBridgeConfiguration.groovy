@@ -29,7 +29,7 @@
 * 0.1.58     2023-08-02 Yves Mercier       Add support for number domain
 * 0.1.62     2023-08-02 Yves Mercier       Add support for input_number domain
 * 0.1.63     2024-01-11 tomw               Remove entityList state
-* 2.0        2024-01-20 tomw, Yves Mercier Introduce entity subscription model
+* 2.0        2024-01-20 Yves Mercier       Introduce entity subscription model
 */
 
 definition(
@@ -54,11 +54,6 @@ def mainPage()
 {
     dynamicPage(name: "mainPage", title: "", install: true, uninstall: true)
     {
-        if(wasButtonPushed("cleanupUnused"))
-        {
-            cullGrandchildren()
-            clearButtonPushed()
-        }
         section("<b>Home Assistant Device Bridge</b>")
         {
             input ("ip", "text", title: "Home Assistant IP Address", description: "HomeAssistant IP Address", required: true)
@@ -76,10 +71,6 @@ def mainPage()
         {
             label title: "Optionally assign a custom name for this app", required: false
         }
-        section("Administration option")
-        {
-            input(name: "cleanupUnused", type: "button", title: "Remove all child devices that are not currently selected (use carefully!)")
-        }
     }
 }
 
@@ -95,6 +86,11 @@ def discoveryPage(params)
 {
     dynamicPage(name: "discoveryPage", title: "", install: true, uninstall: true)
     {
+        if(wasButtonPushed("cleanupUnused"))
+        {
+            cullGrandchildren()
+            clearButtonPushed()
+        }
         if(params?.runDiscovery)
         {
             state.entityList = [:]
@@ -117,29 +113,16 @@ def discoveryPage(params)
                 state.entityList = state.entityList.sort { it.value }
             }
         }
-        
         section
         {
             input name: "includeList", type: "enum", title: "Select any devices to <b>include</b> from Home Assistant Device Bridge", options: state.entityList, required: false, multiple: true, offerAll: true
         }
-        
+        section("Administration option")
+        {
+            input(name: "cleanupUnused", type: "button", title: "Remove all child devices that are not currently selected (use carefully!)")
+        }
         linkToMain()
     }
-}
-
-def checkIfFiltered(entity)
-{
-    if(enableFiltering || (null == enableFiltering))
-    {
-        return shouldFilter(entity)
-    }
-    
-    return false
-}
-
-def shouldFilter(entity)
-{
-    return !(includeList?.contains(entity) || accessCustomFilter("get")?.contains(entity))    
 }
 
 def cullGrandchildren()
@@ -151,10 +134,7 @@ def cullGrandchildren()
     ch?.getChildDevices()?.each()
     {
         def entity = it.getDeviceNetworkId()?.tokenize("-")?.getAt(1)        
-        if(shouldFilter(entity))
-        {
-            ch.removeChild(entity)
-        }
+        if(!includeList?.contains(entity)) { ch.removeChild(entity) }
     }
 }
 

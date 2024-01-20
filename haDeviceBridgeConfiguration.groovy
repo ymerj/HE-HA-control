@@ -29,7 +29,7 @@
 * 0.1.58     2023-08-02 Yves Mercier       Add support for number domain
 * 0.1.62     2023-08-02 Yves Mercier       Add support for input_number domain
 * 0.1.63     2024-01-11 tomw               Remove entityList state
-* 2.0        2024-01-20 tomw et al         Introduce entity subscription model
+* 2.0        2024-01-20 tomw et al.        Introduce entity subscription model
 */
 
 definition(

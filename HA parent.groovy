@@ -203,32 +203,33 @@ def parse(String description) {
         response = new groovy.json.JsonSlurper().parseText(description)
 	
 	if (response.type != "event") return
-	if (response?.event?.variables?.trigger?.to_state?.state?.toLowerCase() == "unknown") return
+	def newState = response?.event?.variables?.trigger?.to_state
+	if (newState?.state?.toLowerCase() == "unknown") return
         
         def origin = "physical"
-        if (response.event?.variables?.trigger?.to_state?.context?.user_id) origin = "digital"
+        if (newState?.context?.user_id) origin = "digital"
         
         def newVals = []
 	def entity = response?.event?.variables?.trigger?.entity_id        
         def domain = entity?.tokenize(".")?.getAt(0)
-        def device_class = response?.event?.variables?.trigger?.to_state?.attributes?.device_class
-        def friendly = response?.event?.variables?.trigger?.to_state?.attributes?.friendly_name
+        def device_class = newState?.attributes?.device_class
+        def friendly = newState?.attributes?.friendly_name
 
-        newVals << response?.event?.variables?.trigger?.to_state?.state
+        newVals << newState?.state
         def mapping = null
         
         if (logEnable) log.debug "parse: domain: ${domain}, device_class: ${device_class}, entity: ${entity}, newVals: ${newVals}, friendly: ${friendly}"
         
         switch (domain) {
             case "fan":
-                def speed = response?.event?.variables?.trigger?.to_state?.attributes?.speed?.toLowerCase()
+                def speed = newState?.attributes?.speed?.toLowerCase()
                 choices =  ["low","medium-low","medium","medium-high","high","auto"]
                 if (!(choices.contains(speed)))
                     {
                     if (logEnable) log.info "Invalid fan speed received - ${speed}"
                     speed = null
                     }
-                def percentage = response?.event?.variables?.trigger?.to_state?.attributes?.percentage
+                def percentage = newState?.attributes?.percentage
                 switch (percentage.toInteger()) {
                     case 0: 
                         speed = "off"
@@ -275,20 +276,20 @@ def parse(String description) {
                 if (mapping) updateChildDevice(mapping, entity, friendly)
                 break
             case "light":
-                def level = response?.event?.variables?.trigger?.to_state?.attributes?.brightness
+                def level = newState?.attributes?.brightness
                 if (level) level = Math.round((level.toInteger() * 100 / 255))
                 newVals += level
-                def hue = response?.event?.variables?.trigger?.to_state?.attributes?.hs_color?.getAt(0)
+                def hue = newState?.attributes?.hs_color?.getAt(0)
                 if (hue) hue = Math.round(hue.toInteger() * 100 / 360)
-                def sat = response?.event?.variables?.trigger?.to_state?.attributes?.hs_color?.getAt(1)
+                def sat = newState?.attributes?.hs_color?.getAt(1)
                 if (sat) sat = Math.round(sat.toInteger())
-                def ct = response?.event?.variables?.trigger?.to_state?.attributes?.color_temp
+                def ct = newState?.attributes?.color_temp
                 if (ct) ct = Math.round(1000000/ct)
                 def effectsList = []
-                effectsList = response?.event?.variables?.trigger?.to_state?.attributes?.effect_list
-                def effectName = response?.event?.variables?.trigger?.to_state?.attributes?.effect
+                effectsList = newState?.attributes?.effect_list
+                def effectName = newState?.attributes?.effect
                 def lightType = []
-                lightType = response?.event?.variables?.trigger?.to_state?.attributes?.supported_color_modes
+                lightType = newState?.attributes?.supported_color_modes
                 if ((lightType.intersect(["hs", "rgb"])) && (lightType.contains("color_temp"))) lightType += "rgbw"
                 if (effectsList) lightType += "rgbwe"
                 switch (lightType)
@@ -328,16 +329,16 @@ def parse(String description) {
                 break
             case "input_number":
             case "number":
-		def minimum = response?.event?.variables?.trigger?.to_state?.attributes?.min
-		def maximum = response?.event?.variables?.trigger?.to_state?.attributes?.max
-		def step = response?.event?.variables?.trigger?.to_state?.attributes?.step
-		def unit = response?.event?.variables?.trigger?.to_state?.attributes?.unit_of_measurement
+		def minimum = newState?.attributes?.min
+		def maximum = newState?.attributes?.max
+		def step = newState?.attributes?.step
+		def unit = newState?.attributes?.unit_of_measurement
 		newVals += [unit, minimum, maximum, step]
                 mapping = translateDevices(domain, newVals, friendly, origin)
                 if (mapping) updateChildDevice(mapping, entity, friendly)
                 break
             case "sensor":
-                def unit_of_measurement = response?.event?.variables?.trigger?.to_state?.attributes?.unit_of_measurement
+                def unit_of_measurement = newState?.attributes?.unit_of_measurement
 		
                 // if there is no device_class, we need to infer from the units
                 if ((!device_class) && (unit_of_measurement in ["Bq/m³","pCi/L"])) device_class = "radon"
@@ -346,13 +347,13 @@ def parse(String description) {
                 if (mapping) updateChildDevice(mapping, entity, friendly)
                 break
             case "climate":
-                def current_temperature = response?.event?.variables?.trigger?.to_state?.attributes?.current_temperature
-                def hvac_action = response?.event?.variables?.trigger?.to_state?.attributes?.hvac_action
-                def target_temperature = response?.event?.variables?.trigger?.to_state?.attributes?.temperature
-                def fan_mode = response?.event?.variables?.trigger?.to_state?.attributes?.fan_mode
-                def thermostat_mode = response?.event?.variables?.trigger?.to_state?.state
-            	def target_temp_high = response?.event?.variables?.trigger?.to_state?.attributes?.target_temp_high
-                def target_temp_low = response?.event?.variables?.trigger?.to_state?.attributes?.target_temp_low
+                def current_temperature = newState?.attributes?.current_temperature
+                def hvac_action = newState?.attributes?.hvac_action
+                def target_temperature = newState?.attributes?.temperature
+                def fan_mode = newState?.attributes?.fan_mode
+                def thermostat_mode = newState?.state
+            	def target_temp_high = newState?.attributes?.target_temp_high
+                def target_temp_low = newState?.attributes?.target_temp_low
                 switch (fan_mode)
                 {
                     case "off":

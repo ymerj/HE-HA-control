@@ -242,7 +242,7 @@ def installed()
     def ch = getChild()
     if(!ch)
     {
-        ch = addChildDevice("ymerj", "HomeAssistant Hub Parent", now().toString(), [name: "Home Assistant Device Bridge", label: "Home Assistant Device Bridge (${ip})", isComponent: false])
+        ch = addChildDevice("ymerj", "HomeAssistant Hub Parent 2.0", now().toString(), [name: "Home Assistant Device Bridge 2.0", label: "Home Assistant Device Bridge 2.0 (${ip})", isComponent: false])
     }
     
     if(ch)

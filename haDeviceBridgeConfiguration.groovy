@@ -32,7 +32,7 @@
 */
 
 definition(
-    name: "Home Assistant Device Bridge",
+    name: "Home Assistant Device Bridge 2.0",
     namespace: "tomw",
     author: "tomw",
     description: "",
@@ -53,7 +53,7 @@ def mainPage()
 {
     dynamicPage(name: "mainPage", title: "", install: true, uninstall: true)
     {
-        section("<b>Home Assistant Device Bridge</b>")
+        section("<b>Home Assistant Device Bridge 2.0</b>")
         {
             input ("ip", "text", title: "Home Assistant IP Address", description: "HomeAssistant IP Address", required: true)
             input ("port", "text", title: "Home Assistant Port", description: "HomeAssistant Port Number", required: true, defaultValue: "8123")

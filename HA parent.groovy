@@ -141,9 +141,11 @@ def initialize() {
     def connectionType = "ws"
     if (secure) connectionType = "wss"
     auth = '{"type":"auth","access_token":"' + "${token}" + '"}'
-    def filterList = device.getDataValue("filterList")
-    def subscriptions = filterList[1..filterList.size()-2].replaceAll('"', "")
-    evenements = '{"id":1,"type":"subscribe_trigger","trigger":{"platform":"state","entity_id":"' + subscriptions + '"}}'
+    // def filterList = device.getDataValue("filterList")
+    // def subscriptions = filterList[1..filterList.size()-2].replaceAll('"', "")
+    def subscriptionsList = device.getDataValue("filterList")
+    if(subscriptionsList == null) return
+    evenements = '{"id":1,"type":"subscribe_trigger","trigger":{"platform":"state","entity_id":"' + subscriptionsList + '"}}'
     try {
         interfaces.webSocket.connect("${connectionType}://${ip}:${port}/api/websocket", ignoreSSLIssues: true)
         interfaces.webSocket.sendMessage("${auth}")

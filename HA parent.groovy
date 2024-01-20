@@ -91,11 +91,8 @@ metadata {
     definition (name: "HomeAssistant Hub Parent", namespace: "ymerj", author: "Yves Mercier", importUrl: "https://raw.githubusercontent.com/ymerj/HE-HA-control/main/HA%20parent.groovy") {
         capability "Initialize"
 
-       // command "createChildTest", [[ name: "entity", type: "STRING", description: "HomeAssistant Entity ID" ]]
-       // command "removeChildTest", [[ name: "entity", type: "STRING", description: "HomeAssistant Entity ID" ]]
         command "closeConnection"        
-       // command "deleteAllChildDevices"
-        
+
         attribute "Connection", "string"
     }
 
@@ -109,11 +106,7 @@ metadata {
     }
 }
 
-def createChildTest(entity){
-	createChild("Generic Component Switch", entity, "test")
-}
-
-def removeChildTest(entity){
+def removeChild(entity){
     String thisId = device.id
     def ch = getChildDevice("${thisId}-${entity}")
     if (ch) {deleteChildDevice("${thisId}-${entity}")}

@@ -20,6 +20,7 @@ Change history:
 
 0.1.58 - Yves Mercier - initial version
 0.1.59 - Yves Mercier - Change healthStatus handling
+0.1.63 - Yves Mercier - Added Actuator capability
 
 */
 
@@ -27,6 +28,7 @@ metadata
 {
     definition(name: "Generic Component Number", namespace: "community", author: "community", importUrl: "https://raw.githubusercontent.com/ymerj/HE-HA-control/main/genericComponentNumber.groovy")
     {
+        capability "Actuator"
         capability "Refresh"
         capability "Health Check"
         

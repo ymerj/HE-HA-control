@@ -81,8 +81,7 @@
 * 0.1.60 2013-12-31 mboisson           Added support for air quality parts
 * 0.1.61 2024-01-02 Yves Mercier       Add alternate RGBW implementation + add handling of unknown state.
 * 0.1.62 2024-01-10 Yves Mercier       Add input_number support
-*
-* Thank you(s):
+* 2.0	 2024-01-20 Yves Mercier       Introduce entity subscription model
 */
 
 import groovy.json.JsonSlurper
@@ -92,11 +91,8 @@ metadata {
     definition (name: "HomeAssistant Hub Parent", namespace: "ymerj", author: "Yves Mercier", importUrl: "https://raw.githubusercontent.com/ymerj/HE-HA-control/main/HA%20parent.groovy") {
         capability "Initialize"
 
-//        command "createChild", [[ name: "entity", type: "STRING", description: "HomeAssistant Entity ID" ]]
-//        command "removeChild", [[ name: "entity", type: "STRING", description: "HomeAssistant Entity ID" ]]
         command "closeConnection"        
-//        command "deleteAllChildDevices"
-        
+
         attribute "Connection", "string"
     }
 
@@ -108,6 +104,12 @@ metadata {
         input ("logEnable", "bool", title: "Enable debug logging", defaultValue: true)
         input ("txtEnable", "bool", title: "Enable description text logging", defaultValue: true)
     }
+}
+
+def removeChild(entity){
+    String thisId = device.id
+    def ch = getChildDevice("${thisId}-${entity}")
+    if (ch) {deleteChildDevice("${thisId}-${entity}")}
 }
 
 def logsOff(){
@@ -132,7 +134,9 @@ def initialize() {
     def connectionType = "ws"
     if (secure) connectionType = "wss"
     auth = '{"type":"auth","access_token":"' + "${token}" + '"}'
-    evenements = '{"id":1,"type":"subscribe_events","event_type":"state_changed"}'
+    def subscriptionsList = device.getDataValue("filterList")
+    if(subscriptionsList == null) return
+    evenements = '{"id":1,"type":"subscribe_trigger","trigger":{"platform":"state","entity_id":"' + subscriptionsList + '"}}'
     try {
         interfaces.webSocket.connect("${connectionType}://${ip}:${port}/api/websocket", ignoreSSLIssues: true)
         interfaces.webSocket.sendMessage("${auth}")
@@ -188,37 +192,35 @@ def parse(String description) {
     def response = null;
     try{
         response = new groovy.json.JsonSlurper().parseText(description)
-        if (response.type != "event") return
-	if (response?.event?.data?.new_state?.state?.toLowerCase() == "unknown") return
+	
+	if (response.type != "event") return
+	def newState = response?.event?.variables?.trigger?.to_state
+	if (newState?.state?.toLowerCase() == "unknown") return
         
         def origin = "physical"
-        if (response.event.context.user_id) origin = "digital"
+        if (newState?.context?.user_id) origin = "digital"
         
         def newVals = []
-        def entity = response?.event?.data?.entity_id
-        
-        // check whether we have a parent, and search its includeList for devices to process
-        if (getParent()?.checkIfFiltered(entity)) return
-        
+	def entity = response?.event?.variables?.trigger?.entity_id        
         def domain = entity?.tokenize(".")?.getAt(0)
-        def device_class = response?.event?.data?.new_state?.attributes?.device_class
-        def friendly = response?.event?.data?.new_state?.attributes?.friendly_name
+        def device_class = newState?.attributes?.device_class
+        def friendly = newState?.attributes?.friendly_name
 
-        newVals << response?.event?.data?.new_state?.state
+        newVals << newState?.state
         def mapping = null
         
         if (logEnable) log.debug "parse: domain: ${domain}, device_class: ${device_class}, entity: ${entity}, newVals: ${newVals}, friendly: ${friendly}"
         
         switch (domain) {
             case "fan":
-                def speed = response?.event?.data?.new_state?.attributes?.speed?.toLowerCase()
+                def speed = newState?.attributes?.speed?.toLowerCase()
                 choices =  ["low","medium-low","medium","medium-high","high","auto"]
                 if (!(choices.contains(speed)))
                     {
                     if (logEnable) log.info "Invalid fan speed received - ${speed}"
                     speed = null
                     }
-                def percentage = response?.event?.data?.new_state?.attributes?.percentage
+                def percentage = newState?.attributes?.percentage
                 switch (percentage.toInteger()) {
                     case 0: 
                         speed = "off"
@@ -246,7 +248,7 @@ def parse(String description) {
             case "cover":
                 // we need to get "current_position" out of the state, if it's there
                 //   note that any additional attributes will use different offsets in the translateCovers mapping
-                def pos = response?.event?.data?.new_state?.attributes?.current_position?.toInteger()
+                def pos = response?.event?.variables?.trigger?.to_state?.attributes?.current_position?.toInteger()
                 newVals += pos                
                 mapping = translateCovers(device_class, newVals, friendly, origin)
                 if (mapping) updateChildDevice(mapping, entity, friendly)
@@ -265,20 +267,20 @@ def parse(String description) {
                 if (mapping) updateChildDevice(mapping, entity, friendly)
                 break
             case "light":
-                def level = response?.event?.data?.new_state?.attributes?.brightness
+                def level = newState?.attributes?.brightness
                 if (level) level = Math.round((level.toInteger() * 100 / 255))
                 newVals += level
-                def hue = response?.event?.data?.new_state?.attributes?.hs_color?.getAt(0)
+                def hue = newState?.attributes?.hs_color?.getAt(0)
                 if (hue) hue = Math.round(hue.toInteger() * 100 / 360)
-                def sat = response?.event?.data?.new_state?.attributes?.hs_color?.getAt(1)
+                def sat = newState?.attributes?.hs_color?.getAt(1)
                 if (sat) sat = Math.round(sat.toInteger())
-                def ct = response?.event?.data?.new_state?.attributes?.color_temp
+                def ct = newState?.attributes?.color_temp
                 if (ct) ct = Math.round(1000000/ct)
                 def effectsList = []
-                effectsList = response?.event?.data?.new_state?.attributes?.effect_list
-                def effectName = response?.event?.data?.new_state?.attributes?.effect
+                effectsList = newState?.attributes?.effect_list
+                def effectName = newState?.attributes?.effect
                 def lightType = []
-                lightType = response?.event?.data?.new_state?.attributes?.supported_color_modes
+                lightType = newState?.attributes?.supported_color_modes
                 if ((lightType.intersect(["hs", "rgb"])) && (lightType.contains("color_temp"))) lightType += "rgbw"
                 if (effectsList) lightType += "rgbwe"
                 switch (lightType)
@@ -318,16 +320,16 @@ def parse(String description) {
                 break
             case "input_number":
             case "number":
-		def minimum = response?.event?.data?.new_state?.attributes?.min
-		def maximum = response?.event?.data?.new_state?.attributes?.max
-		def step = response?.event?.data?.new_state?.attributes?.step
-		def unit = response?.event?.data?.new_state?.attributes?.unit_of_measurement
+		def minimum = newState?.attributes?.min
+		def maximum = newState?.attributes?.max
+		def step = newState?.attributes?.step
+		def unit = newState?.attributes?.unit_of_measurement
 		newVals += [unit, minimum, maximum, step]
                 mapping = translateDevices(domain, newVals, friendly, origin)
                 if (mapping) updateChildDevice(mapping, entity, friendly)
                 break
             case "sensor":
-                def unit_of_measurement = response?.event?.data?.new_state?.attributes?.unit_of_measurement
+                def unit_of_measurement = newState?.attributes?.unit_of_measurement
 		
                 // if there is no device_class, we need to infer from the units
                 if ((!device_class) && (unit_of_measurement in ["Bq/m³","pCi/L"])) device_class = "radon"
@@ -336,13 +338,13 @@ def parse(String description) {
                 if (mapping) updateChildDevice(mapping, entity, friendly)
                 break
             case "climate":
-                def current_temperature = response?.event?.data?.new_state?.attributes?.current_temperature
-                def hvac_action = response?.event?.data?.new_state?.attributes?.hvac_action
-                def target_temperature = response?.event?.data?.new_state?.attributes?.temperature
-                def fan_mode = response?.event?.data?.new_state?.attributes?.fan_mode
-                def thermostat_mode = response?.event?.data?.new_state?.state
-            	def target_temp_high = response?.event?.data?.new_state?.attributes?.target_temp_high
-                def target_temp_low = response?.event?.data?.new_state?.attributes?.target_temp_low
+                def current_temperature = newState?.attributes?.current_temperature
+                def hvac_action = newState?.attributes?.hvac_action
+                def target_temperature = newState?.attributes?.temperature
+                def fan_mode = newState?.attributes?.fan_mode
+                def thermostat_mode = newState?.state
+            	def target_temp_high = newState?.attributes?.target_temp_high
+                def target_temp_low = newState?.attributes?.target_temp_low
                 switch (fan_mode)
                 {
                     case "off":
@@ -510,12 +512,6 @@ def createChild(deviceType, entity, friendly, namespace = null)
     def ch = getChildDevice("${device.id}-${entity}")
     if (!ch) ch = addChildDevice(namespace ?: "hubitat", deviceType, "${device.id}-${entity}", [name: "${entity}", label: "${friendly}", isComponent: false])
     return ch
-}
-
-def removeChild(entity){
-    String thisId = device.id
-    def ch = getChildDevice("${thisId}-${entity}")
-    if (ch) {deleteChildDevice("${thisId}-${entity}")}
 }
 
 def componentOn(ch){

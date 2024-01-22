@@ -28,7 +28,8 @@
 * 0.1.53     2023-02-19 tomw               Allow multiple instances of HADB app to be installed
 * 0.1.58     2023-08-02 Yves Mercier       Add support for number domain
 * 0.1.62     2023-08-02 Yves Mercier       Add support for input_number domain
-* 0.1.63     2023-08-02 tomw               Remove entityList state
+* 0.1.63     2024-01-11 tomw               Remove entityList state
+* 2.0        2024-01-20 Yves Mercier       Introduce entity subscription model
 */
 
 definition(
@@ -61,16 +62,15 @@ def mainPage()
             input name: "secure", type: "bool", title: "Require secure connection", defaultValue: false, required: true
             input name: "ignoreSSLIssues", type: "bool", title: "Ignore SSL Issues", defaultValue: false, required: true
             input name: "enableLogging", type: "bool", title: "Enable debug logging?", defaultValue: false, required: true
-            
         }
         section("<b>Configuration options:</b>")
         {
             href(page: "discoveryPage", title: "<b>Discover and select devices</b>", description: "Query Home Assistant for all currently configured devices.  Then select which entities to Import to Hubitat.", params: [runDiscovery : true])
-            href(page: "advOptionsPage", title: "<b>Configure advanced options</b>", description: "Advanced options for manual configuration")
         }
-        section("App Name") {
+        section("App Name")
+        {
             label title: "Optionally assign a custom name for this app", required: false
-        }        
+        }
     }
 }
 
@@ -86,6 +86,11 @@ def discoveryPage(params)
 {
     dynamicPage(name: "discoveryPage", title: "", install: true, uninstall: true)
     {
+        if(wasButtonPushed("cleanupUnused"))
+        {
+            cullGrandchildren()
+            clearButtonPushed()
+        }
         if(params?.runDiscovery)
         {
             state.entityList = [:]
@@ -108,29 +113,16 @@ def discoveryPage(params)
                 state.entityList = state.entityList.sort { it.value }
             }
         }
-        
         section
         {
             input name: "includeList", type: "enum", title: "Select any devices to <b>include</b> from Home Assistant Device Bridge", options: state.entityList, required: false, multiple: true, offerAll: true
         }
-        
+        section("Administration option")
+        {
+            input(name: "cleanupUnused", type: "button", title: "Remove all child devices that are not currently selected (use carefully!)")
+        }
         linkToMain()
     }
-}
-
-def checkIfFiltered(entity)
-{
-    if(enableFiltering || (null == enableFiltering))
-    {
-        return shouldFilter(entity)
-    }
-    
-    return false
-}
-
-def shouldFilter(entity)
-{
-    return !(includeList?.contains(entity) || accessCustomFilter("get")?.contains(entity))    
 }
 
 def cullGrandchildren()
@@ -142,90 +134,7 @@ def cullGrandchildren()
     ch?.getChildDevices()?.each()
     {
         def entity = it.getDeviceNetworkId()?.tokenize("-")?.getAt(1)        
-        if(shouldFilter(entity))
-        {
-            ch.removeChild(entity)
-        }
-    }
-}
-
-def accessCustomFilter(op, val = null)
-{
-    if(!["add", "del", "clear", "get"].contains(op))
-    {
-        return
-    }
-    
-    def list = state.customFilterList ?: []
-    
-    switch(op)
-    {
-        case "add":
-            !list.contains(val.toString()) ? ((val?.toString()) ? list.add(val.toString()) : null) : null
-            break
-        case "del":
-            list.remove(val.toString())
-            break
-        case "clear":
-            list.clear()
-            break
-        case "get":
-            return list
-            break
-    }
-    
-    state.customFilterList = list
-}
-
-def advOptionsPage()
-{
-    dynamicPage(name: "advOptionsPage", title: "", install: true, uninstall: true)
-    {
-        if(wasButtonPushed("clickToAdd"))
-        {
-            accessCustomFilter("add", eId)
-            clearButtonPushed()
-        }
-        
-        if(wasButtonPushed("clickToRemove"))
-        {
-            accessCustomFilter("del", eId)
-            clearButtonPushed()
-        }
-        
-        if(wasButtonPushed("removeAll"))
-        {
-            accessCustomFilter("clear")
-            clearButtonPushed()
-        }        
-        app.updateSetting("eId", "")
-        
-        if(wasButtonPushed("cleanupUnused"))
-        {
-            cullGrandchildren()
-            clearButtonPushed()
-        }
-        
-        section(hideable: true, hidden: false, title: "Entity filtering options")
-        {
-            input("enableFiltering", "bool", title: "Only pass through user-selected and manually-added entities? (disable this option to pass all through)<br><br>", defaultValue: true, submitOnChange: true)
-        }
-        
-        section(hideable: true, hidden: false, title: "Manually add an entity to be included")
-        {
-            paragraph "<b>Manually added entities:</b> ${accessCustomFilter("get")}"
-            input name: "eId", type: "text", title: "Entity ID", description: "ID"
-            input(name: "clickToAdd", type: "button", title: "Add entity to list", width:2)
-            input(name: "clickToRemove", type: "button", title: "Remove entity from list", width:2)
-            input(name: "removeAll", type: "button", title: "Remove all that were manually added to list? (use carefully!)")
-        }
-        
-        section(hideable: true, hidden: false, title: "System administration options")
-        {
-            input(name: "cleanupUnused", type: "button", title: "Remove all child devices that are not currently either user-selected or manually-added (use carefully!)")
-        }
-        
-        linkToMain()
+        if(!includeList?.contains(entity)) { ch.removeChild(entity) }
     }
 }
 
@@ -252,7 +161,8 @@ def installed()
         ch.updateSetting("port", port)
         ch.updateSetting("token", token)
         ch.updateSetting("secure", secure)
-
+        def filterListForChild = includeList?.join(",")
+        ch.updateDataValue("filterList", filterListForChild)
         ch.updated()
     }
     state.remove("entityList")

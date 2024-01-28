@@ -367,6 +367,18 @@ def parse(String description) {
                     case "auto":
                        return
                 }
+                switch (hvac_action)
+                {
+                    case "off":
+                        hvac_action = "idle"
+                        break
+                    case "fan":
+                        hvac_action = "fan only"
+                        break
+                    case "preheating":
+                        hvac_action = "pending heat"
+                        break
+                }
                 newVals[0] = thermostat_mode
                 newVals += [current_temperature, target_temperature, fan_mode, hvac_action, target_temp_high, target_temp_low]
                 mapping = translateDevices(domain, newVals, friendly, origin)

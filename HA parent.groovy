@@ -338,13 +338,14 @@ def parse(String description) {
                 if (mapping) updateChildDevice(mapping, entity, friendly)
                 break
             case "climate":
-                def current_temperature = newState?.attributes?.current_temperature
-                def hvac_action = newState?.attributes?.hvac_action
-                def target_temperature = newState?.attributes?.temperature
-                def fan_mode = newState?.attributes?.fan_mode
                 def thermostat_mode = newState?.state
+        	def current_temperature = newState?.attributes?.current_temperature
+                def hvac_action = newState?.attributes?.hvac_action
+                def fan_mode = newState?.attributes?.fan_mode
+                def target_temperature = newState?.attributes?.temperature
             	def target_temp_high = newState?.attributes?.target_temp_high
                 def target_temp_low = newState?.attributes?.target_temp_low
+		
                 switch (fan_mode)
                 {
                     case "off":
@@ -379,12 +380,11 @@ def parse(String description) {
                         hvac_action = "pending heat"
                         break
                 }
-                newVals[0] = thermostat_mode
-                newVals += [current_temperature, target_temperature, fan_mode, hvac_action, target_temp_high, target_temp_low]
+                newVals = [thermostat_mode, current_temperature, hvac_action, fan_mode, target_temperature, target_temp_high, target_temp_low]
                 mapping = translateDevices(domain, newVals, friendly, origin)
                 if (newVals[0] == "off") //remove updates not provided with the HA 'off' event json data
                    {
-                   for(int i in (mapping.event.size - 1)..1) 
+                   for(int i in (mapping.event.size - 1)..3) 
                        {
                        mapping.event.remove(i)
                        }  
@@ -483,7 +483,7 @@ def translateDevices(domain, newVals, friendly, origin)
             switch: [type: "Generic Component Switch",                  event: [[name: "switch", value: newVals[0], type: origin, descriptionText:"${friendly} was turned ${newVals[0]} [${origin}]"]]],
             device_tracker: [type: "Generic Component Presence Sensor", event: [[name: "presence", value: newVals[0] == "home" ? "present":"not present", descriptionText:"${friendly} is updated"]], namespace: "community"],
             lock: [type: "Generic Component Lock",                      event: [[name: "lock", value: newVals[0] ?: "unknown", type: origin, descriptionText:"${friendly} was turned ${newVals[0]} [${origin}]"]]],
-            climate: [type: "Generic Component Thermostat",             event: [[name: "thermostatMode", value: newVals[0], descriptionText: "${friendly} is set to ${newVals[0]}"],[name: "temperature", value: newVals[1], descriptionText: "${friendly}'s current temperature is ${newVals[1]} degree"],[name: "coolingSetpoint", value: newVals[2], descriptionText: "${friendly}'s cooling temperature is set to ${newVals[2]} degree"],[name: "heatingSetpoint", value: newVals[2], descriptionText: "${friendly}'s heating temperature is set to ${newVals[2]} degree"],[name: "thermostatFanMode", value: newVals[3], descriptionText: "${friendly}'s fan is set to ${newVals[3]}"],[name: "thermostatSetpoint", value: newVals[2], descriptionText: "${friendly}'s temperature is set to ${newVals[2]} degree"],[name: "thermostatOperatingState", value: newVals[4], descriptionText: "${friendly}'s mode is ${newVals[4]}"],[name: "coolingSetpoint", value: newVals[5], descriptionText: "${friendly}'s cooling temperature is set to ${newVals[5]} degrees"],[name: "heatingSetpoint", value: newVals[6], descriptionText: "${friendly}'s heating temperature is set to ${newVals[6]} degrees"]]],
+	    climate: [type: "Generic Component Thermostat",             event: [[name: "thermostatMode", value: newVals[0], descriptionText: "${friendly} is set to ${newVals[0]}"],[name: "temperature", value: newVals[1], descriptionText: "${friendly}'s current temperature is ${newVals[1]} degree"],[name: "thermostatOperatingState", value: newVals[2], descriptionText: "${friendly}'s mode is ${newVals[4]}"],[name: "thermostatFanMode", value: newVals[3], descriptionText: "${friendly}'s fan is set to ${newVals[3]}"],[name: "thermostatSetpoint", value: newVals[4], descriptionText: "${friendly}'s temperature is set to ${newVals[2]} degree"],[name: "coolingSetpoint", value: newVals[5], descriptionText: "${friendly}'s cooling temperature is set to ${newVals[5]} degrees"],[name: "heatingSetpoint", value: newVals[6], descriptionText: "${friendly}'s heating temperature is set to ${newVals[6]} degrees"]]],
             input_boolean: [type: "Generic Component Switch",           event: [[name: "switch", value: newVals[0], type: origin, descriptionText:"${friendly} was turned ${newVals[0]} [${origin}]"]]],
             input_number: [type: "Generic Component Number",            event: [[name: "number", value: newVals[0], unit: newVals[1] ?: "", type: origin, descriptionText:"${friendly} was set to ${newVals[0]} ${newVals[1] ?: ''} [${origin}]"],[name: "minimum", value: newVals[2], descriptionText:"${friendly} minimum value is ${newVals[2]}"],[name: "maximum", value: newVals[3], descriptionText:"${friendly} maximum value is ${newVals[3]}"],[name: "step", value: newVals[4], descriptionText:"${friendly} step is ${newVals[4]}"]], namespace: "community"],
             number: [type: "Generic Component Number",                  event: [[name: "number", value: newVals[0], unit: newVals[1] ?: "", type: origin, descriptionText:"${friendly} was set to ${newVals[0]} ${newVals[1] ?: ''} [${origin}]"],[name: "minimum", value: newVals[2], descriptionText:"${friendly} minimum value is ${newVals[2]}"],[name: "maximum", value: newVals[3], descriptionText:"${friendly} maximum value is ${newVals[3]}"],[name: "step", value: newVals[4], descriptionText:"${friendly} step is ${newVals[4]}"]], namespace: "community"],

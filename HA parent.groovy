@@ -346,6 +346,10 @@ def parse(String description) {
             	def target_temp_high = newState?.attributes?.target_temp_high
                 def target_temp_low = newState?.attributes?.target_temp_low
 		
+		//def hvac_modes = newState?.attributes?.hvac_modes
+		//hvac_modes.minus(['auto', 'dry', 'fan_only'])
+		//hvac_modes.collect {it == 'heat_cool' ? 'auto' : it}​
+		
                 switch (fan_mode)
                 {
                     case "off":
@@ -380,7 +384,7 @@ def parse(String description) {
                         hvac_action = "pending heat"
                         break
                 }
-                newVals = [thermostat_mode, current_temperature, hvac_action, fan_mode, target_temperature, target_temp_high, target_temp_low]
+                newVals = [thermostat_mode, current_temperature, hvac_action, fan_mode, target_temperature, target_temp_high, target_temp_low] //hvac_modes
                 mapping = translateDevices(domain, newVals, friendly, origin)
                 if (newVals[0] == "off") //remove updates not provided with the HA 'off' event json data
                    {

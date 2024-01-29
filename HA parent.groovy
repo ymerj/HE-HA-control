@@ -347,11 +347,11 @@ def parse(String description) {
                 def target_temp_low = newState?.attributes?.target_temp_low
 		
                 def hvac_modes = newState?.attributes?.hvac_modes
-		log.info "untouch ${hvac_mode}"
+		log.info "untouch ${hvac_modes}"
                 hvac_modes = hvac_modes.minus(["auto", "dry", "fan_only"])
-		log.info "minus ${hvac_mode}"
+		log.info "minus ${hvac_modes}"
                 hvac_modes = hvac_modes.collect {it == "heat_cool" ? "auto" : it}​
-		log.info "collect ${hvac_mode}"
+		log.info "collect ${hvac_modes}"
                 def supportedModes = hvac_modes.inspect().replaceAll("\'", "\"")
 		log.info "inspect ${supportedModes}"
 		

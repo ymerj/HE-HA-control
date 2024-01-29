@@ -345,7 +345,7 @@ def parse(String description) {
                 def target_temperature = newState?.attributes?.temperature
                 def target_temp_high = newState?.attributes?.target_temp_high
                 def target_temp_low = newState?.attributes?.target_temp_low
-		
+		def hvac_modes = []
                 def hvac_modes = newState?.attributes?.hvac_modes
 		log.info "untouch ${hvac_modes}"
                 hvac_modes = hvac_modes.minus(["auto", "dry", "fan_only"])

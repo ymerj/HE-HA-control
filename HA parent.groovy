@@ -339,17 +339,17 @@ def parse(String description) {
                 break
             case "climate":
                 def thermostat_mode = newState?.state
-        	def current_temperature = newState?.attributes?.current_temperature
+                def current_temperature = newState?.attributes?.current_temperature
                 def hvac_action = newState?.attributes?.hvac_action
                 def fan_mode = newState?.attributes?.fan_mode
                 def target_temperature = newState?.attributes?.temperature
-            	def target_temp_high = newState?.attributes?.target_temp_high
+                def target_temp_high = newState?.attributes?.target_temp_high
                 def target_temp_low = newState?.attributes?.target_temp_low
 		
-		def hvac_modes = newState?.attributes?.hvac_modes
-		hvac_modes = hvac_modes.minus(["auto", "dry", "fan_only"])
-		hvac_modes = hvac_modes.collect {it == "heat_cool" ? "auto" : it}​
-		def supportedModes = hvac_modes.inspect().replaceAll("\'", "\"")
+                def hvac_modes = newState?.attributes?.hvac_modes
+                hvac_modes = hvac_modes.minus(["auto", "dry", "fan_only"])
+                hvac_modes = hvac_modes.collect {it == "heat_cool" ? "auto" : it}​
+                def supportedModes = hvac_modes.inspect().replaceAll("\'", "\"")
 		
                 switch (fan_mode)
                 {

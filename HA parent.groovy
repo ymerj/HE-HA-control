@@ -387,7 +387,10 @@ def parse(String description) {
                 }
                 newVals = [thermostat_mode, current_temperature, hvac_action, fan_mode, target_temperature, target_temp_high, target_temp_low, supportedModes]
                 mapping = translateDevices(domain, newVals, friendly, origin)
-                if (newVals[0] == "off") //remove updates not provided with the HA 'off' event json data
+		
+		// remove updates possibly not provided with the HA 'off' event json data
+		// it might not be needed for climate entity
+                if (newVals[0] == "off")
                    {
                    for(int i in (mapping.event.size - 1)..3) 
                        {

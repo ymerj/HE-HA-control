@@ -350,7 +350,7 @@ def parse(String description) {
 		log.info "untouch ${hvac_modes}"
                 hvac_modes = hvac_modes.minus(["auto", "dry", "fan_only"])
 		log.info "minus ${hvac_modes}"
-                hvac_modes = hvac_modes.replaceAll("heat_cool", "auto")​
+                hvac_modes = hvac_modes.replaceAll("heat_cool", "auto")
 		log.info "replace ${hvac_modes}"
 		def supportedModes = hvac_modes.tokenize(',[]')
 		log.info "token ${supportedModes}"

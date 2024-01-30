@@ -350,10 +350,12 @@ def parse(String description) {
 		log.info "untouch ${hvac_modes}"
                 hvac_modes = hvac_modes.minus(["auto", "dry", "fan_only"])
 		log.info "minus ${hvac_modes}"
-                hvac_modes = hvac_modes.collect {it == "heat_cool" ? "auto" : it}​
-		log.info "collect ${hvac_modes}"
-                def supportedModes = hvac_modes.inspect().replaceAll("\'", "\"")
-		log.info "inspect ${supportedModes}"
+                hvac_modes = hvac_modes.replaceAll("heat_cool", "auto")​
+		log.info "replace ${hvac_modes}"
+		def supportedModes = hvac_modes.tokenize(',[]')
+		log.info "token ${supportedModes}"
+		hvac_modes = '"' + new groovy.json.JsonBuilder(supportedModes).toString() + '"'
+		log.info "last ${hvac_modes}"
 		
                 switch (fan_mode)
                 {
@@ -389,7 +391,7 @@ def parse(String description) {
                         hvac_action = "pending heat"
                         break
                 }
-                newVals = [thermostat_mode, current_temperature, hvac_action, fan_mode, target_temperature, target_temp_high, target_temp_low, supportedModes]
+                newVals = [thermostat_mode, current_temperature, hvac_action, fan_mode, target_temperature, target_temp_high, target_temp_low, hvac_modes]
                 mapping = translateDevices(domain, newVals, friendly, origin)
 		
 		// remove updates possibly not provided with the HA 'off' event json data

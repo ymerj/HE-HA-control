@@ -346,18 +346,15 @@ def parse(String description) {
                 def target_temperature = newState?.attributes?.temperature
                 def target_temp_high = newState?.attributes?.target_temp_high
                 def target_temp_low = newState?.attributes?.target_temp_low
-		def hvac_modes = []
+                def hvac_modes = []
                 hvac_modes = newState?.attributes?.hvac_modes
 		log.info "untouch ${hvac_modes}"
                 hvac_modes = hvac_modes.minus(["auto", "dry", "fan_only"])
 		log.info "minus ${hvac_modes}"
-                hvac_modes = hvac_modes.replaceAll("heat_cool", "auto")
+                if (hvac_modes.contains("heat_cool")) hvac_modes = hvac_modes - "heat_cool" + "auto"
 		log.info "replace ${hvac_modes}"
-		def supportedModes = hvac_modes.tokenize(',[]')
-		log.info "token ${supportedModes}"
-		hvac_modes = '"' + new groovy.json.JsonBuilder(supportedModes).toString() + '"'
+                hvac_modes = '"' + new groovy.json.JsonBuilder(hvac_modes).toString() + '"'
 		log.info "last ${hvac_modes}"
-		
                 switch (fan_mode)
                 {
                     case "off":

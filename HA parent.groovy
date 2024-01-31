@@ -82,6 +82,7 @@
 * 0.1.61 2024-01-02 Yves Mercier       Add alternate RGBW implementation + add handling of unknown state.
 * 0.1.62 2024-01-10 Yves Mercier       Add input_number support
 * 2.0	 2024-01-20 Yves Mercier       Introduce entity subscription model
+* 2.1	 2024-01-30 Yves Mercier       Improve climate support
 */
 
 import groovy.json.JsonSlurper
@@ -348,15 +349,10 @@ def parse(String description) {
                 def target_temp_low = newState?.attributes?.target_temp_low
                 def hvac_modes = []
                 hvac_modes = newState?.attributes?.hvac_modes
-		log.info "untouch ${hvac_modes}"
                 hvac_modes = hvac_modes.minus(["auto"])
-		log.info "minus ${hvac_modes}"
                 if (hvac_modes.contains("heat_cool")) hvac_modes = hvac_modes - "heat_cool" + "auto"
-		log.info "replace ${hvac_modes}"
 		hvac_modes = hvac_modes.intersect(["auto", "off", "heat", "emergency heat", "cool"])
-		log.info "inter ${hvac_modes}"
-                hvac_modes = '"' + new groovy.json.JsonBuilder(hvac_modes).toString() + '"'
-		log.info "last ${hvac_modes}"
+                hvac_modes = new groovy.json.JsonBuilder(hvac_modes).toString()
                 switch (fan_mode)
                 {
                     case "off":

@@ -82,10 +82,12 @@
 * 0.1.61 2024-01-02 Yves Mercier       Add alternate RGBW implementation + add handling of unknown state.
 * 0.1.62 2024-01-10 Yves Mercier       Add input_number support
 * 2.0	 2024-01-20 Yves Mercier       Introduce entity subscription model
+* 2.1	 2024-01-30 Yves Mercier       Improve climate support
 */
 
 import groovy.json.JsonSlurper
 import groovy.json.JsonOutput
+import groovy.json.JsonBuilder
 
 metadata {
     definition (name: "HomeAssistant Hub Parent", namespace: "ymerj", author: "Yves Mercier", importUrl: "https://raw.githubusercontent.com/ymerj/HE-HA-control/main/HA%20parent.groovy") {
@@ -201,7 +203,7 @@ def parse(String description) {
         if (newState?.context?.user_id) origin = "digital"
         
         def newVals = []
-	def entity = response?.event?.variables?.trigger?.entity_id        
+        def entity = response?.event?.variables?.trigger?.entity_id        
         def domain = entity?.tokenize(".")?.getAt(0)
         def device_class = newState?.attributes?.device_class
         def friendly = newState?.attributes?.friendly_name
@@ -320,11 +322,11 @@ def parse(String description) {
                 break
             case "input_number":
             case "number":
-		def minimum = newState?.attributes?.min
-		def maximum = newState?.attributes?.max
-		def step = newState?.attributes?.step
-		def unit = newState?.attributes?.unit_of_measurement
-		newVals += [unit, minimum, maximum, step]
+                def minimum = newState?.attributes?.min
+                def maximum = newState?.attributes?.max
+                def step = newState?.attributes?.step
+                def unit = newState?.attributes?.unit_of_measurement
+                newVals += [unit, minimum, maximum, step]
                 mapping = translateDevices(domain, newVals, friendly, origin)
                 if (mapping) updateChildDevice(mapping, entity, friendly)
                 break
@@ -333,18 +335,24 @@ def parse(String description) {
 		
                 // if there is no device_class, we need to infer from the units
                 if ((!device_class) && (unit_of_measurement in ["Bq/m³","pCi/L"])) device_class = "radon"
-		newVals << unit_of_measurement
+                newVals << unit_of_measurement
                 mapping = translateSensors(device_class, newVals, friendly, origin)
                 if (mapping) updateChildDevice(mapping, entity, friendly)
                 break
             case "climate":
+                def thermostat_mode = newState?.state
                 def current_temperature = newState?.attributes?.current_temperature
                 def hvac_action = newState?.attributes?.hvac_action
-                def target_temperature = newState?.attributes?.temperature
                 def fan_mode = newState?.attributes?.fan_mode
-                def thermostat_mode = newState?.state
-            	def target_temp_high = newState?.attributes?.target_temp_high
+                def target_temperature = newState?.attributes?.temperature
+                def target_temp_high = newState?.attributes?.target_temp_high
                 def target_temp_low = newState?.attributes?.target_temp_low
+                def hvac_modes = []
+                hvac_modes = newState?.attributes?.hvac_modes
+                hvac_modes = hvac_modes.minus(["auto"])
+                if (hvac_modes.contains("heat_cool")) hvac_modes = hvac_modes - "heat_cool" + "auto"
+		hvac_modes = hvac_modes.intersect(["auto", "off", "heat", "emergency heat", "cool"])
+                hvac_modes = new groovy.json.JsonBuilder(hvac_modes).toString()
                 switch (fan_mode)
                 {
                     case "off":
@@ -367,12 +375,26 @@ def parse(String description) {
                     case "auto":
                        return
                 }
-                newVals[0] = thermostat_mode
-                newVals += [current_temperature, target_temperature, fan_mode, hvac_action, target_temp_high, target_temp_low]
+                switch (hvac_action)
+                {
+                    case "off":
+                        hvac_action = "idle"
+                        break
+                    case "fan":
+                        hvac_action = "fan only"
+                        break
+                    case "preheating":
+                        hvac_action = "pending heat"
+                        break
+                }
+                newVals = [thermostat_mode, current_temperature, hvac_action, fan_mode, target_temperature, target_temp_high, target_temp_low, hvac_modes]
                 mapping = translateDevices(domain, newVals, friendly, origin)
-                if (newVals[0] == "off") //remove updates not provided with the HA 'off' event json data
+		
+		// remove updates possibly not provided with the HA 'off' event json data
+		// it might not be needed for climate entity
+                if (newVals[0] == "off")
                    {
-                   for(int i in (mapping.event.size - 1)..1) 
+                   for(int i in (mapping.event.size - 1)..3) 
                        {
                        mapping.event.remove(i)
                        }  
@@ -425,7 +447,7 @@ def translateSensors(device_class, newVals, friendly, origin)
             carbon_dioxide: [type: "Generic Component Carbon Dioxide Sensor", event: [[name: "carbonDioxide", value: newVals[0], unit: newVals[1] ?: "ppm", descriptionText:"${friendly} carbon_dioxide is ${newVals[0]} ${newVals[1] ?: 'ppm'}"]], namespace: "community"],
             volatile_organic_compounds_parts: [type: "Generic Component Volatile Organic Compounds Sensor",
                                                                               event: [[name: "voc", value: newVals[0], unit: newVals[1] ?: "ppb", descriptionText:"${friendly} volatile_organic_compounds_parts is ${newVals[0]} ${newVals[1] ?: 'ppb'}"]], namespace: "community"],
-	    volatile_organic_compounds: [type: "Generic Component Volatile Organic Compounds Sensor",
+            volatile_organic_compounds: [type: "Generic Component Volatile Organic Compounds Sensor",
                                                                               event: [[name: "voc", value: newVals[0], unit: newVals[1] ?: "µg/m³", descriptionText:"${friendly} volatile_organic_compounds is ${newVals[0]} ${newVals[1] ?: 'µg/m³'}"]], namespace: "community"],
             radon: [type: "Generic Component Radon Sensor",                   event: [[name: "radon", value: newVals[0], unit: newVals[1], descriptionText:"${friendly} radon is ${newVals[0]} ${newVals[1]}"]], namespace: "community"],
             temperature: [type: "Generic Component Temperature Sensor",       event: [[name: "temperature", value: newVals[0], unit: newVals[1] ?: "°", descriptionText:"${friendly} temperature is ${newVals[0]} ${newVals[1] ?: '°'}"]]],
@@ -471,7 +493,7 @@ def translateDevices(domain, newVals, friendly, origin)
             switch: [type: "Generic Component Switch",                  event: [[name: "switch", value: newVals[0], type: origin, descriptionText:"${friendly} was turned ${newVals[0]} [${origin}]"]]],
             device_tracker: [type: "Generic Component Presence Sensor", event: [[name: "presence", value: newVals[0] == "home" ? "present":"not present", descriptionText:"${friendly} is updated"]], namespace: "community"],
             lock: [type: "Generic Component Lock",                      event: [[name: "lock", value: newVals[0] ?: "unknown", type: origin, descriptionText:"${friendly} was turned ${newVals[0]} [${origin}]"]]],
-            climate: [type: "Generic Component Thermostat",             event: [[name: "thermostatMode", value: newVals[0], descriptionText: "${friendly} is set to ${newVals[0]}"],[name: "temperature", value: newVals[1], descriptionText: "${friendly}'s current temperature is ${newVals[1]} degree"],[name: "coolingSetpoint", value: newVals[2], descriptionText: "${friendly}'s cooling temperature is set to ${newVals[2]} degree"],[name: "heatingSetpoint", value: newVals[2], descriptionText: "${friendly}'s heating temperature is set to ${newVals[2]} degree"],[name: "thermostatFanMode", value: newVals[3], descriptionText: "${friendly}'s fan is set to ${newVals[3]}"],[name: "thermostatSetpoint", value: newVals[2], descriptionText: "${friendly}'s temperature is set to ${newVals[2]} degree"],[name: "thermostatOperatingState", value: newVals[4], descriptionText: "${friendly}'s mode is ${newVals[4]}"],[name: "coolingSetpoint", value: newVals[5], descriptionText: "${friendly}'s cooling temperature is set to ${newVals[5]} degrees"],[name: "heatingSetpoint", value: newVals[6], descriptionText: "${friendly}'s heating temperature is set to ${newVals[6]} degrees"]]],
+            climate: [type: "Generic Component Thermostat",             event: [[name: "thermostatMode", value: newVals[0], descriptionText: "${friendly} is set to ${newVals[0]}"],[name: "temperature", value: newVals[1], descriptionText: "${friendly}'s current temperature is ${newVals[1]} degree"],[name: "thermostatOperatingState", value: newVals[2], descriptionText: "${friendly}'s mode is ${newVals[2]}"],[name: "thermostatFanMode", value: newVals[3], descriptionText: "${friendly}'s fan is set to ${newVals[3]}"],[name: "thermostatSetpoint", value: newVals[4], descriptionText: "${friendly}'s temperature is set to ${newVals[4]} degree"],[name: "coolingSetpoint", value: newVals[5] ?: newVals[4], descriptionText: "${friendly}'s cooling temperature is set to ${newVals[5] ?: newVals[4]} degrees"],[name: "heatingSetpoint", value: newVals[6] ?: newVals[4], descriptionText: "${friendly}'s heating temperature is set to ${newVals[6] ?: newVals[4]} degrees"],[name: "supportedThermostatModes", value: newVals[7], descriptionText: "${friendly} supportedThermostatModes were set to ${newVals[7]}"]]],
             input_boolean: [type: "Generic Component Switch",           event: [[name: "switch", value: newVals[0], type: origin, descriptionText:"${friendly} was turned ${newVals[0]} [${origin}]"]]],
             input_number: [type: "Generic Component Number",            event: [[name: "number", value: newVals[0], unit: newVals[1] ?: "", type: origin, descriptionText:"${friendly} was set to ${newVals[0]} ${newVals[1] ?: ''} [${origin}]"],[name: "minimum", value: newVals[2], descriptionText:"${friendly} minimum value is ${newVals[2]}"],[name: "maximum", value: newVals[3], descriptionText:"${friendly} maximum value is ${newVals[3]}"],[name: "step", value: newVals[4], descriptionText:"${friendly} step is ${newVals[4]}"]], namespace: "community"],
             number: [type: "Generic Component Number",                  event: [[name: "number", value: newVals[0], unit: newVals[1] ?: "", type: origin, descriptionText:"${friendly} was set to ${newVals[0]} ${newVals[1] ?: ''} [${origin}]"],[name: "minimum", value: newVals[2], descriptionText:"${friendly} minimum value is ${newVals[2]}"],[name: "maximum", value: newVals[3], descriptionText:"${friendly} maximum value is ${newVals[3]}"],[name: "step", value: newVals[4], descriptionText:"${friendly} step is ${newVals[4]}"]], namespace: "community"],

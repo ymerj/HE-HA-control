@@ -250,7 +250,7 @@ def parse(String description) {
             case "cover":
                 // we need to get "current_position" out of the state, if it's there
                 //   note that any additional attributes will use different offsets in the translateCovers mapping
-                def pos = response?.event?.variables?.trigger?.to_state?.attributes?.current_position?.toInteger()
+                def pos = newState?.attributes?.current_position?.toInteger()
                 newVals += pos                
                 mapping = translateCovers(device_class, newVals, friendly, origin)
                 if (mapping) updateChildDevice(mapping, entity, friendly)
@@ -463,23 +463,14 @@ def translateSensors(device_class, newVals, friendly, origin)
 }
 
 def translateCovers(device_class, newVals, friendly, origin)
-{    
-    def typicalCover =
-        [
-            type: "Generic Component Window Shade",
-            event:
-            [
-                [name: "windowShade", value: newVals[0] ?: "unknown", type: origin, descriptionText:"${friendly} was turned ${newVals[0]} [${origin}]"],
-                [name: "position", value: (null != newVals?.getAt(1)) ? newVals[1] : "unknown", type: origin, descriptionText:"${friendly} was turned ${newVals[1]} [${origin}]"]
-            ],
-            namespace: "community"
-        ]
-    
+{
     def mapping =
         [
-            curtain: typicalCover,
+            curtain: [type: "Generic Component Window Shade",           event: [[name: "windowShade", value: newVals[0] ?: "unknown", type: origin, descriptionText:"${friendly} was turned ${newVals[0]} [${origin}]"],[name: "position", value: (null != newVals?.getAt(1)) ? newVals[1] : "unknown", type: origin, descriptionText:"${friendly} was turned ${newVals[1]} [${origin}]"]], namespace: "community"],
+            shade: [type: "Generic Component Window Shade",             event: [[name: "windowShade", value: newVals[0] ?: "unknown", type: origin, descriptionText:"${friendly} was turned ${newVals[0]} [${origin}]"],[name: "position", value: (null != newVals?.getAt(1)) ? newVals[1] : "unknown", type: origin, descriptionText:"${friendly} was turned ${newVals[1]} [${origin}]"]], namespace: "community"],
             garage: [type: "Generic Component Garage Door Control",     event: [[name: "door", value: newVals[0] ?: "unknown", type: origin, descriptionText:"${friendly} was turned ${newVals[0]} [${origin}]"]], namespace: "community"],
-            shade: typicalCover
+            gate: [type: "Generic Component Door Control",              event: [[name: "door", value: newVals[0] ?: "unknown", type: origin, descriptionText:"${friendly} was turned ${newVals[0]} [${origin}]"]], namespace: "community"],
+            door: [type: "Generic Component Door Control",              event: [[name: "door", value: newVals[0] ?: "unknown", type: origin, descriptionText:"${friendly} was turned ${newVals[0]} [${origin}]"]], namespace: "community"],
         ]
 
     return mapping[device_class]

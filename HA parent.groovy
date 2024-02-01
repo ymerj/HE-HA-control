@@ -83,6 +83,7 @@
 * 0.1.62 2024-01-10 Yves Mercier       Add input_number support
 * 2.0	 2024-01-20 Yves Mercier       Introduce entity subscription model
 * 2.1	 2024-01-30 Yves Mercier       Improve climate support
+* 2.2    2024-02-01 Yves Mercier       Add support for doors, gates and moisture
 */
 
 import groovy.json.JsonSlurper

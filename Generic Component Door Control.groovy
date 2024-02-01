@@ -28,7 +28,7 @@ Change history:
 
 metadata
 {
-    definition(name: "Generic Component Garage Door Control", namespace: "community", author: "community", importUrl: "https://raw.githubusercontent.com/ymerj/HE-HA-control/main/genericComponentDoorControl.groovy")
+    definition(name: "Generic Component Door Control", namespace: "community", author: "community", importUrl: "https://raw.githubusercontent.com/ymerj/HE-HA-control/main/genericComponentDoorControl.groovy")
     {
         capability "ContactSensor"
         capability "DoorControl"

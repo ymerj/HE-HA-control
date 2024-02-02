@@ -105,9 +105,16 @@
     },
     {
       "id": "d31cc626-0afe-4ad5-a512-f5782358bf8f",
-      "name": "Generic Component Number",
+      "name": "Generic Component Door Control",
       "namespace": "community",
       "location": "https://raw.githubusercontent.com/ymerj/HE-HA-control/main/genericComponentDoorControl.groovy",
+      "required": false
+    },
+    {
+      "id": "d31cc626-0afe-4ad5-a512-f5782358bf90",
+      "name": "Generic Component Window Blind",
+      "namespace": "community",
+      "location": "https://raw.githubusercontent.com/ymerj/HE-HA-control/main/genericComponentWindowBlind.groovy",
       "required": false
     }
   ],

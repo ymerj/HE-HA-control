@@ -85,6 +85,10 @@ void stopPositionChange() {
     parent?.componentStopPositionChange(this.device)
 }
 
+void setTiltLevel(tilt) {
+    parent?.componentSetTiltLevel(this.device, tilt)
+}
+
 void ping() {
     refresh()
 }

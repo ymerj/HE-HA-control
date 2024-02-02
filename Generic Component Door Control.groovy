@@ -22,7 +22,7 @@ Change history:
 0.1.40 - tomw - Added ContactSensor emulation
 0.1.52 - Yves Mercier - Add health check capability
 0.1.59 - Yves Mercier - Change healthStatus handling
-2.2    - Yves Mercier - Modified from garage door to use with door and gate entities
+2.2    - Yves Mercier - Modified from garage door to use with door type entities
 
 */
 

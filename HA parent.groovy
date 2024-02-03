@@ -83,6 +83,7 @@
 * 0.1.62 2024-01-10 Yves Mercier       Add input_number support
 * 2.0	 2024-01-20 Yves Mercier       Introduce entity subscription model
 * 2.1	 2024-01-30 Yves Mercier       Improve climate support
+* 2.2    2024-02-01 Yves Mercier       Add support for door types, blind types and moisture
 */
 
 import groovy.json.JsonSlurper
@@ -250,8 +251,23 @@ def parse(String description) {
             case "cover":
                 // we need to get "current_position" out of the state, if it's there
                 //   note that any additional attributes will use different offsets in the translateCovers mapping
-                def pos = response?.event?.variables?.trigger?.to_state?.attributes?.current_position?.toInteger()
-                newVals += pos                
+                def pos = newState?.attributes?.current_position?.toInteger()
+                newVals += pos
+                def tilt = newState?.attributes?.current_tilt_position?.toInteger() // or perhaps newState?.attributes?.current_cover_tilt_position?.toInteger()
+                newVals += tilt
+                switch (device_class)
+                {
+                   case {it in ["blind","shutter","window"]}:
+                       device_class = "blind"
+                       break
+                   case {it in ["curtain","shade"]}:
+                       device_class = "shade"
+                       break
+                   case "garage":
+                       break
+                   default:
+                       device_class = "door"
+                }
                 mapping = translateCovers(device_class, newVals, friendly, origin)
                 if (mapping) updateChildDevice(mapping, entity, friendly)
                 break
@@ -351,7 +367,7 @@ def parse(String description) {
                 hvac_modes = newState?.attributes?.hvac_modes
                 hvac_modes = hvac_modes.minus(["auto"])
                 if (hvac_modes.contains("heat_cool")) hvac_modes = hvac_modes - "heat_cool" + "auto"
-		hvac_modes = hvac_modes.intersect(["auto", "off", "heat", "emergency heat", "cool"])
+                hvac_modes = hvac_modes.intersect(["auto", "off", "heat", "emergency heat", "cool"])
                 hvac_modes = new groovy.json.JsonBuilder(hvac_modes).toString()
                 switch (fan_mode)
                 {
@@ -390,8 +406,8 @@ def parse(String description) {
                 newVals = [thermostat_mode, current_temperature, hvac_action, fan_mode, target_temperature, target_temp_high, target_temp_low, hvac_modes]
                 mapping = translateDevices(domain, newVals, friendly, origin)
 		
-		// remove updates possibly not provided with the HA 'off' event json data
-		// it might not be needed for climate entity
+                // remove updates possibly not provided with the HA 'off' event json data
+                // perhaps not needed for climate entity
                 if (newVals[0] == "off")
                    {
                    for(int i in (mapping.event.size - 1)..3) 
@@ -430,7 +446,6 @@ def translateBinarySensors(device_class, newVals, friendly, origin)
             unknown: [type: "Generic Component Unknown Sensor",         event: [[name: "unknown", value: newVals[0], descriptionText:"${friendly} is ${newVals[0]}"]], namespace: "community"],
             window: [type: "Generic Component Contact Sensor",          event: [[name: "contact", value: newVals[0] == "on" ? "open":"closed", descriptionText:"${friendly} is ${newVals[0] == 'on' ? 'open':'closed'}"]]],
         ]
-	
     if (!mapping[device_class]) device_class = "unknown"
     return mapping[device_class]
 }
@@ -440,6 +455,7 @@ def translateSensors(device_class, newVals, friendly, origin)
     def mapping =
         [
             humidity: [type: "Generic Component Humidity Sensor",             event: [[name: "humidity", value: newVals[0], unit: newVals[1] ?: "%", descriptionText:"${friendly} humidity is ${newVals[0]} ${newVals[1] ?: '%'}"]]],
+            moisture: [type: "Generic Component Humidity Sensor",             event: [[name: "humidity", value: newVals[0], unit: newVals[1] ?: "%", descriptionText:"${friendly} humidity is ${newVals[0]} ${newVals[1] ?: '%'}"]]],
             illuminance: [type: "Generic Component Illuminance Sensor",       event: [[name: "illuminance", value: newVals[0], unit: newVals[1] ?: "lx", descriptionText:"${friendly} illuminance is ${newVals[0]} ${newVals[1] ?: 'lx'}"]], namespace: "community"],
             battery: [type: "Generic Component Battery",                      event: [[name: "battery", value: newVals[0], unit: newVals[1] ?: "%", descriptionText:"${friendly} battery is ${newVals[0]} ${newVals[1] ?: '%'}"]], namespace: "community"],
             power: [type: "Generic Component Power Meter",                    event: [[name: "power", value: newVals[0], unit: newVals[1] ?: "W", descriptionText:"${friendly} power is ${newVals[0]} ${newVals[1] ?: 'W'}"]]],
@@ -456,32 +472,20 @@ def translateSensors(device_class, newVals, friendly, origin)
             unknown: [type: "Generic Component Unknown Sensor",               event: [[name: "unknown", value: newVals[0], unit: newVals[1] ?: "", descriptionText:"${friendly} value is ${newVals[0]} ${newVals[1] ?: ''}"]], namespace: "community"],
             timestamp: [type: "Generic Component TimeStamp Sensor",           event: [[name: "timestamp", value: newVals[0], descriptionText:"${friendly} time is ${newVals[0]}"]], namespace: "community"],
             pm25: [type: "Generic Component pm25 Sensor",                     event: [[name: "pm25", value: newVals[0], unit: newVals[1] ?: "µg/m³", descriptionText:"${friendly} pm2.5 is ${newVals[0]} ${newVals[1] ?: 'µg/m³'}"]], namespace: "community"],
-	]
-	
+        ]
     if (!mapping[device_class]) device_class = "unknown"
     return mapping[device_class]
 }
 
 def translateCovers(device_class, newVals, friendly, origin)
-{    
-    def typicalCover =
-        [
-            type: "Generic Component Window Shade",
-            event:
-            [
-                [name: "windowShade", value: newVals[0] ?: "unknown", type: origin, descriptionText:"${friendly} was turned ${newVals[0]} [${origin}]"],
-                [name: "position", value: (null != newVals?.getAt(1)) ? newVals[1] : "unknown", type: origin, descriptionText:"${friendly} was turned ${newVals[1]} [${origin}]"]
-            ],
-            namespace: "community"
-        ]
-    
+{
     def mapping =
         [
-            curtain: typicalCover,
+            shade: [type: "Generic Component Window Shade",             event: [[name: "windowShade", value: newVals[0] ?: "unknown", type: origin, descriptionText:"${friendly} was turned ${newVals[0]} [${origin}]"],[name: "position", value: (null != newVals?.getAt(1)) ? newVals[1] : "unknown", type: origin, descriptionText:"${friendly} was turned ${newVals[1]} [${origin}]"]], namespace: "community"],
             garage: [type: "Generic Component Garage Door Control",     event: [[name: "door", value: newVals[0] ?: "unknown", type: origin, descriptionText:"${friendly} was turned ${newVals[0]} [${origin}]"]], namespace: "community"],
-            shade: typicalCover
+            door: [type: "Generic Component Door Control",              event: [[name: "door", value: newVals[0] ?: "unknown", type: origin, descriptionText:"${friendly} was turned ${newVals[0]} [${origin}]"]], namespace: "community"],
+            blind: [type: "Generic Component Window Blind",             event: [[name: "windowBlind", value: newVals[0] ?: "unknown", type: origin, descriptionText:"${friendly} was turned ${newVals[0]} [${origin}]"],[name: "position", value: newVals[1] ?: "unknown", type: origin, descriptionText:"${friendly} position was set to ${newVals[1] ?: "unknown"} [${origin}]"],[name: "tilt", value: newVals[2] ?: "unknown", type: origin, descriptionText:"${friendly} tilt was set to ${newVals[2] ?: "unknown"} [${origin}]"]], namespace: "community"],
         ]
-
     return mapping[device_class]
 }
 
@@ -498,7 +502,6 @@ def translateDevices(domain, newVals, friendly, origin)
             input_number: [type: "Generic Component Number",            event: [[name: "number", value: newVals[0], unit: newVals[1] ?: "", type: origin, descriptionText:"${friendly} was set to ${newVals[0]} ${newVals[1] ?: ''} [${origin}]"],[name: "minimum", value: newVals[2], descriptionText:"${friendly} minimum value is ${newVals[2]}"],[name: "maximum", value: newVals[3], descriptionText:"${friendly} maximum value is ${newVals[3]}"],[name: "step", value: newVals[4], descriptionText:"${friendly} step is ${newVals[4]}"]], namespace: "community"],
             number: [type: "Generic Component Number",                  event: [[name: "number", value: newVals[0], unit: newVals[1] ?: "", type: origin, descriptionText:"${friendly} was set to ${newVals[0]} ${newVals[1] ?: ''} [${origin}]"],[name: "minimum", value: newVals[2], descriptionText:"${friendly} minimum value is ${newVals[2]}"],[name: "maximum", value: newVals[3], descriptionText:"${friendly} maximum value is ${newVals[3]}"],[name: "step", value: newVals[4], descriptionText:"${friendly} step is ${newVals[4]}"]], namespace: "community"],
         ]
-
     return mapping[domain]
 }
 
@@ -512,7 +515,6 @@ def translateLight(device_class, newVals, friendly, origin)
             ct: [type: "Generic Component CT",                          event: [[name: "switch", value: newVals[0], type: origin, descriptionText:"${friendly} was turned ${newVals[0]} [${origin}]"],[name: "level", value: newVals[1], type: origin, descriptionText:"${friendly} level was set to ${newVals[1]}"],[name: "colorTemperature", value: newVals[2], descriptionText:"${friendly} color temperature was set to ${newVals[2]}°K"]]],
             dimmer: [type: "Generic Component Dimmer",                  event: [[name: "switch", value: newVals[0], type: origin, descriptionText:"${friendly} was turned ${newVals[0]} [${origin}]"],[name: "level", value: newVals[1], type: origin, descriptionText:"${friendly} level was set to ${newVals[1]} [${origin}]"]]],
         ]
-
     return mapping[device_class]
 }
    
@@ -735,6 +737,11 @@ void operateCover(ch, op) {
 void componentSetPosition(ch, pos) {
     
     executeCommand(ch, "set_cover_position", [position: pos])
+}
+
+void componentSetTiltLevel(ch, tilt) {
+    
+    executeCommand(ch, "set_cover_tilt_position", [position: tilt])
 }
 
 void componentStartPositionChange(ch, dir) {

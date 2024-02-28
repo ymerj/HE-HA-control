@@ -17,63 +17,63 @@
       "name": "Generic Component Illuminance Sensor",
       "namespace": "community",
       "location": "https://raw.githubusercontent.com/ymerj/HE-HA-control/main/genericComponentIlluminanceSensor.groovy",
-      "required": false
+      "required": true
     },
     {
       "id": "5c5d7872-f132-483c-a976-d40b4be79590",
       "name": "Generic Component Pressure Sensor",
       "namespace": "community",
       "location": "https://raw.githubusercontent.com/ymerj/HE-HA-control/main/genericComponentPressureSensor.groovy",
-      "required": false
+      "required": true
     },
     {
       "id": "cb5d799b-9916-487e-9f7d-c0501f4c9a49",
       "name": "Generic Component Presence Sensor",
       "namespace": "community",
       "location": "https://raw.githubusercontent.com/ymerj/HE-HA-control/main/genericComponentPresenceSensor.groovy",
-      "required": false
+      "required": true
     },
     {
       "id": "0eef3c4e-619c-4f23-94d9-8ff8ae769eb4",
       "name": "Generic Component Garage Door Control",
       "namespace": "community",
       "location": "https://raw.githubusercontent.com/ymerj/HE-HA-control/main/genericComponentGarageDoorControl.groovy",
-      "required": false
+      "required": true
     },
     {
       "id": "6ae357fa-2751-4eea-a765-5378ace0b225",
       "name": "Generic Component Battery",
       "namespace": "community",
       "location": "https://raw.githubusercontent.com/ymerj/HE-HA-control/main/genericComponentBattery.groovy",
-      "required": false
+      "required": true
     },
     {
       "id": "3170ee14-7231-4e28-ac94-6d63db674dd6",
       "name": "Generic Component Window Shade",
       "namespace": "community",
       "location": "https://raw.githubusercontent.com/ymerj/HE-HA-control/main/genericComponentWindowShade.groovy",
-      "required": false
+      "required": true
     },
     {
       "id": "d31cc626-0afe-4ad5-a512-f5782358bf8b",
       "name": "Generic Component Carbon Dioxide Sensor",
       "namespace": "community",
       "location": "https://raw.githubusercontent.com/ymerj/HE-HA-control/main/genericComponentCarbonDioxideSensor.groovy",
-      "required": false
+      "required": true
     },
     {
       "id": "ae0a3a97-fa06-44e8-9ac7-4351e1f20652",
       "name": "Generic Component Radon Sensor",
       "namespace": "community",
       "location": "https://raw.githubusercontent.com/ymerj/HE-HA-control/main/genericComponentRadonSensor.groovy",
-      "required": false
+      "required": true
     },
     {
       "id": "d31cc626-0afe-4ad5-a512-f5782358bf8c",
       "name": "Generic Component TimeStamp Sensor",
       "namespace": "community",
       "location": "https://raw.githubusercontent.com/ymerj/HE-HA-control/main/genericComponentTimeStampSensor.groovy",
-      "required": false
+      "required": true
     },
     {
       "id": "c555e878-9cc9-4d40-8cc6-1dc114973f47",
@@ -87,35 +87,35 @@
       "name": "Generic Component Volatile Organic Compounds Sensor",
       "namespace": "community",
       "location": "https://raw.githubusercontent.com/ymerj/HE-HA-control/main/genericComponentVolatileOrganicCompoundsSensor.groovy",
-      "required": false
+      "required": true
     },
     {
       "id": "d31cc626-0afe-4ad5-a512-f5782358bf8d",
       "name": "Generic Component pm25 Sensor",
       "namespace": "community",
       "location": "https://raw.githubusercontent.com/ymerj/HE-HA-control/main/genericComponentpm25Sensor.groovy",
-      "required": false
+      "required": true
     },
     {
       "id": "d31cc626-0afe-4ad5-a512-f5782358bf8e",
       "name": "Generic Component Number",
       "namespace": "community",
       "location": "https://raw.githubusercontent.com/ymerj/HE-HA-control/main/genericComponentNumber.groovy",
-      "required": false
+      "required": true
     },
     {
       "id": "d31cc626-0afe-4ad5-a512-f5782358bf8f",
       "name": "Generic Component Door Control",
       "namespace": "community",
       "location": "https://raw.githubusercontent.com/ymerj/HE-HA-control/main/genericComponentDoorControl.groovy",
-      "required": false
+      "required": true
     },
     {
       "id": "d31cc626-0afe-4ad5-a512-f5782358bf90",
       "name": "Generic Component Window Blind",
       "namespace": "community",
       "location": "https://raw.githubusercontent.com/ymerj/HE-HA-control/main/genericComponentWindowBlind.groovy",
-      "required": false
+      "required": true
     }
   ],
   "apps": [
@@ -124,7 +124,7 @@
       "name": "Home Assistant Device Bridge configuration",
       "namespace": "tomw",
       "location": "https://raw.githubusercontent.com/ymerj/HE-HA-control/main/haDeviceBridgeConfiguration.groovy",
-      "required": false
+      "required": true
     }  
   ],
 	

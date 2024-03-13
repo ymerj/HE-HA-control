@@ -174,7 +174,7 @@ def webSocketStatus(String status){
         sendEvent(name: "Connection", value: "Open")
     } 
     else {
-        log.warn "WebSocket error, reconnecting."
+        log.warn("WebSocket error, reconnecting.")
         sendEvent(name: "Connection", value: "Reconnecting")
         reconnectWebSocket()
     }
@@ -521,7 +521,7 @@ def translateLight(device_class, newVals, friendly, origin)
 def updateChildDevice(mapping, entity, friendly) {
     def ch = createChild(mapping.type, entity, friendly, mapping.namespace)
     if (!ch) {
-        log.warn "Child type: ${mapping.type} not created for entity: ${entity}"
+        log.warn("Child type: ${mapping.type} not created for entity: ${entity}")
         return
     }
     else {
@@ -653,11 +653,11 @@ def componentSetEffect(ch, effectNumber)
 }
 
 def componentSetNextEffect(ch) {
-    log.warn "setNextEffect not implemented"
+    log.warn("setNextEffect not implemented")
 }
 
 def componentSetPreviousEffect(ch) {
-    log.warn "setPreviousEffect not implemented"
+    log.warn("setPreviousEffect not implemented")
 }
 
 def componentSetSpeed(ch, speed) {
@@ -691,7 +691,7 @@ def componentSetSpeed(ch, speed) {
             executeCommand(ch, "turn_on", data)
             break
         default:
-            if (logEnable) log.info "No case defined for Fan setSpeed(${speed})"
+            if (logEnable) log.info("No case defined for Fan setSpeed(${speed})")
     }
 }
 
@@ -902,12 +902,12 @@ def componentOffTStat(ch)
 
 def componentStartLevelChange(ch)
 {
-    log.warn ("Start level change not supported")
+    log.warn("Start level change not supported")
 }
 
 def componentStopLevelChange(ch)
 {
-    log.warn ("Stop level change not supported")
+    log.warn("Stop level change not supported")
 }
 
 def closeConnection() {

@@ -158,7 +158,7 @@ def uninstalled() {
 }
 
 def webSocketStatus(String status){
-    if (logEnable) log.debug "webSocket ${status}"
+    if (logEnable) log.debug("webSocket ${status}")
 
     if ((status == "status: closing") && (state.wasExpectedClose)) {
         state.wasExpectedClose = false
@@ -166,7 +166,7 @@ def webSocketStatus(String status){
         return
     } 
     else if(status == 'status: open') {
-        log.info "websocket is open"
+        log.info("websocket is open")
         // success! reset reconnect delay
         pauseExecution(1000)
         state.reconnectDelay = 1
@@ -212,7 +212,7 @@ def parse(String description) {
         newVals << newState?.state
         def mapping = null
         
-        if (logEnable) log.debug "parse: domain: ${domain}, device_class: ${device_class}, entity: ${entity}, newVals: ${newVals}, friendly: ${friendly}"
+        if (logEnable) log.debug("parse: domain: ${domain}, device_class: ${device_class}, entity: ${entity}, newVals: ${newVals}, friendly: ${friendly}")
         
         switch (domain) {
             case "fan":
@@ -220,7 +220,7 @@ def parse(String description) {
                 choices =  ["low","medium-low","medium","medium-high","high","auto"]
                 if (!(choices.contains(speed)))
                     {
-                    if (logEnable) log.info "Invalid fan speed received - ${speed}"
+                    if (logEnable) log.info("Invalid fan speed received - ${speed}")
                     speed = null
                     }
                 def percentage = newState?.attributes?.percentage
@@ -240,7 +240,7 @@ def parse(String description) {
                     case 100: 
                         speed = "high"
                     default:
-                        if (logEnable) log.info "Invalid fan percentage received - ${percentage}"
+                        if (logEnable) log.info("Invalid fan percentage received - ${percentage}")
                 }
                 newVals += speed
                 newVals += percentage
@@ -418,7 +418,7 @@ def parse(String description) {
                 if (mapping) updateChildDevice(mapping, entity, friendly) 
                 break
             default:
-                if (logEnable) log.info "No mapping exists for domain: ${domain}, device_class: ${device_class}.  Please contact devs to have this added."
+                if (logEnable) log.info("No mapping exists for domain: ${domain}, device_class: ${device_class}.  Please contact devs to have this added.")
         }
         return
     }  
@@ -589,7 +589,7 @@ def componentSetLevel(ch, level, transition=1){
                 componentSetSpeed(ch, "high")
             break
             default:
-                if (logEnable) log.info "No case defined for Fan setLevel(${level})"
+                if (logEnable) log.info("No case defined for Fan setLevel(${level})")
         }
     } 
     else {        
@@ -930,7 +930,7 @@ def executeCommand(ch, service, data)
 }
 
 def deleteAllChildDevices() {
-    log.info "Uninstalling all Child Devices"
+    log.info("Uninstalling all Child Devices")
     getChildDevices().each {
           deleteChildDevice(it.deviceNetworkId)
        }

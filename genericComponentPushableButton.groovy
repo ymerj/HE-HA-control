@@ -58,6 +58,10 @@ void parse(List<Map> description) {
     }
 }
 
+void push(nb) {
+    parent?.componentPush(this.device, nb)
+}
+
 void refresh() {
     parent?.componentRefresh(this.device)
 }

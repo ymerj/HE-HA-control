@@ -435,7 +435,7 @@ def parse(String description) {
     }
 }
 
-def translateBinarySensors(domain, newVals, friendly, origin)
+def translateBinarySensors(device_class, newVals, friendly, origin)
 {
     def mapping =
         [

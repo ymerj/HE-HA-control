@@ -94,6 +94,7 @@ import groovy.json.JsonBuilder
 metadata {
     definition (name: "HomeAssistant Hub Parent", namespace: "ymerj", author: "Yves Mercier", importUrl: "https://raw.githubusercontent.com/ymerj/HE-HA-control/main/HA%20parent.groovy") {
         capability "Initialize"
+        capability "Actuator"
 
         command "closeConnection"        
         command "callService", [[name:"entity", type:"STRING", description:"domain.entity"],[name:"service", type:"STRING"],[name:"data", type:"STRING", description:"key:value,key:value... etc"]]

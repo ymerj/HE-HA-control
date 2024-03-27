@@ -84,7 +84,7 @@
 * 2.0	 2024-01-20 Yves Mercier       Introduce entity subscription model
 * 2.1	 2024-01-30 Yves Mercier       Improve climate support
 * 2.2    2024-02-01 Yves Mercier       Add support for door types, blind types and moisture
-* 2.3    2024-03-26 Yves Mercier       Add support for buttons
+* 2.3    2024-03-26 Yves Mercier       Add call service command and support for buttons 
 */
 
 import groovy.json.JsonSlurper
@@ -96,7 +96,8 @@ metadata {
         capability "Initialize"
 
         command "closeConnection"        
-
+        command "callService", [[name:"entity", type:"STRING", description:"domain.entity"],[name:"service", type:"STRING"],[name:"data", type:"STRING", description:"key:value,key:value... etc"]]
+	    
         attribute "Connection", "string"
     }
 
@@ -929,6 +930,24 @@ def closeConnection() {
     if (logEnable) log.debug("Closing connection...")   
     state.wasExpectedClose = true
     interfaces.webSocket.close()
+}
+
+def callService(entity, service)
+{
+    callService(entity, service, "")
+}
+
+def callService(entity, service, data)
+{
+    def cvData = [:]
+    cvData = data.tokenize(",").collectEntries{it.tokenize(":").with{[(it[0]):it[1]]}}
+    domain = entity?.tokenize(".")[0]
+    messUpd = [id: state.id, type: "call_service", domain: domain, service: service, service_data : [entity_id: entity] + cvData]
+    state.id = state.id + 1
+
+    messUpdStr = JsonOutput.toJson(messUpd)
+    if (logEnable) log.debug("messUpdStr = ${messUpdStr}")
+    interfaces.webSocket.sendMessage(messUpdStr)    
 }
 
 def executeCommand(ch, service, data)

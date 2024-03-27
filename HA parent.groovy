@@ -84,6 +84,7 @@
 * 2.0	 2024-01-20 Yves Mercier       Introduce entity subscription model
 * 2.1	 2024-01-30 Yves Mercier       Improve climate support
 * 2.2    2024-02-01 Yves Mercier       Add support for door types, blind types and moisture
+* 2.3    2024-03-26 Yves Mercier       Add call service command and support for buttons 
 */
 
 import groovy.json.JsonSlurper
@@ -95,7 +96,8 @@ metadata {
         capability "Initialize"
 
         command "closeConnection"        
-
+        command "callService", [[name:"entity", type:"STRING", description:"domain.entity"],[name:"service", type:"STRING"],[name:"data", type:"STRING", description:"key:value,key:value... etc"]]
+	    
         attribute "Connection", "string"
     }
 
@@ -158,7 +160,7 @@ def uninstalled() {
 }
 
 def webSocketStatus(String status){
-    if (logEnable) log.debug "webSocket ${status}"
+    if (logEnable) log.debug("webSocket ${status}")
 
     if ((status == "status: closing") && (state.wasExpectedClose)) {
         state.wasExpectedClose = false
@@ -166,7 +168,7 @@ def webSocketStatus(String status){
         return
     } 
     else if(status == 'status: open') {
-        log.info "websocket is open"
+        log.info("websocket is open")
         // success! reset reconnect delay
         pauseExecution(1000)
         state.reconnectDelay = 1
@@ -174,7 +176,7 @@ def webSocketStatus(String status){
         sendEvent(name: "Connection", value: "Open")
     } 
     else {
-        log.warn "WebSocket error, reconnecting."
+        log.warn("WebSocket error, reconnecting.")
         sendEvent(name: "Connection", value: "Reconnecting")
         reconnectWebSocket()
     }
@@ -212,7 +214,7 @@ def parse(String description) {
         newVals << newState?.state
         def mapping = null
         
-        if (logEnable) log.debug "parse: domain: ${domain}, device_class: ${device_class}, entity: ${entity}, newVals: ${newVals}, friendly: ${friendly}"
+        if (logEnable) log.debug("parse: domain: ${domain}, device_class: ${device_class}, entity: ${entity}, newVals: ${newVals}, friendly: ${friendly}")
         
         switch (domain) {
             case "fan":
@@ -220,7 +222,7 @@ def parse(String description) {
                 choices =  ["low","medium-low","medium","medium-high","high","auto"]
                 if (!(choices.contains(speed)))
                     {
-                    if (logEnable) log.info "Invalid fan speed received - ${speed}"
+                    if (logEnable) log.info("Invalid fan speed received - ${speed}")
                     speed = null
                     }
                 def percentage = newState?.attributes?.percentage
@@ -240,7 +242,7 @@ def parse(String description) {
                     case 100: 
                         speed = "high"
                     default:
-                        if (logEnable) log.info "Invalid fan percentage received - ${percentage}"
+                        if (logEnable) log.info("Invalid fan percentage received - ${percentage}")
                 }
                 newVals += speed
                 newVals += percentage
@@ -415,10 +417,16 @@ def parse(String description) {
                        mapping.event.remove(i)
                        }  
                     }
-                if (mapping) updateChildDevice(mapping, entity, friendly) 
+                if (mapping) updateChildDevice(mapping, entity, friendly)
+                break
+            case "button":
+            case "input_button":
+                newVals = [1]
+                mapping = translateDevices(domain, newVals, friendly, origin)
+                if (mapping) updateChildDevice(mapping, entity, friendly)
                 break
             default:
-                if (logEnable) log.info "No mapping exists for domain: ${domain}, device_class: ${device_class}.  Please contact devs to have this added."
+                if (logEnable) log.info("No mapping exists for domain: ${domain}, device_class: ${device_class}.  Please contact devs to have this added.")
         }
         return
     }  
@@ -493,6 +501,8 @@ def translateDevices(domain, newVals, friendly, origin)
 {
     def mapping =
         [
+            button: [type: "Generic Component Pushable Button",         event: [[name: "push", value: newVals[0], type: origin, descriptionText:"${friendly} button ${newVals[0]} was pushed [${origin}]"]], namespace: "community"],
+            input_button: [type: "Generic Component Pushable Button",   event: [[name: "push", value: newVals[0], type: origin, descriptionText:"${friendly} button ${newVals[0]} was pushed [${origin}]"]], namespace: "community"],
             fan: [type: "Generic Component Fan Control",                event: [[name: "switch", value: newVals[0], type: origin, descriptionText:"${friendly} was turned ${newVals[0]} [${origin}]"],[name: "speed", value: newVals[1], type: origin, descriptionText:"${friendly} speed was set to ${newVals[1]} [${origin}]"],[name: "level", value: newVals[2], type: origin, descriptionText:"${friendly} level was set to ${newVals[2]} [${origin}]"]]],
             switch: [type: "Generic Component Switch",                  event: [[name: "switch", value: newVals[0], type: origin, descriptionText:"${friendly} was turned ${newVals[0]} [${origin}]"]]],
             device_tracker: [type: "Generic Component Presence Sensor", event: [[name: "presence", value: newVals[0] == "home" ? "present":"not present", descriptionText:"${friendly} is updated"]], namespace: "community"],
@@ -521,7 +531,7 @@ def translateLight(device_class, newVals, friendly, origin)
 def updateChildDevice(mapping, entity, friendly) {
     def ch = createChild(mapping.type, entity, friendly, mapping.namespace)
     if (!ch) {
-        log.warn "Child type: ${mapping.type} not created for entity: ${entity}"
+        log.warn("Child type: ${mapping.type} not created for entity: ${entity}")
         return
     }
     else {
@@ -589,7 +599,7 @@ def componentSetLevel(ch, level, transition=1){
                 componentSetSpeed(ch, "high")
             break
             default:
-                if (logEnable) log.info "No case defined for Fan setLevel(${level})"
+                if (logEnable) log.info("No case defined for Fan setLevel(${level})")
         }
     } 
     else {        
@@ -653,11 +663,11 @@ def componentSetEffect(ch, effectNumber)
 }
 
 def componentSetNextEffect(ch) {
-    log.warn "setNextEffect not implemented"
+    log.warn("setNextEffect not implemented")
 }
 
 def componentSetPreviousEffect(ch) {
-    log.warn "setPreviousEffect not implemented"
+    log.warn("setPreviousEffect not implemented")
 }
 
 def componentSetSpeed(ch, speed) {
@@ -691,7 +701,7 @@ def componentSetSpeed(ch, speed) {
             executeCommand(ch, "turn_on", data)
             break
         default:
-            if (logEnable) log.info "No case defined for Fan setSpeed(${speed})"
+            if (logEnable) log.info("No case defined for Fan setSpeed(${speed})")
     }
 }
 
@@ -770,6 +780,12 @@ void operateLock(ch, op)
 
     data = [:]
     executeCommand(ch, op, data)
+}
+
+def componentPush(ch, nb) {
+    if (logEnable) log.info("received push button ${nb} request from ${ch.label}")
+    data = [:]
+    executeCommand(ch, "press", data)
 }
 
 def componentSetNumber(ch, newValue) {
@@ -902,18 +918,36 @@ def componentOffTStat(ch)
 
 def componentStartLevelChange(ch)
 {
-    log.warn ("Start level change not supported")
+    log.warn("Start level change not supported")
 }
 
 def componentStopLevelChange(ch)
 {
-    log.warn ("Stop level change not supported")
+    log.warn("Stop level change not supported")
 }
 
 def closeConnection() {
     if (logEnable) log.debug("Closing connection...")   
     state.wasExpectedClose = true
     interfaces.webSocket.close()
+}
+
+def callService(entity, service)
+{
+    callService(entity, service, "")
+}
+
+def callService(entity, service, data)
+{
+    def cvData = [:]
+    cvData = data.tokenize(",").collectEntries{it.tokenize(":").with{[(it[0]):it[1]]}}
+    domain = entity?.tokenize(".")[0]
+    messUpd = [id: state.id, type: "call_service", domain: domain, service: service, service_data : [entity_id: entity] + cvData]
+    state.id = state.id + 1
+
+    messUpdStr = JsonOutput.toJson(messUpd)
+    if (logEnable) log.debug("messUpdStr = ${messUpdStr}")
+    interfaces.webSocket.sendMessage(messUpdStr)    
 }
 
 def executeCommand(ch, service, data)
@@ -930,7 +964,7 @@ def executeCommand(ch, service, data)
 }
 
 def deleteAllChildDevices() {
-    log.info "Uninstalling all Child Devices"
+    log.info("Uninstalling all Child Devices")
     getChildDevices().each {
           deleteChildDevice(it.deviceNetworkId)
        }

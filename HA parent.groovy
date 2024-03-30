@@ -814,34 +814,27 @@ def componentSetThermostatMode(ch, thermostatmode){
     switch(thermostatmode)
 	{
 	case "auto":
-	    data = [hvac_mode: "heat_cool"] //[target_temp_high: ch.currentValue("coolingSetpoint"), target_temp_low: ch.currentValue("heatingSetpoint"), hvac_mode: "heat_cool"]
-	    //service = "set_temperature"
+	    data = [hvac_mode: "heat_cool"]
         break
 	case "emergencyHeat":
 	    thermostatmode = "heat"
 	case "heat":
 	case "cool":
-	    data = [hvac_mode: thermostatmode] //[temperature: ch.currentValue("thermostatSetpoint"), hvac_mode: thermostatmode]
-	    //service = "set_temperature"
-	break
 	case "off":
 	    data =  [hvac_mode: thermostatmode]
-	    //service = "set_hvac_mode"
 	break
 	}
-    executeCommand(ch, "set_hvac_mode", data) //executeCommand(ch, service, data)
+    executeCommand(ch, "set_hvac_mode", data)
 }
 
 def componentSetCoolingSetpoint(ch, temperature){
     if (logEnable) log.info("received setCoolingSetpoint request from ${ch.label}")
     
-    tmode = ch.currentValue("thermostatMode")
-    if (tmode == "auto") {
-        data = [target_temp_high: temperature, target_temp_low: ch.currentValue("heatingSetpoint")] //, hvac_mode: "heat_cool"]
+    if (ch.currentValue("thermostatMode") == "auto") {
+        data = [target_temp_high: temperature, target_temp_low: ch.currentValue("heatingSetpoint")]
 	}
     else {
-	//if (tmode == "emergencyHeat") tmode = "heat"
-	data = [temperature: temperature] //, hvac_mode: tmode]
+	data = [temperature: temperature]
 	}
     executeCommand(ch, "set_temperature", data)
 }
@@ -849,13 +842,11 @@ def componentSetCoolingSetpoint(ch, temperature){
 def componentSetHeatingSetpoint(ch, temperature) {
     if (logEnable) log.info("received setHeatingSetpoint request from ${ch.label}")
 
-    tmode = ch.currentValue("thermostatMode")
-    if (tmode == "auto") {
-	data = [target_temp_high: ch.currentValue("coolingSetpoint"), target_temp_low: temperature] //, hvac_mode: "heat_cool"]
+    if (ch.currentValue("thermostatMode") == "auto") {
+	data = [target_temp_high: ch.currentValue("coolingSetpoint"), target_temp_low: temperature]
     }
     else {
-	//if (tmode == "emergencyHeat") tmode = "heat"
-	data = [temperature: temperature] //, hvac_mode: tmode]
+	data = [temperature: temperature] 
     }
     executeCommand(ch, "set_temperature", data)
 }

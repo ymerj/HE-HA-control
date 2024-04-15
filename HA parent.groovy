@@ -411,14 +411,14 @@ def parse(String description) {
 		
                 // remove updates possibly not provided with the HA 'off' event json data
                 // perhaps not needed for climate entity
-                if (newVals[0] == "off")
+ /*               if (newVals[0] == "off")
                    {
                    for(int i in (mapping.event.size - 1)..3) 
                        {
                        mapping.event.remove(i)
                        }  
                     }
-                if (mapping) updateChildDevice(mapping, entity, friendly)
+*/                if (mapping) updateChildDevice(mapping, entity, friendly)
                 break
             case "button":
             case "input_button":

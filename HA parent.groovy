@@ -384,18 +384,22 @@ def parse(String description) {
                 }
                 switch (thermostat_mode)
                 {
+                    case "dry":
+                    case "auto":
+                        return
+			break
                     case "fan_only":
                         fan_mode = "circulate"
                         break
                     case "heat_cool":
                         thermostat_mode = "auto"
                         break
-                    case "dry":
-                    case "auto":
-                       return
                 }
                 switch (hvac_action)
                 {
+                    case "drying":
+                        return
+                        break
                     case "off":
                         hvac_action = "idle"
                         break

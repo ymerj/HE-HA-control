@@ -84,7 +84,8 @@
 * 2.0	 2024-01-20 Yves Mercier       Introduce entity subscription model
 * 2.1	 2024-01-30 Yves Mercier       Improve climate support
 * 2.2    2024-02-01 Yves Mercier       Add support for door types, blind types and moisture
-* 2.3    2024-03-26 Yves Mercier       Add call service command and support for buttons 
+* 2.3    2024-03-26 Yves Mercier       Add call service command and support for buttons
+* 2.4    2024-04-27 Yves Mercier       Add humidity to climate entity
 */
 
 import groovy.json.JsonSlurper

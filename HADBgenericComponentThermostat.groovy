@@ -25,7 +25,7 @@ Change history:
 
 metadata
 {
-    definition(name: 'Generic Component Thermostat', namespace: 'community', author: 'community')
+    definition(name: 'HADB Generic Component Thermostat', namespace: 'community', author: 'community')
     {
         capability 'Actuator'
         capability 'Sensor'

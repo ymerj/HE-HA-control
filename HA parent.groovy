@@ -323,10 +323,8 @@ def parse(String description) {
                         device_class = "dimmer"
                     }
                 mapping = translateLight(device_class, newVals, friendly, origin)
-                if (newVals[0] == "off") //remove updates not provided with the HA 'off' event json data
-                   {
-                   for(int i in (mapping.event.size - 1)..1) 
-                       {
+                if (newVals[0] == "off") { // remove updates not provided with the HA 'off' event json data
+                   for(int i in (mapping.event.size - 1)..1) {
                        mapping.event.remove(i)
                        }  
                     }
@@ -549,9 +547,7 @@ def componentOn(ch) {
 
 def componentOff(ch) {
     if (logEnable) log.info("received off request from ${ch.label}")
-    if(ch.getSupportedAttributes().contains("thermostatMode"))
-    {
-        // since componentOff() is not unique across Hubitat device types, catch this special case
+    if(ch.getSupportedAttributes().contains("thermostatMode")) { // since componentOff() is not unique across Hubitat device types, catch this special case
         componentOffTStat(ch)
         return
     }
@@ -563,9 +559,7 @@ def componentSetLevel(ch, level, transition=1) {
     if (logEnable) log.info("received setLevel request from ${ch.label}")
     if (level > 100) level = 100
     if (level < 0) level = 0
-
-    //if a Fan device, special handling
-    if (ch.currentValue("speed")) {
+    if (ch.currentValue("speed")) { // if a Fan device, special handling
         switch (level.toInteger()) {
             case 0:
                 componentSetSpeed(ch, "off")
@@ -759,7 +753,7 @@ def componentSetNumber(ch, newValue) {
     executeCommand(ch, "set_value", data)
 }
 
-def componentRefresh(ch){
+def componentRefresh(ch) {
     if (logEnable) log.info("received refresh request from ${ch.label}")
     // special handling since domain is fixed 
     entity = ch.name
@@ -769,7 +763,7 @@ def componentRefresh(ch){
     interfaces.webSocket.sendMessage("${messUpd}")
 }
 
-def componentSetThermostatMode(ch, thermostatmode){
+def componentSetThermostatMode(ch, thermostatmode) {
     if (logEnable) log.info("received setThermostatMode request from ${ch.label}")
     switch(thermostatmode)
 	{

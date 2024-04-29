@@ -253,14 +253,11 @@ def parse(String description) {
                 if (mapping) updateChildDevice(mapping, entity, friendly)
                 break
             case "cover":
-                // we need to get "current_position" out of the state, if it's there
-                //   note that any additional attributes will use different offsets in the translateCovers mapping
                 def pos = newState?.attributes?.current_position?.toInteger()
                 newVals += pos
-                def tilt = newState?.attributes?.current_tilt_position?.toInteger() // or perhaps newState?.attributes?.current_cover_tilt_position?.toInteger()
+                def tilt = newState?.attributes?.current_tilt_position?.toInteger() // or perhaps newState?.attributes?.current_cover_tilt_position?.toInteger(). Ambiguity in the docs.
                 newVals += tilt
-                switch (device_class)
-                {
+                switch (device_class) {
                    case {it in ["blind","shutter","window"]}:
                        device_class = "blind"
                        break
@@ -305,8 +302,7 @@ def parse(String description) {
                 lightType = newState?.attributes?.supported_color_modes
                 if ((lightType.intersect(["hs", "rgb"])) && (lightType.contains("color_temp"))) lightType += "rgbw"
                 if (effectsList) lightType += "rgbwe"
-                switch (lightType)
-                    {
+                switch (lightType) {
                     case {it.intersect(["rgbwe"])}:
                         device_class = "rgbwe"
                         newVals += [hue, sat, ct, effectsList, effectName]
@@ -352,9 +348,7 @@ def parse(String description) {
                 break
             case "sensor":
                 def unit_of_measurement = newState?.attributes?.unit_of_measurement
-		
-                // if there is no device_class, we need to infer from the units
-                if ((!device_class) && (unit_of_measurement in ["Bq/m³","pCi/L"])) device_class = "radon"
+                if ((!device_class) && (unit_of_measurement in ["Bq/m³","pCi/L"])) device_class = "radon" // if there is no device_class, we need to infer from the units
                 newVals << unit_of_measurement
                 mapping = translateSensors(device_class, newVals, friendly, origin)
                 if (mapping) updateChildDevice(mapping, entity, friendly)
@@ -374,8 +368,7 @@ def parse(String description) {
                 if (hvac_modes.contains("heat_cool")) hvac_modes = hvac_modes - "heat_cool" + "auto"
                 hvac_modes = hvac_modes.intersect(["auto", "off", "heat", "emergency heat", "cool"])
                 hvac_modes = new groovy.json.JsonBuilder(hvac_modes).toString()
-                switch (fan_mode)
-                {
+                switch (fan_mode) {
                     case "off":
                         thermostat_mode = "off"
                         break
@@ -384,8 +377,7 @@ def parse(String description) {
                     default:
                     	fan_mode = "on"
                 }
-                switch (thermostat_mode)
-                {
+                switch (thermostat_mode) {
                     case "dry":
                     case "auto":
                         return
@@ -397,8 +389,7 @@ def parse(String description) {
                         thermostat_mode = "auto"
                         break
                 }
-                switch (hvac_action)
-                {
+                switch (hvac_action) {
                     case "drying":
                         return
                         break
@@ -414,17 +405,8 @@ def parse(String description) {
                 }
                 newVals = [thermostat_mode, current_temperature, hvac_action, fan_mode, target_temperature, target_temp_high, target_temp_low, hvac_modes, current_humidity]
                 mapping = translateDevices(domain, newVals, friendly, origin)
-                if (!current_humidity) mapping.event.remove(8)
-                // remove updates possibly not provided with the HA 'off' event json data
-                // perhaps not needed for climate entity
- /*               if (newVals[0] == "off")
-                   {
-                   for(int i in (mapping.event.size - 1)..3) 
-                       {
-                       mapping.event.remove(i)
-                       }  
-                    }
-*/                if (mapping) updateChildDevice(mapping, entity, friendly)
+                if (!current_humidity) mapping.event.remove(8) // some thermostats don't provide humidity reading
+                if (mapping) updateChildDevice(mapping, entity, friendly)
                 break
             case "button":
             case "input_button":
@@ -548,41 +530,36 @@ def updateChildDevice(mapping, entity, friendly) {
     }
 }
 
-def createChild(deviceType, entity, friendly, namespace = null)
-{
+def createChild(deviceType, entity, friendly, namespace = null) {
     def ch = getChildDevice("${device.id}-${entity}")
     if (!ch) ch = addChildDevice(namespace ?: "hubitat", deviceType, "${device.id}-${entity}", [name: "${entity}", label: "${friendly}", isComponent: false])
     return ch
 }
 
-def componentOn(ch){
+def componentOn(ch) {
     if (logEnable) log.info("received on request from ${ch.label}")
-
     if (!ch.currentValue("level") || ch.hasCapability("LightEffects")) {
         data = [:]
     }
     else {
         data = [brightness_pct: "${ch.currentValue("level")}"]
     }
-    
     executeCommand(ch, "turn_on", data)
 }
 
-def componentOff(ch){
+def componentOff(ch) {
     if (logEnable) log.info("received off request from ${ch.label}")
-    
     if(ch.getSupportedAttributes().contains("thermostatMode"))
     {
         // since componentOff() is not unique across Hubitat device types, catch this special case
         componentOffTStat(ch)
         return
     }
-
     data = [:]
     executeCommand(ch, "turn_off", data)
 }
 
-def componentSetLevel(ch, level, transition=1){
+def componentSetLevel(ch, level, transition=1) {
     if (logEnable) log.info("received setLevel request from ${ch.label}")
     if (level > 100) level = 100
     if (level < 0) level = 0
@@ -615,56 +592,41 @@ def componentSetLevel(ch, level, transition=1){
     }
 }
 
-def componentSetColor(ch, color, transition=1)
-    {
+def componentSetColor(ch, color, transition=1) {
     if (logEnable) log.info("received setColor request from ${ch.label}")
-
     convertedHue = Math.round(color.hue * 360/100)
-    
     data = [brightness_pct: "${color.level}", hs_color: ["${convertedHue}", "${color.saturation}"], transition: "${transition}"]
     executeCommand(ch, "turn_on", data)
 }
 
-def componentSetColorTemperature(ch, colortemperature, level, transition=1)
-    {
+def componentSetColorTemperature(ch, colortemperature, level, transition=1) {
     if (logEnable) log.info("received setColorTemperature request from ${ch.label}")
-
     if (!level) level = ch.currentValue("level")
     if (!transition) transition = 1
-
     data = [brightness_pct: "${level}", color_temp_kelvin: "${colortemperature}", transition: "${transition}"]
     executeCommand(ch, "turn_on", data)
 }
 
-def componentSetHue(ch, hue, transition=1)
-    {
+def componentSetHue(ch, hue, transition=1) {
     if (logEnable) log.info("received setHue request from ${ch.label}")
-    
     convertedHue = Math.round(hue * 360/100)
-    
     data = [brightness_pct: "${ch.currentValue("level")}", hs_color: ["${convertedHue}", "${ch.currentValue("saturation")}"], transition: "${transition}"]
     executeCommand(ch, "turn_on", data)
 }
 
-def componentSetSaturation(ch, saturation, transition=1)
-    {
+def componentSetSaturation(ch, saturation, transition=1) {
     if (logEnable) log.info("received setSaturation request from ${ch.label}")
-    
     convertedHue = Math.round(ch.currentValue("hue") * 360/100)
-    
     data = [brightness_pct: "${ch.currentValue("level")}", hs_color: ["${convertedHue}", "${saturation}"], transition: "${transition}"]
     executeCommand(ch, "turn_on", data)
 }
 
-def componentSetEffect(ch, effectNumber)
-    {
+def componentSetEffect(ch, effectNumber) {
     if (logEnable) log.info("received setEffect request from ${ch.label}")
-
     def effectsList = ch.currentValue("lightEffects")?.tokenize(',[]')
     def max = effectsList.size()
     effectNumber = effectNumber.toInteger()
     effectNumber = (effectNumber < 1) ? 1 : ((effectNumber > max) ? max : effectNumber)   
-        
     data = [effect: effectsList[effectNumber - 1].trim()]
     executeCommand(ch, "turn_on", data)
 }
@@ -745,31 +707,26 @@ void componentOpen(ch) {
 
 void operateCover(ch, op) {
     if (logEnable) log.info("received ${op} request from ${ch.label}")
-
     service = op + "_cover"
     data = [:]
     executeCommand(ch, service, data)
 }
 
 void componentSetPosition(ch, pos) {
-    
     executeCommand(ch, "set_cover_position", [position: pos])
 }
 
 void componentSetTiltLevel(ch, tilt) {
-    
     executeCommand(ch, "set_cover_tilt_position", [position: tilt])
 }
 
 void componentStartPositionChange(ch, dir) {
-    
     if(["open", "close"].contains(dir)) {
         operateCover(ch, dir)
     }
 }
 
 void componentStopPositionChange(ch) {
-    
     operateCover(ch, "stop")
 }
 
@@ -781,10 +738,8 @@ void componentUnlock(ch) {
     operateLock(ch, "unlock")
 }
 
-void operateLock(ch, op)
-{
+void operateLock(ch, op) {
     if (logEnable) log.info("received ${op} request from ${ch.label}")
-
     data = [:]
     executeCommand(ch, op, data)
 }
@@ -816,7 +771,6 @@ def componentRefresh(ch){
 
 def componentSetThermostatMode(ch, thermostatmode){
     if (logEnable) log.info("received setThermostatMode request from ${ch.label}")
-
     switch(thermostatmode)
 	{
 	case "auto":
@@ -833,21 +787,19 @@ def componentSetThermostatMode(ch, thermostatmode){
     executeCommand(ch, "set_hvac_mode", data)
 }
 
-def componentSetCoolingSetpoint(ch, temperature){
+def componentSetCoolingSetpoint(ch, temperature) {
     if (logEnable) log.info("received setCoolingSetpoint request from ${ch.label}")
-    
     if (ch.currentValue("thermostatMode") == "auto") {
         data = [target_temp_high: temperature, target_temp_low: ch.currentValue("heatingSetpoint")]
-	}
+    }
     else {
 	data = [temperature: temperature]
-	}
+    }
     executeCommand(ch, "set_temperature", data)
 }
 
 def componentSetHeatingSetpoint(ch, temperature) {
     if (logEnable) log.info("received setHeatingSetpoint request from ${ch.label}")
-
     if (ch.currentValue("thermostatMode") == "auto") {
 	data = [target_temp_high: ch.currentValue("coolingSetpoint"), target_temp_low: temperature]
     }
@@ -870,53 +822,43 @@ def componentSetThermostatFanMode(ch, fanmode) {
     }
 }
 
-def componentAuto(ch)
-{
+def componentAuto(ch) {
     componentSetThermostatMode(ch, "auto")
 }
 
-def componentCool(ch)
-{
+def componentCool(ch) {
     componentSetThermostatMode(ch, "cool")
 }
 
-def componentEmergencyHeat(ch)
-{
+def componentEmergencyHeat(ch) {
     componentSetThermostatMode(ch, "emergencyHeat")
 }
 
-def componentFanAuto(ch)
-{
+def componentFanAuto(ch) {
     componentSetThermostatMode(ch, "auto")
 }
 
-def componentFanCirculate(ch)
-{
+def componentFanCirculate(ch) {
     componentSetThermostatFanMode(ch, "circulate")
 }
 
-def componentFanOn(ch)
-{
+def componentFanOn(ch) {
     componentSetThermostatFanMode(ch, "on")
 }
 
-def componentHeat(ch)
-{
+def componentHeat(ch) {
     componentSetThermostatMode(ch, "heat")
 }
 
-def componentOffTStat(ch)
-{
+def componentOffTStat(ch) {
     componentSetThermostatMode(ch, "off")
 }
 
-def componentStartLevelChange(ch)
-{
+def componentStartLevelChange(ch) {
     log.warn("Start level change not supported")
 }
 
-def componentStopLevelChange(ch)
-{
+def componentStopLevelChange(ch) {
     log.warn("Stop level change not supported")
 }
 
@@ -926,32 +868,26 @@ def closeConnection() {
     interfaces.webSocket.close()
 }
 
-def callService(entity, service)
-{
+def callService(entity, service) {
     callService(entity, service, "")
 }
 
-def callService(entity, service, data)
-{
+def callService(entity, service, data) {
     def cvData = [:]
     cvData = data.tokenize(",").collectEntries{it.tokenize(":").with{[(it[0]):it[1]]}}
     domain = entity?.tokenize(".")[0]
     messUpd = [id: state.id, type: "call_service", domain: domain, service: service, service_data : [entity_id: entity] + cvData]
     state.id = state.id + 1
-
     messUpdStr = JsonOutput.toJson(messUpd)
     if (logEnable) log.debug("messUpdStr = ${messUpdStr}")
     interfaces.webSocket.sendMessage(messUpdStr)    
 }
 
-def executeCommand(ch, service, data)
-{    
+def executeCommand(ch, service, data) {    
     entity = ch?.name
     domain = entity?.tokenize(".")[0]
-
     messUpd = [id: state.id, type: "call_service", domain: domain, service: service, service_data : [entity_id: entity] + data]
     state.id = state.id + 1
-
     messUpdStr = JsonOutput.toJson(messUpd)
     if (logEnable) log.debug("messUpdStr = ${messUpdStr}")
     interfaces.webSocket.sendMessage(messUpdStr)    

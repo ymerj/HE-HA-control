@@ -105,7 +105,7 @@ def discoveryPage(params)
                 resp.data.each
                 {
                     domain = it.entity_id?.tokenize(".")?.getAt(0)
-                    if(["fan", "switch", "light", "binary_sensor", "sensor", "device_tracker", "cover", "lock", "climate", "input_boolean", "number", "input_number", "button", "input_button"].contains(domain))
+                    if(["fan", "switch", "light", "binary_sensor", "sensor", "device_tracker", "cover", "lock", "climate", "input_boolean", "number", "input_number", "button", "input_button", "valve"].contains(domain))
                     {
                         state.entityList.put(it.entity_id, "${it.attributes?.friendly_name} (${it.entity_id})")
                     }

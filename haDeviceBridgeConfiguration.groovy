@@ -31,6 +31,7 @@
 * 0.1.63     2024-01-11 tomw               Remove entityList state
 * 2.0        2024-01-20 Yves Mercier       Introduce entity subscription model
 * 2.3        2024-03-26 Yves Mercier       Add support for buttons
+* 2.5        2024-05-08 Yves Mercier       Add support for valves
 */
 
 definition(

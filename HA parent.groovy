@@ -86,6 +86,7 @@
 * 2.2    2024-02-01 Yves Mercier       Add support for door types, blind types and moisture
 * 2.3    2024-03-26 Yves Mercier       Add call service command and support for buttons
 * 2.4    2024-04-27 Yves Mercier       Add humidity to climate entity
+* 2.5    2024-05-08 Yves Mercier       Add support for valve entity
 */
 
 import groovy.json.JsonSlurper
@@ -273,13 +274,8 @@ def parse(String description) {
                 if (mapping) updateChildDevice(mapping, entity, friendly)
                 break
             case "lock":
-                mapping = translateDevices(domain, newVals, friendly, origin)
-                if (mapping) updateChildDevice(mapping, entity, friendly)
-                break
             case "device_tracker":
-                mapping = translateDevices(domain, newVals, friendly, origin)
-                if (mapping) updateChildDevice(mapping, entity, friendly)
-                break
+            case "valve":
             case "switch":
             case "input_boolean":
                 mapping = translateDevices(domain, newVals, friendly, origin)
@@ -492,10 +488,11 @@ def translateDevices(domain, newVals, friendly, origin)
             input_button: [type: "Generic Component Pushable Button",   event: [[name: "push", value: newVals[0], type: origin, descriptionText:"${friendly} button ${newVals[0]} was pushed [${origin}]"]], namespace: "community"],
             fan: [type: "Generic Component Fan Control",                event: [[name: "switch", value: newVals[0], type: origin, descriptionText:"${friendly} was turned ${newVals[0]} [${origin}]"],[name: "speed", value: newVals[1], type: origin, descriptionText:"${friendly} speed was set to ${newVals[1]} [${origin}]"],[name: "level", value: newVals[2], type: origin, descriptionText:"${friendly} level was set to ${newVals[2]} [${origin}]"]]],
             switch: [type: "Generic Component Switch",                  event: [[name: "switch", value: newVals[0], type: origin, descriptionText:"${friendly} was turned ${newVals[0]} [${origin}]"]]],
-            device_tracker: [type: "Generic Component Presence Sensor", event: [[name: "presence", value: newVals[0] == "home" ? "present":"not present", descriptionText:"${friendly} is updated"]], namespace: "community"],
+            device_tracker: [type: "Generic Component Presence Sensor", event: [[name: "presence", value: newVals[0] == "home" ? "present":"not present", descriptionText:"${friendly} is updated"]]],
             lock: [type: "Generic Component Lock",                      event: [[name: "lock", value: newVals[0] ?: "unknown", type: origin, descriptionText:"${friendly} was turned ${newVals[0]} [${origin}]"]]],
             climate: [type: "HADB Generic Component Thermostat",        event: [[name: "thermostatMode", value: newVals[0], descriptionText: "${friendly} is set to ${newVals[0]}"],[name: "temperature", value: newVals[1], descriptionText: "${friendly}'s current temperature is ${newVals[1]} degree"],[name: "thermostatOperatingState", value: newVals[2], descriptionText: "${friendly}'s mode is ${newVals[2]}"],[name: "thermostatFanMode", value: newVals[3], descriptionText: "${friendly}'s fan is set to ${newVals[3]}"],[name: "thermostatSetpoint", value: newVals[4], descriptionText: "${friendly}'s temperature is set to ${newVals[4]} degree"],[name: "coolingSetpoint", value: newVals[5] ?: newVals[4], descriptionText: "${friendly}'s cooling temperature is set to ${newVals[5] ?: newVals[4]} degrees"],[name: "heatingSetpoint", value: newVals[6] ?: newVals[4], descriptionText: "${friendly}'s heating temperature is set to ${newVals[6] ?: newVals[4]} degrees"],[name: "supportedThermostatModes", value: newVals[7], descriptionText: "${friendly} supportedThermostatModes were set to ${newVals[7]}"],[name: "humidity", value: newVals[8], unit: "%", descriptionText:"${friendly} humidity is ${newVals[8]}%"]], namespace: "community"],
             input_boolean: [type: "Generic Component Switch",           event: [[name: "switch", value: newVals[0], type: origin, descriptionText:"${friendly} was turned ${newVals[0]} [${origin}]"]]],
+            valve: [type: "HADB Generic Component Valve",               event: [[name: "valve", value: newVals[0] == "closed" ?: "open", type: origin, descriptionText:"${friendly} was turned ${newVals[0]} [${origin}]"]], namespace: "community"],
             input_number: [type: "Generic Component Number",            event: [[name: "number", value: newVals[0], unit: newVals[1] ?: "", type: origin, descriptionText:"${friendly} was set to ${newVals[0]} ${newVals[1] ?: ''} [${origin}]"],[name: "minimum", value: newVals[2], descriptionText:"${friendly} minimum value is ${newVals[2]}"],[name: "maximum", value: newVals[3], descriptionText:"${friendly} maximum value is ${newVals[3]}"],[name: "step", value: newVals[4], descriptionText:"${friendly} step is ${newVals[4]}"]], namespace: "community"],
             number: [type: "Generic Component Number",                  event: [[name: "number", value: newVals[0], unit: newVals[1] ?: "", type: origin, descriptionText:"${friendly} was set to ${newVals[0]} ${newVals[1] ?: ''} [${origin}]"],[name: "minimum", value: newVals[2], descriptionText:"${friendly} minimum value is ${newVals[2]}"],[name: "maximum", value: newVals[3], descriptionText:"${friendly} maximum value is ${newVals[3]}"],[name: "step", value: newVals[4], descriptionText:"${friendly} step is ${newVals[4]}"]], namespace: "community"],
         ]
@@ -551,8 +548,7 @@ def componentOff(ch) {
         componentOffTStat(ch)
         return
     }
-    data = [:]
-    executeCommand(ch, "turn_off", data)
+    executeCommand(ch, "turn_off", [:])
 }
 
 def componentSetLevel(ch, level, transition=1) {
@@ -692,56 +688,54 @@ def componentCycleSpeed(ch) {
 }
 
 void componentClose(ch) {
-    operateCover(ch, "close")
+    if (logEnable) log.info("received close request from ${ch.label}")
+    service = "close_cover"
+    if (ch.hasCapability("Valve")) service = "close_valve"
+    executeCommand(ch, service, [:])
 }
 
 void componentOpen(ch) {
-    operateCover(ch, "open")
-}
-
-void operateCover(ch, op) {
-    if (logEnable) log.info("received ${op} request from ${ch.label}")
-    service = op + "_cover"
-    data = [:]
-    executeCommand(ch, service, data)
+    if (logEnable) log.info("received open request from ${ch.label}")
+    service = "open_cover"
+    if (ch.hasCapability("Valve")) service = "open_valve"
+    executeCommand(ch, service, [:])
 }
 
 void componentSetPosition(ch, pos) {
+    if (logEnable) log.info("received set position request from ${ch.label}")
     executeCommand(ch, "set_cover_position", [position: pos])
 }
 
 void componentSetTiltLevel(ch, tilt) {
+    if (logEnable) log.info("received set tilt request from ${ch.label}")
     executeCommand(ch, "set_cover_tilt_position", [position: tilt])
 }
 
 void componentStartPositionChange(ch, dir) {
     if(["open", "close"].contains(dir)) {
-        operateCover(ch, dir)
+        if (logEnable) log.info("received ${dir} request from ${ch.label}")
+        executeCommand(ch, dir + "_cover", [:])
     }
 }
 
 void componentStopPositionChange(ch) {
-    operateCover(ch, "stop")
+    if (logEnable) log.info("received stop request from ${ch.label}")
+    executeCommand(ch, "stop_cover", [:])
 }
 
 void componentLock(ch) {
-    operateLock(ch, "lock")
+    if (logEnable) log.info("received lock request from ${ch.label}")
+    executeCommand(ch, "lock", [:])
 }
 
 void componentUnlock(ch) {
-    operateLock(ch, "unlock")
-}
-
-void operateLock(ch, op) {
-    if (logEnable) log.info("received ${op} request from ${ch.label}")
-    data = [:]
-    executeCommand(ch, op, data)
+    if (logEnable) log.info("received unlock request from ${ch.label}")
+    executeCommand(ch, "unlock", [:])
 }
 
 def componentPush(ch, nb) {
     if (logEnable) log.info("received push button ${nb} request from ${ch.label}")
-    data = [:]
-    executeCommand(ch, "press", data)
+    executeCommand(ch, "press", [:])
 }
 
 def componentSetNumber(ch, newValue) {
@@ -749,8 +743,7 @@ def componentSetNumber(ch, newValue) {
     newValue = Math.round(newValue / ch.currentValue("step")) * ch.currentValue("step")
     if (newValue < ch.currentValue("minimum")) newValue = ch.currentValue("minimum")
     if (newValue > ch.currentValue("maximum")) newValue = ch.currentValue("maximum")
-    data = [value: newValue]
-    executeCommand(ch, "set_value", data)
+    executeCommand(ch, "set_value", [value: newValue])
 }
 
 def componentRefresh(ch) {
@@ -804,15 +797,13 @@ def componentSetHeatingSetpoint(ch, temperature) {
 }
 
 def componentSetThermostatFanMode(ch, fanmode) {
-    if (logEnable) log.info("received fanmode request from ${ch.label}")
+    if (logEnable) log.info("received ${fanmode} request from ${ch.label}")
 
     if (fanmode == "circulate") {
-        data = [hvac_mode: "fan_only"]
-        executeCommand(ch, "set_hvac_mode", data)
+        executeCommand(ch, "set_hvac_mode", [hvac_mode: "fan_only"])
     }
     else {    
-        data = [fan_mode: fanmode]
-        executeCommand(ch, "set_fan_mode", data)
+        executeCommand(ch, "set_fan_mode", [fan_mode: fanmode])
     }
 }
 

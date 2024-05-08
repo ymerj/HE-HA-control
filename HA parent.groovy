@@ -689,15 +689,17 @@ def componentCycleSpeed(ch) {
 
 void componentClose(ch) {
     if (logEnable) log.info("received close request from ${ch.label}")
-    service = "close_cover"
-    if (ch.hasCapability("Valve")) service = "close_valve"
+    service = ch.hasCapability("Valve") ? "close_valve":"close_cover"
+//    service = "close_cover"
+//    if (ch.hasCapability("Valve")) service = "close_valve"
     executeCommand(ch, service, [:])
 }
 
 void componentOpen(ch) {
     if (logEnable) log.info("received open request from ${ch.label}")
-    service = "open_cover"
-    if (ch.hasCapability("Valve")) service = "open_valve"
+    service = ch.hasCapability("Valve") ? "open_valve":"open_cover"
+//    service = "open_cover"
+//    if (ch.hasCapability("Valve")) service = "open_valve"
     executeCommand(ch, service, [:])
 }
 

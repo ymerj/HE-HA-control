@@ -86,7 +86,7 @@
 * 2.2    2024-02-01 Yves Mercier       Add support for door types, blind types and moisture
 * 2.3    2024-03-26 Yves Mercier       Add call service command and support for buttons
 * 2.4    2024-04-27 Yves Mercier       Add humidity to climate entity
-* 2.5    2024-05-08 Yves Mercier       Add support for valve entity
+* 2.5    2024-05-24 Yves Mercier       Add support for valve entity and add supported fan modes for climate entity
 */
 
 import groovy.json.JsonSlurper

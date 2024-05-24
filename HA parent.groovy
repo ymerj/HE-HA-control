@@ -356,8 +356,7 @@ def parse(String description) {
                 def target_temperature = newState?.attributes?.temperature
                 def target_temp_high = newState?.attributes?.target_temp_high
                 def target_temp_low = newState?.attributes?.target_temp_low
-                def hvac_modes = []
-                hvac_modes = newState?.attributes?.hvac_modes
+                def hvac_modes = newState?.attributes?.hvac_modes
                 if (hvac_modes)
                     {
                     hvac_modes = hvac_modes.minus(["auto"])
@@ -368,9 +367,8 @@ def parse(String description) {
                     {
                     hvac_modes = ["heat"]
                     }
-                hvac_modes = new groovy.json.JsonBuilder(hvac_modes).toString()
-                def fan_modes = []
-                fan_modes = newState?.attributes?.fan_modes
+                def supportedTmodes = JsonOutput.toJson(hvac_modes)
+                def fan_modes = newState?.attributes?.fan_modes
                 if (fan_modes) 
                     {
                     if (fan_modes.minus(["auto", "on"])) fan_modes = fan_modes + "circulate"
@@ -380,7 +378,7 @@ def parse(String description) {
                     {
                     fan_modes = ["auto"]
                     }
-                fan_modes = new groovy.json.JsonBuilder(fan_modes).toString()
+                def supportedFmodes = JsonOutput.toJson(fan_modes)
                 switch (fan_mode) {
                     case "off":
                         thermostat_mode = "off"
@@ -416,7 +414,7 @@ def parse(String description) {
                         hvac_action = "pending heat"
                         break
                 }
-                newVals = [thermostat_mode, current_temperature, hvac_action, fan_mode, target_temperature, target_temp_high, target_temp_low, hvac_modes, fan_modes, current_humidity]
+                newVals = [thermostat_mode, current_temperature, hvac_action, fan_mode, target_temperature, target_temp_high, target_temp_low, supportedTmodes, supportedFmodes, current_humidity]
                 mapping = translateDevices(domain, newVals, friendly, origin)
                 if (!current_humidity) mapping.event.remove(9) // some thermostats don't provide humidity reading
                 if (mapping) updateChildDevice(mapping, entity, friendly)

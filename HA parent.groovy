@@ -350,24 +350,36 @@ def parse(String description) {
             case "climate":
                 def thermostat_mode = newState?.state
                 def current_temperature = newState?.attributes?.current_temperature
-		def current_humidity = newState?.attributes?.current_humidity
+                def current_humidity = newState?.attributes?.current_humidity
                 def hvac_action = newState?.attributes?.hvac_action
                 def fan_mode = newState?.attributes?.fan_mode
                 def target_temperature = newState?.attributes?.temperature
                 def target_temp_high = newState?.attributes?.target_temp_high
                 def target_temp_low = newState?.attributes?.target_temp_low
                 def hvac_modes = []
-		def fan_modes = []
                 hvac_modes = newState?.attributes?.hvac_modes
-                hvac_modes = hvac_modes.minus(["auto"])
-                if (hvac_modes.contains("heat_cool")) hvac_modes = hvac_modes - "heat_cool" + "auto"
-                hvac_modes = hvac_modes.intersect(["auto", "off", "heat", "emergency heat", "cool"])
-		if (!hvac_modes) hvac_modes = ["heat"]
+                if (hvac_modes)
+                    {
+                    hvac_modes = hvac_modes.minus(["auto"])
+                    if (hvac_modes.contains("heat_cool")) hvac_modes = hvac_modes - "heat_cool" + "auto"
+                    hvac_modes = hvac_modes.intersect(["auto", "off", "heat", "emergency heat", "cool"])
+                    }
+                else
+                    {
+                    hvac_modes = ["heat"]
+                    }
                 hvac_modes = new groovy.json.JsonBuilder(hvac_modes).toString()
-		fan_modes = newState?.attributes?.fan_modes
-		if (fan_modes.minus(["auto", "on"])) fan_modes = fan_modes + "circulate"
-                fan_modes = fan_modes.intersect(["auto", "on", "circulate"])
-		if (!fan_modes) fan_modes = ["auto"]
+                def fan_modes = []
+                fan_modes = newState?.attributes?.fan_modes
+                if (fan_modes) 
+                    {
+                    if (fan_modes.minus(["auto", "on"])) fan_modes = fan_modes + "circulate"
+                    fan_modes = fan_modes.intersect(["auto", "on", "circulate"])
+                    }
+                else
+                    {
+                    fan_modes = ["auto"]
+                    }
                 fan_modes = new groovy.json.JsonBuilder(fan_modes).toString()
                 switch (fan_mode) {
                     case "off":
@@ -382,7 +394,7 @@ def parse(String description) {
                     case "dry":
                     case "auto":
                         return
-			break
+                        break
                     case "fan_only":
                         fan_mode = "circulate"
                         break

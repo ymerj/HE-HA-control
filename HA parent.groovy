@@ -369,14 +369,14 @@ def parse(String description) {
                     }
                 def supportedTmodes = JsonOutput.toJson(hvac_modes)
                 def fan_modes = newState?.attributes?.fan_modes
-                if (fan_modes) 
+                if (fan_modes)
                     {
                     if (fan_modes.minus(["auto", "on"])) fan_modes = fan_modes + "circulate"
                     fan_modes = fan_modes.intersect(["auto", "on", "circulate"])
                     }
                 else
                     {
-                    fan_modes = ["auto"]
+                    fan_modes = ["on"]
                     }
                 def supportedFmodes = JsonOutput.toJson(fan_modes)
                 switch (fan_mode) {

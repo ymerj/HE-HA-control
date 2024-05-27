@@ -86,6 +86,7 @@
 * 2.2    2024-02-01 Yves Mercier       Add support for door types, blind types and moisture
 * 2.3    2024-03-26 Yves Mercier       Add call service command and support for buttons
 * 2.4    2024-04-27 Yves Mercier       Add humidity to climate entity
+* 2.5    2024-05-24 Yves Mercier       Add support for valve entity and add supported fan modes for climate entity
 */
 
 import groovy.json.JsonSlurper
@@ -273,13 +274,8 @@ def parse(String description) {
                 if (mapping) updateChildDevice(mapping, entity, friendly)
                 break
             case "lock":
-                mapping = translateDevices(domain, newVals, friendly, origin)
-                if (mapping) updateChildDevice(mapping, entity, friendly)
-                break
             case "device_tracker":
-                mapping = translateDevices(domain, newVals, friendly, origin)
-                if (mapping) updateChildDevice(mapping, entity, friendly)
-                break
+            case "valve":
             case "switch":
             case "input_boolean":
                 mapping = translateDevices(domain, newVals, friendly, origin)
@@ -354,18 +350,35 @@ def parse(String description) {
             case "climate":
                 def thermostat_mode = newState?.state
                 def current_temperature = newState?.attributes?.current_temperature
-		def current_humidity = newState?.attributes?.current_humidity
+                def current_humidity = newState?.attributes?.current_humidity
                 def hvac_action = newState?.attributes?.hvac_action
                 def fan_mode = newState?.attributes?.fan_mode
                 def target_temperature = newState?.attributes?.temperature
                 def target_temp_high = newState?.attributes?.target_temp_high
                 def target_temp_low = newState?.attributes?.target_temp_low
-                def hvac_modes = []
-                hvac_modes = newState?.attributes?.hvac_modes
-                hvac_modes = hvac_modes.minus(["auto"])
-                if (hvac_modes.contains("heat_cool")) hvac_modes = hvac_modes - "heat_cool" + "auto"
-                hvac_modes = hvac_modes.intersect(["auto", "off", "heat", "emergency heat", "cool"])
-                hvac_modes = new groovy.json.JsonBuilder(hvac_modes).toString()
+                def hvac_modes = newState?.attributes?.hvac_modes
+                if (hvac_modes)
+                    {
+                    hvac_modes = hvac_modes.minus(["auto"])
+                    if (hvac_modes.contains("heat_cool")) hvac_modes = hvac_modes - "heat_cool" + "auto"
+                    hvac_modes = hvac_modes.intersect(["auto", "off", "heat", "emergency heat", "cool"])
+                    }
+                else
+                    {
+                    hvac_modes = ["heat"]
+                    }
+                def supportedTmodes = JsonOutput.toJson(hvac_modes)
+                def fan_modes = newState?.attributes?.fan_modes
+                if (fan_modes)
+                    {
+                    if (fan_modes.minus(["auto", "on"])) fan_modes = fan_modes + "circulate"
+                    fan_modes = fan_modes.intersect(["auto", "on", "circulate"])
+                    }
+                else
+                    {
+                    fan_modes = ["on"]
+                    }
+                def supportedFmodes = JsonOutput.toJson(fan_modes)
                 switch (fan_mode) {
                     case "off":
                         thermostat_mode = "off"
@@ -379,7 +392,7 @@ def parse(String description) {
                     case "dry":
                     case "auto":
                         return
-			break
+                        break
                     case "fan_only":
                         fan_mode = "circulate"
                         break
@@ -401,9 +414,9 @@ def parse(String description) {
                         hvac_action = "pending heat"
                         break
                 }
-                newVals = [thermostat_mode, current_temperature, hvac_action, fan_mode, target_temperature, target_temp_high, target_temp_low, hvac_modes, current_humidity]
+                newVals = [thermostat_mode, current_temperature, hvac_action, fan_mode, target_temperature, target_temp_high, target_temp_low, supportedTmodes, supportedFmodes, current_humidity]
                 mapping = translateDevices(domain, newVals, friendly, origin)
-                if (!current_humidity) mapping.event.remove(8) // some thermostats don't provide humidity reading
+                if (!current_humidity) mapping.event.remove(9) // some thermostats don't provide humidity reading
                 if (mapping) updateChildDevice(mapping, entity, friendly)
                 break
             case "button":
@@ -494,8 +507,9 @@ def translateDevices(domain, newVals, friendly, origin)
             switch: [type: "Generic Component Switch",                  event: [[name: "switch", value: newVals[0], type: origin, descriptionText:"${friendly} was turned ${newVals[0]} [${origin}]"]]],
             device_tracker: [type: "Generic Component Presence Sensor", event: [[name: "presence", value: newVals[0] == "home" ? "present":"not present", descriptionText:"${friendly} is updated"]], namespace: "community"],
             lock: [type: "Generic Component Lock",                      event: [[name: "lock", value: newVals[0] ?: "unknown", type: origin, descriptionText:"${friendly} was turned ${newVals[0]} [${origin}]"]]],
-            climate: [type: "HADB Generic Component Thermostat",        event: [[name: "thermostatMode", value: newVals[0], descriptionText: "${friendly} is set to ${newVals[0]}"],[name: "temperature", value: newVals[1], descriptionText: "${friendly}'s current temperature is ${newVals[1]} degree"],[name: "thermostatOperatingState", value: newVals[2], descriptionText: "${friendly}'s mode is ${newVals[2]}"],[name: "thermostatFanMode", value: newVals[3], descriptionText: "${friendly}'s fan is set to ${newVals[3]}"],[name: "thermostatSetpoint", value: newVals[4], descriptionText: "${friendly}'s temperature is set to ${newVals[4]} degree"],[name: "coolingSetpoint", value: newVals[5] ?: newVals[4], descriptionText: "${friendly}'s cooling temperature is set to ${newVals[5] ?: newVals[4]} degrees"],[name: "heatingSetpoint", value: newVals[6] ?: newVals[4], descriptionText: "${friendly}'s heating temperature is set to ${newVals[6] ?: newVals[4]} degrees"],[name: "supportedThermostatModes", value: newVals[7], descriptionText: "${friendly} supportedThermostatModes were set to ${newVals[7]}"],[name: "humidity", value: newVals[8], unit: "%", descriptionText:"${friendly} humidity is ${newVals[8]}%"]], namespace: "community"],
+            climate: [type: "HADB Generic Component Thermostat",        event: [[name: "thermostatMode", value: newVals[0], descriptionText: "${friendly} is set to ${newVals[0]}"],[name: "temperature", value: newVals[1], descriptionText: "${friendly}'s current temperature is ${newVals[1]} degree"],[name: "thermostatOperatingState", value: newVals[2], descriptionText: "${friendly}'s mode is ${newVals[2]}"],[name: "thermostatFanMode", value: newVals[3], descriptionText: "${friendly}'s fan is set to ${newVals[3]}"],[name: "thermostatSetpoint", value: newVals[4], descriptionText: "${friendly}'s temperature is set to ${newVals[4]} degree"],[name: "coolingSetpoint", value: newVals[5] ?: newVals[4], descriptionText: "${friendly}'s cooling temperature is set to ${newVals[5] ?: newVals[4]} degrees"],[name: "heatingSetpoint", value: newVals[6] ?: newVals[4], descriptionText: "${friendly}'s heating temperature is set to ${newVals[6] ?: newVals[4]} degrees"],[name: "supportedThermostatModes", value: newVals[7], descriptionText: "${friendly} supportedThermostatModes were set to ${newVals[7]}"],[name: "supportedThermostatFanModes", value: newVals[8], descriptionText: "${friendly} supportedThermostatFanModes were set to ${newVals[8]}"],[name: "humidity", value: newVals[9], unit: "%", descriptionText:"${friendly} humidity is ${newVals[9]}%"]], namespace: "community"],
             input_boolean: [type: "Generic Component Switch",           event: [[name: "switch", value: newVals[0], type: origin, descriptionText:"${friendly} was turned ${newVals[0]} [${origin}]"]]],
+            valve: [type: "HADB Generic Component Valve",               event: [[name: "valve", value: newVals[0] == "closed" ? "closed":"open", type: origin, descriptionText:"${friendly} was turned ${newVals[0]} [${origin}]"]], namespace: "community"],
             input_number: [type: "Generic Component Number",            event: [[name: "number", value: newVals[0], unit: newVals[1] ?: "", type: origin, descriptionText:"${friendly} was set to ${newVals[0]} ${newVals[1] ?: ''} [${origin}]"],[name: "minimum", value: newVals[2], descriptionText:"${friendly} minimum value is ${newVals[2]}"],[name: "maximum", value: newVals[3], descriptionText:"${friendly} maximum value is ${newVals[3]}"],[name: "step", value: newVals[4], descriptionText:"${friendly} step is ${newVals[4]}"]], namespace: "community"],
             number: [type: "Generic Component Number",                  event: [[name: "number", value: newVals[0], unit: newVals[1] ?: "", type: origin, descriptionText:"${friendly} was set to ${newVals[0]} ${newVals[1] ?: ''} [${origin}]"],[name: "minimum", value: newVals[2], descriptionText:"${friendly} minimum value is ${newVals[2]}"],[name: "maximum", value: newVals[3], descriptionText:"${friendly} maximum value is ${newVals[3]}"],[name: "step", value: newVals[4], descriptionText:"${friendly} step is ${newVals[4]}"]], namespace: "community"],
         ]
@@ -551,8 +565,7 @@ def componentOff(ch) {
         componentOffTStat(ch)
         return
     }
-    data = [:]
-    executeCommand(ch, "turn_off", data)
+    executeCommand(ch, "turn_off", [:])
 }
 
 def componentSetLevel(ch, level, transition=1) {
@@ -692,56 +705,52 @@ def componentCycleSpeed(ch) {
 }
 
 void componentClose(ch) {
-    operateCover(ch, "close")
+    if (logEnable) log.info("received close request from ${ch.label}")
+    service = ch.hasCapability("Valve") ? "close_valve":"close_cover"
+    executeCommand(ch, service, [:])
 }
 
 void componentOpen(ch) {
-    operateCover(ch, "open")
-}
-
-void operateCover(ch, op) {
-    if (logEnable) log.info("received ${op} request from ${ch.label}")
-    service = op + "_cover"
-    data = [:]
-    executeCommand(ch, service, data)
+    if (logEnable) log.info("received open request from ${ch.label}")
+    service = ch.hasCapability("Valve") ? "open_valve":"open_cover"
+    executeCommand(ch, service, [:])
 }
 
 void componentSetPosition(ch, pos) {
+    if (logEnable) log.info("received set position request from ${ch.label}")
     executeCommand(ch, "set_cover_position", [position: pos])
 }
 
 void componentSetTiltLevel(ch, tilt) {
+    if (logEnable) log.info("received set tilt request from ${ch.label}")
     executeCommand(ch, "set_cover_tilt_position", [position: tilt])
 }
 
 void componentStartPositionChange(ch, dir) {
     if(["open", "close"].contains(dir)) {
-        operateCover(ch, dir)
+        if (logEnable) log.info("received ${dir} request from ${ch.label}")
+        executeCommand(ch, dir + "_cover", [:])
     }
 }
 
 void componentStopPositionChange(ch) {
-    operateCover(ch, "stop")
+    if (logEnable) log.info("received stop request from ${ch.label}")
+    executeCommand(ch, "stop_cover", [:])
 }
 
 void componentLock(ch) {
-    operateLock(ch, "lock")
+    if (logEnable) log.info("received lock request from ${ch.label}")
+    executeCommand(ch, "lock", [:])
 }
 
 void componentUnlock(ch) {
-    operateLock(ch, "unlock")
-}
-
-void operateLock(ch, op) {
-    if (logEnable) log.info("received ${op} request from ${ch.label}")
-    data = [:]
-    executeCommand(ch, op, data)
+    if (logEnable) log.info("received unlock request from ${ch.label}")
+    executeCommand(ch, "unlock", [:])
 }
 
 def componentPush(ch, nb) {
     if (logEnable) log.info("received push button ${nb} request from ${ch.label}")
-    data = [:]
-    executeCommand(ch, "press", data)
+    executeCommand(ch, "press", [:])
 }
 
 def componentSetNumber(ch, newValue) {
@@ -749,8 +758,7 @@ def componentSetNumber(ch, newValue) {
     newValue = Math.round(newValue / ch.currentValue("step")) * ch.currentValue("step")
     if (newValue < ch.currentValue("minimum")) newValue = ch.currentValue("minimum")
     if (newValue > ch.currentValue("maximum")) newValue = ch.currentValue("maximum")
-    data = [value: newValue]
-    executeCommand(ch, "set_value", data)
+    executeCommand(ch, "set_value", [value: newValue])
 }
 
 def componentRefresh(ch) {
@@ -804,15 +812,13 @@ def componentSetHeatingSetpoint(ch, temperature) {
 }
 
 def componentSetThermostatFanMode(ch, fanmode) {
-    if (logEnable) log.info("received fanmode request from ${ch.label}")
+    if (logEnable) log.info("received ${fanmode} request from ${ch.label}")
 
     if (fanmode == "circulate") {
-        data = [hvac_mode: "fan_only"]
-        executeCommand(ch, "set_hvac_mode", data)
+        executeCommand(ch, "set_hvac_mode", [hvac_mode: "fan_only"])
     }
     else {    
-        data = [fan_mode: fanmode]
-        executeCommand(ch, "set_fan_mode", data)
+        executeCommand(ch, "set_fan_mode", [fan_mode: fanmode])
     }
 }
 

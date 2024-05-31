@@ -32,6 +32,7 @@
 * 2.0        2024-01-20 Yves Mercier       Introduce entity subscription model
 * 2.3        2024-03-26 Yves Mercier       Add support for buttons
 * 2.5        2024-05-08 Yves Mercier       Add support for valves
+* 2.6        2024-05-31 Yves Mercier       Add support for humidifier
 */
 
 definition(
@@ -106,7 +107,7 @@ def discoveryPage(params)
                 resp.data.each
                 {
                     domain = it.entity_id?.tokenize(".")?.getAt(0)
-                    if(["fan", "switch", "light", "binary_sensor", "sensor", "device_tracker", "cover", "lock", "climate", "input_boolean", "number", "input_number", "button", "input_button", "valve"].contains(domain))
+                    if(["fan", "switch", "light", "binary_sensor", "sensor", "device_tracker", "cover", "lock", "climate", "input_boolean", "number", "input_number", "button", "input_button", "valve", "humidifier"].contains(domain))
                     {
                         state.entityList.put(it.entity_id, "${it.attributes?.friendly_name} (${it.entity_id})")
                     }

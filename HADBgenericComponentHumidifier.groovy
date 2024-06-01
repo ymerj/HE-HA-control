@@ -23,17 +23,21 @@ metadata
         capability "Refresh"
         capability "Actuator"
         capability "Health Check"
+        capability "RelativeHumidityMeasurement"
+        capability "Sensor"
         }
     preferences
         {
         input name: "txtEnable", type: "bool", title: "Enable descriptionText logging", defaultValue: true
         }
 
-    command "setMode", [[name: "modeNumber", type: "number", description: "Indicate the index of the desired mode"]]
+    command "setMode", [[name: "modeNumber", type: "number", description: "Input the index of the desired mode"]]
+    command "setHumidity", [[name: "humidityTarget", type: "number", description: "Input the desired humidity level"]]
 
     attribute "healthStatus", "enum", ["offline", "online"]
     attribute "supportedModes", "string"
     attribute "humidifierMode", "string"
+    attribute "humidityTarget", "number"
     }
 
 void updated() {
@@ -51,7 +55,7 @@ void parse(String description) { log.warn "parse(String description) not impleme
 
 void parse(List description) {
     description.each {
-        if (it.name in ["switch", "humidifierMode", "supportedModes", "healthStatus"]) {
+        if (it.name in ["switch", "humidifierMode", "supportedModes", "healthStatus", "humidity", "humidityTarget"]) {
             if (txtEnable) log.info it.descriptionText
             sendEvent(it)
         }
@@ -68,6 +72,10 @@ void off() {
 
 def setMode(modeNumber) {
     parent?.componentSetHumidifierMode(this.device, modeNumber)
+}
+
+def setHumidity(humidityTarget) {
+    parent?.componentSetHumidify(this.device, humidityTarget)
 }
 
 void refresh() {

@@ -92,7 +92,6 @@
 
 import groovy.json.JsonSlurper
 import groovy.json.JsonOutput
-import groovy.json.JsonBuilder
 
 metadata {
     definition (name: "HomeAssistant Hub Parent", namespace: "ymerj", author: "Yves Mercier", importUrl: "https://raw.githubusercontent.com/ymerj/HE-HA-control/main/HA%20parent.groovy") {
@@ -320,11 +319,7 @@ def parse(String description) {
                         device_class = "dimmer"
                     }
                 mapping = translateLight(device_class, newVals, friendly, origin)
-                if (newVals[0] == "off") { // remove updates not provided with the HA 'off' event json data
-                   for(int i in (mapping.event.size - 1)..1) {
-                       mapping.event.remove(i)
-                       }  
-                    }
+                if (newVals[0] == "off") mapping = mapping.event.getAt(0) // remove updates not provided with the HA 'off' event json data
                 if (mapping) updateChildDevice(mapping, entity, friendly)
                 break
             case "binary_sensor":
@@ -427,12 +422,12 @@ def parse(String description) {
                 if (mapping) updateChildDevice(mapping, entity, friendly)
                 break
             case "humidifier":
-                def modesList = []
-                supportedModes = newState?.attributes?.modes
                 humidifierMode = newState?.attributes?.mode
+                def supportedModes = []
+                supportedModes = newState?.attributes?.modes
                 newVals += [humidifierMode, supportedModes]
                 mapping = translateDevices(domain, newVals, friendly, origin)
-                if (newVals[0] == "off") mapping = mapping.event.getAt(0)
+                if (newVals[0] == "off") mapping = mapping.event.getAt(0) // remove updates not provided with the HA 'off' event json data
                 if (mapping) updateChildDevice(mapping, entity, friendly)
                 break
             default:

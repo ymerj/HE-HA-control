@@ -32,12 +32,12 @@ metadata
         }
 
     command "setMode", [[name: "modeNumber", type: "number", description: "Input the index of the desired mode"]]
-    command "setHumidity", [[name: "humidityTarget", type: "number", description: "Input the desired humidity level"]]
+    command "setHumidity", [[name: "target", type: "number", description: "Input the desired humidity level"]]
 
     attribute "healthStatus", "enum", ["offline", "online"]
     attribute "supportedModes", "string"
     attribute "humidifierMode", "string"
-    attribute "humidityTarget", "number"
+    attribute "targetHumidity", "number"
     }
 
 void updated() {
@@ -55,7 +55,7 @@ void parse(String description) { log.warn "parse(String description) not impleme
 
 void parse(List description) {
     description.each {
-        if (it.name in ["switch", "humidifierMode", "supportedModes", "healthStatus", "humidity", "humidityTarget"]) {
+        if (it.name in ["switch", "humidifierMode", "supportedModes", "healthStatus", "humidity", "targetHumidity"]) {
             if (txtEnable) log.info it.descriptionText
             sendEvent(it)
         }
@@ -74,8 +74,8 @@ def setMode(modeNumber) {
     parent?.componentSetHumidifierMode(this.device, modeNumber)
 }
 
-def setHumidity(humidityTarget) {
-    parent?.componentSetHumidify(this.device, humidityTarget)
+def setHumidity(target) {
+    parent?.componentSetHumidify(this.device, target)
 }
 
 void refresh() {

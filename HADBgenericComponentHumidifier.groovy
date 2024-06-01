@@ -51,7 +51,7 @@ void parse(String description) { log.warn "parse(String description) not impleme
 
 void parse(List description) {
     description.each {
-        if (it.name in ["switch", "mode", "supportedModes", "healthStatus"]) {
+        if (it.name in ["switch", "humidifierMode", "supportedModes", "healthStatus"]) {
             if (txtEnable) log.info it.descriptionText
             sendEvent(it)
         }
@@ -67,7 +67,7 @@ void off() {
 }
 
 def setMode(modeNumber) {
-    parent?.componentSetMode(this.device, modeNumber)
+    parent?.componentSetHumidifierMode(this.device, modeNumber)
 }
 
 void refresh() {

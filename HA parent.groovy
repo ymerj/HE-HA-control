@@ -840,6 +840,11 @@ def componentSetHumidifierMode(ch, modeNumber) {
     executeCommand(ch, "set_mode", data)
 }
 
+def componentSetHumidity(ch, target) {
+    if (logEnable) log.info("received set humidity request from ${ch.label}")
+    executeCommand(ch, "set_humidity", target_humidity: target)
+}
+
 def componentAuto(ch) {
     componentSetThermostatMode(ch, "auto")
 }

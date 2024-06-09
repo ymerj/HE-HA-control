@@ -431,9 +431,9 @@ def parse(String description) {
                 def targetHumidity = newState?.attributes?.target_humidity
                 newVals += [humidifierMode, supportedModes, maxHumidity, minHumidity, currentHumidity, targetHumidity]
                 mapping = translateDevices(domain, newVals, friendly, origin)
-                if (newVals[0] == "off") mapping = mapping.event.getAt(0) // remove updates not provided with the HA 'off' event json data
                 if (!targetHumidity) mapping.event.removeLast()
                 if (!currentHumidity) mapping.event.removeLast()
+//                if (newVals[0] == "off") mapping = mapping.event.getAt(0) // remove updates not provided with the HA 'off' event json data
                 if (mapping) updateChildDevice(mapping, entity, friendly)
                 break
             default:

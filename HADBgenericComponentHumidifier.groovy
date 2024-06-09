@@ -37,6 +37,8 @@ metadata
     attribute "healthStatus", "enum", ["offline", "online"]
     attribute "supportedModes", "string"
     attribute "humidifierMode", "string"
+    attribute "maxHumidity", "number"
+    attribute "minHumidity", "number"
     attribute "targetHumidity", "number"
     }
 
@@ -55,7 +57,7 @@ void parse(String description) { log.warn "parse(String description) not impleme
 
 void parse(List description) {
     description.each {
-        if (it.name in ["switch", "humidifierMode", "supportedModes", "healthStatus", "humidity", "targetHumidity"]) {
+        if (it.name in ["switch", "humidifierMode", "supportedModes", "healthStatus", "maxHumidity", "minHumidity", "humidity", "targetHumidity"]) {
             if (txtEnable) log.info it.descriptionText
             sendEvent(it)
         }

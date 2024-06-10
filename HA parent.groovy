@@ -412,7 +412,7 @@ def parse(String description) {
                 }
                 newVals = [thermostat_mode, current_temperature, hvac_action, fan_mode, target_temperature, target_temp_high, target_temp_low, supportedTmodes, supportedFmodes, current_humidity]
                 mapping = translateDevices(domain, newVals, friendly, origin)
-                if (!current_humidity) mapping.event.removeLast() // some thermostats don't provide humidity reading
+                if (!current_humidity) mapping.event.remove(9) // some thermostats don't provide humidity reading
                 if (mapping) updateChildDevice(mapping, entity, friendly)
                 break
             case "button":
@@ -431,8 +431,8 @@ def parse(String description) {
                 def targetHumidity = newState?.attributes?.target_humidity
                 newVals += [humidifierMode, supportedModes, maxHumidity, minHumidity, currentHumidity, targetHumidity]
                 mapping = translateDevices(domain, newVals, friendly, origin)
-                if (!targetHumidity) mapping.event.removeLast()
-                if (!currentHumidity) mapping.event.removeLast()
+                if (!targetHumidity) mapping.event.remove(6)
+                if (!currentHumidity) mapping.event.remove(5)
 //                if (newVals[0] == "off") mapping = mapping.event.getAt(0) // remove updates not provided with the HA 'off' event json data
                 if (mapping) updateChildDevice(mapping, entity, friendly)
                 break

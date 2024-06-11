@@ -87,7 +87,7 @@
 * 2.3    2024-03-26 Yves Mercier       Add call service command and support for buttons
 * 2.4    2024-04-27 Yves Mercier       Add humidity to climate entity
 * 2.5    2024-05-24 Yves Mercier       Add support for valve entity and add supported fan modes for climate entity
-* 2.6    2024-06-09 Yves Mercier       Add support for humidifier entity
+* 2.6    2024-06-11 Yves Mercier       Add support for humidifier entity
 */
 
 import groovy.json.JsonSlurper
@@ -645,7 +645,7 @@ def componentSetSaturation(ch, saturation, transition=1) {
 
 def componentSetEffect(ch, effectNumber) {
     if (logEnable) log.info("received setEffect request from ${ch.label}")
-    effectsList = ch.currentValue("lightEffects")?.tokenize(',=[]')
+    def effectsList = ch.currentValue("lightEffects")?.tokenize(',=[]')
     def max = effectsList.size() / 2
     max = max.toInteger()
     effectNumber = effectNumber.toInteger()

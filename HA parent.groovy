@@ -292,7 +292,7 @@ def parse(String description) {
                 def ct = newState?.attributes?.color_temp
                 if (ct) ct = Math.round(1000000/ct)
                 def effectsList = []
-                effectsList = newState?.attributes?.effect_list
+                effectsList = newState?.attributes?.effect_list.indexed(1)
                 def effectName = newState?.attributes?.effect
                 def lightType = []
                 lightType = newState?.attributes?.supported_color_modes
@@ -319,7 +319,11 @@ def parse(String description) {
                         device_class = "dimmer"
                     }
                 mapping = translateLight(device_class, newVals, friendly, origin)
-                if (newVals[0] == "off") mapping = mapping.event.getAt(0) // remove updates not provided with the HA 'off' event json data
+                if (newVals[0] == "off") { // remove updates not provided with the HA 'off' event json data
+                   for(int i in (mapping.event.size - 1)..1) {
+                       mapping.event.remove(i)
+                       }  
+                    }
                 if (mapping) updateChildDevice(mapping, entity, friendly)
                 break
             case "binary_sensor":
@@ -424,16 +428,15 @@ def parse(String description) {
             case "humidifier":
                 humidifierMode = newState?.attributes?.mode
                 def supportedModes = []
-                supportedModes = newState?.attributes?.available_modes
-		def maxHumidity = newState?.attributes?.max_humidity
-		def minHumidity = newState?.attributes?.min_humidity
+                supportedModes = newState?.attributes?.available_modes.indexed(1)
+                def maxHumidity = newState?.attributes?.max_humidity
+                def minHumidity = newState?.attributes?.min_humidity
                 def currentHumidity = newState?.attributes?.current_humidity
                 def targetHumidity = newState?.attributes?.target_humidity
                 newVals += [humidifierMode, supportedModes, maxHumidity, minHumidity, currentHumidity, targetHumidity]
                 mapping = translateDevices(domain, newVals, friendly, origin)
                 if (!targetHumidity) mapping.event.remove(6)
                 if (!currentHumidity) mapping.event.remove(5)
-//                if (newVals[0] == "off") mapping = mapping.event.getAt(0) // remove updates not provided with the HA 'off' event json data
                 if (mapping) updateChildDevice(mapping, entity, friendly)
                 break
             default:
@@ -642,11 +645,12 @@ def componentSetSaturation(ch, saturation, transition=1) {
 
 def componentSetEffect(ch, effectNumber) {
     if (logEnable) log.info("received setEffect request from ${ch.label}")
-    def effectsList = ch.currentValue("lightEffects")?.tokenize(',[]')
-    def max = effectsList.size()
+    effectsList = ch.currentValue("lightEffects")?.tokenize(',=[]')
+    def max = effectsList.size() / 2
+    max = max.toInteger()
     effectNumber = effectNumber.toInteger()
     effectNumber = (effectNumber < 1) ? 1 : ((effectNumber > max) ? max : effectNumber)   
-    data = [effect: effectsList[effectNumber - 1].trim()]
+    data = [effect: effectsList[(effectNumber * 2) - 1].trim().replaceAll("}","")]
     executeCommand(ch, "turn_on", data)
 }
 
@@ -836,13 +840,12 @@ def componentSetThermostatFanMode(ch, fanmode) {
 
 def componentSetHumidifierMode(ch, modeNumber) {
     if (logEnable) log.info("received set mode request from ${ch.label}")
-
-    def modesList = ch.currentValue("supportedModes")?.tokenize(',[]')
-    def max = modesList.size()
+    def modesList = ch.currentValue("supportedModes")?.tokenize(',=[]')
+    def max = modesList.size() / 2
+    max = max.toInteger()
     modeNumber = modeNumber.toInteger()
     modeNumber = (modeNumber < 1) ? 1 : ((modeNumber > max) ? max : modeNumber)   
-    data = [mode: modesList[modeNumber - 1].trim()]
-        
+    data = [mode: modesList[(modeNumber * 2) - 1].trim().replaceAll("}","")]
     executeCommand(ch, "set_mode", data)
 }
 

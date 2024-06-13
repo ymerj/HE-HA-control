@@ -31,8 +31,8 @@ metadata
         input name: "txtEnable", type: "bool", title: "Enable descriptionText logging", defaultValue: true
         }
 
-    command "setMode", [[name: "modeNumber", type: "NUMBER", description: "Input the index of the desired mode"]]
-    command "setHumidity", [[name: "target", type: "NUMBER", description: "Input the desired humidity level"]]
+    command "setMode", [[name: "modeNumber", type: "NUMBER", description: "Mode number"]]
+    command "setHumidity", [[name: "target", type: "NUMBER", description: "Target humidity"]]
 
     attribute "healthStatus", "enum", ["offline", "online"]
     attribute "supportedModes", "string"

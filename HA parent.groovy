@@ -87,11 +87,11 @@
 * 2.3    2024-03-26 Yves Mercier       Add call service command and support for buttons
 * 2.4    2024-04-27 Yves Mercier       Add humidity to climate entity
 * 2.5    2024-05-24 Yves Mercier       Add support for valve entity and add supported fan modes for climate entity
+* 2.6    2024-06-11 Yves Mercier       Add support for humidifier entity
 */
 
 import groovy.json.JsonSlurper
 import groovy.json.JsonOutput
-import groovy.json.JsonBuilder
 
 metadata {
     definition (name: "HomeAssistant Hub Parent", namespace: "ymerj", author: "Yves Mercier", importUrl: "https://raw.githubusercontent.com/ymerj/HE-HA-control/main/HA%20parent.groovy") {
@@ -292,7 +292,7 @@ def parse(String description) {
                 def ct = newState?.attributes?.color_temp
                 if (ct) ct = Math.round(1000000/ct)
                 def effectsList = []
-                effectsList = newState?.attributes?.effect_list
+                effectsList = newState?.attributes?.effect_list.indexed(1)
                 def effectName = newState?.attributes?.effect
                 def lightType = []
                 lightType = newState?.attributes?.supported_color_modes
@@ -301,19 +301,19 @@ def parse(String description) {
                 switch (lightType) {
                     case {it.intersect(["rgbwe"])}:
                         device_class = "rgbwe"
-                        newVals += [hue, sat, ct, effectsList, effectName]
+                        newVals += ["RGB", hue, sat, ct, effectsList, effectName]
                         break
                     case {it.intersect(["rgbww", "rgbw"])}:
                         device_class = "rgbw"
-                        newVals += [hue, sat, ct]
+                        newVals += ["RGB", hue, sat, ct]
                         break
                     case {it.intersect(["hs", "rgb"])}:
                         device_class = "rgb"
-                        newVals += [hue, sat]
+                        newVals += ["RGB", hue, sat]
                         break
                     case {it.intersect(["color_temp"])}:
                         device_class = "ct"
-                        newVals += ct
+                        newVals += ["CT", ct]
                         break
                     default:
                         device_class = "dimmer"
@@ -425,6 +425,20 @@ def parse(String description) {
                 mapping = translateDevices(domain, newVals, friendly, origin)
                 if (mapping) updateChildDevice(mapping, entity, friendly)
                 break
+            case "humidifier":
+                humidifierMode = newState?.attributes?.mode
+                def supportedModes = []
+                supportedModes = newState?.attributes?.available_modes.indexed(1)
+                def maxHumidity = newState?.attributes?.max_humidity
+                def minHumidity = newState?.attributes?.min_humidity
+                def currentHumidity = newState?.attributes?.current_humidity
+                def targetHumidity = newState?.attributes?.target_humidity
+                newVals += [humidifierMode, supportedModes, maxHumidity, minHumidity, currentHumidity, targetHumidity]
+                mapping = translateDevices(domain, newVals, friendly, origin)
+                if (!targetHumidity) mapping.event.remove(6)
+                if (!currentHumidity) mapping.event.remove(5)
+                if (mapping) updateChildDevice(mapping, entity, friendly)
+                break
             default:
                 if (logEnable) log.info("No mapping exists for domain: ${domain}, device_class: ${device_class}.  Please contact devs to have this added.")
         }
@@ -509,6 +523,7 @@ def translateDevices(domain, newVals, friendly, origin)
             lock: [type: "Generic Component Lock",                      event: [[name: "lock", value: newVals[0] ?: "unknown", type: origin, descriptionText:"${friendly} was turned ${newVals[0]} [${origin}]"]]],
             climate: [type: "HADB Generic Component Thermostat",        event: [[name: "thermostatMode", value: newVals[0], descriptionText: "${friendly} is set to ${newVals[0]}"],[name: "temperature", value: newVals[1], descriptionText: "${friendly}'s current temperature is ${newVals[1]} degree"],[name: "thermostatOperatingState", value: newVals[2], descriptionText: "${friendly}'s mode is ${newVals[2]}"],[name: "thermostatFanMode", value: newVals[3], descriptionText: "${friendly}'s fan is set to ${newVals[3]}"],[name: "thermostatSetpoint", value: newVals[4], descriptionText: "${friendly}'s temperature is set to ${newVals[4]} degree"],[name: "coolingSetpoint", value: newVals[5] ?: newVals[4], descriptionText: "${friendly}'s cooling temperature is set to ${newVals[5] ?: newVals[4]} degrees"],[name: "heatingSetpoint", value: newVals[6] ?: newVals[4], descriptionText: "${friendly}'s heating temperature is set to ${newVals[6] ?: newVals[4]} degrees"],[name: "supportedThermostatModes", value: newVals[7], descriptionText: "${friendly} supportedThermostatModes were set to ${newVals[7]}"],[name: "supportedThermostatFanModes", value: newVals[8], descriptionText: "${friendly} supportedThermostatFanModes were set to ${newVals[8]}"],[name: "humidity", value: newVals[9], unit: "%", descriptionText:"${friendly} humidity is ${newVals[9]}%"]], namespace: "community"],
             input_boolean: [type: "Generic Component Switch",           event: [[name: "switch", value: newVals[0], type: origin, descriptionText:"${friendly} was turned ${newVals[0]} [${origin}]"]]],
+            humidifier: [type: "HADB Generic Component Humidifier",     event: [[name: "switch", value: newVals[0], type: origin, descriptionText:"${friendly} was turned ${newVals[0]} [${origin}]"],[name: "humidifierMode", value: newVals[1], descriptionText: "${friendly}'s humidifier is set to ${newVals[1]}"],[name: "supportedModes", value: newVals[2], descriptionText: "${friendly} supportedModes were set to ${newVals[2]}"],[name: "maxHumidity", value: newVals[3] ?: 100, descriptionText:"${friendly} max humidity is ${newVals[3] ?: 100}"],[name: "minHumidity", value: newVals[4] ?: 0, descriptionText:"${friendly} min humidity is ${newVals[4] ?: 0}"],[name: "humidity", value: newVals[5], unit: "%", descriptionText:"${friendly} current humidity is ${newVals[5]}%"],[name: "targetHumidity", value: newVals[6], unit: "%", descriptionText:"${friendly} target humidity is set to ${newVals[6]}%"]], namespace: "community"],
             valve: [type: "HADB Generic Component Valve",               event: [[name: "valve", value: newVals[0] == "closed" ? "closed":"open", type: origin, descriptionText:"${friendly} was turned ${newVals[0]} [${origin}]"]], namespace: "community"],
             input_number: [type: "Generic Component Number",            event: [[name: "number", value: newVals[0], unit: newVals[1] ?: "", type: origin, descriptionText:"${friendly} was set to ${newVals[0]} ${newVals[1] ?: ''} [${origin}]"],[name: "minimum", value: newVals[2], descriptionText:"${friendly} minimum value is ${newVals[2]}"],[name: "maximum", value: newVals[3], descriptionText:"${friendly} maximum value is ${newVals[3]}"],[name: "step", value: newVals[4], descriptionText:"${friendly} step is ${newVals[4]}"]], namespace: "community"],
             number: [type: "Generic Component Number",                  event: [[name: "number", value: newVals[0], unit: newVals[1] ?: "", type: origin, descriptionText:"${friendly} was set to ${newVals[0]} ${newVals[1] ?: ''} [${origin}]"],[name: "minimum", value: newVals[2], descriptionText:"${friendly} minimum value is ${newVals[2]}"],[name: "maximum", value: newVals[3], descriptionText:"${friendly} maximum value is ${newVals[3]}"],[name: "step", value: newVals[4], descriptionText:"${friendly} step is ${newVals[4]}"]], namespace: "community"],
@@ -520,11 +535,11 @@ def translateLight(device_class, newVals, friendly, origin)
 {
     def mapping =
         [
-            rgbwe: [type: "Generic Component RGBW Light Effects",       event: [[name: "switch", value: newVals[0], type: origin, descriptionText:"${friendly} was turned ${newVals[0]} [${origin}]"],[name: "level", value: newVals[1], type: origin, descriptionText:"${friendly} level was set to ${newVals[1]}"],[name: "hue", value: newVals[2], descriptionText:"${friendly} hue was set to ${newVals[2]}"],[name: "saturation", value: newVals[3], descriptionText:"${friendly} saturation was set to ${newVals[3]}"],[name: "colorTemperature", value: newVals[4] ?: 'emulated', descriptionText:"${friendly} color temperature was set to ${newVals[4] ?: 'emulated'}°K"],[name: "lightEffects", value: newVals[5]],[name: "effectName", value: newVals[6] ?: "none", descriptionText:"${friendly} effect was set to ${newVals[6] ?: 'none'}"]]],
-            rgbw: [type: "Generic Component RGBW",                      event: [[name: "switch", value: newVals[0], type: origin, descriptionText:"${friendly} was turned ${newVals[0]} [${origin}]"],[name: "level", value: newVals[1], type: origin, descriptionText:"${friendly} level was set to ${newVals[1]}"],[name: "hue", value: newVals[2], descriptionText:"${friendly} hue was set to ${newVals[2]}"],[name: "saturation", value: newVals[3], descriptionText:"${friendly} saturation was set to ${newVals[3]}"],[name: "colorTemperature", value: newVals[4], descriptionText:"${friendly} color temperature was set to ${newVals[4]}°K"]]],
-            rgb: [type: "Generic Component RGB",                        event: [[name: "switch", value: newVals[0], type: origin, descriptionText:"${friendly} was turned ${newVals[0]} [${origin}]"],[name: "level", value: newVals[1], type: origin, descriptionText:"${friendly} level was set to ${newVals[1]}"],[name: "hue", value: newVals[2], descriptionText:"${friendly} hue was set to ${newVals[2]}"],[name: "saturation", value: newVals[3], descriptionText:"${friendly} saturation was set to ${newVals[3]}"]]],
-            ct: [type: "Generic Component CT",                          event: [[name: "switch", value: newVals[0], type: origin, descriptionText:"${friendly} was turned ${newVals[0]} [${origin}]"],[name: "level", value: newVals[1], type: origin, descriptionText:"${friendly} level was set to ${newVals[1]}"],[name: "colorTemperature", value: newVals[2], descriptionText:"${friendly} color temperature was set to ${newVals[2]}°K"]]],
-            dimmer: [type: "Generic Component Dimmer",                  event: [[name: "switch", value: newVals[0], type: origin, descriptionText:"${friendly} was turned ${newVals[0]} [${origin}]"],[name: "level", value: newVals[1], type: origin, descriptionText:"${friendly} level was set to ${newVals[1]} [${origin}]"]]],
+            rgbwe: [type: "Generic Component RGBW Light Effects",       event: [[name: "switch", value: newVals[0], type: origin, descriptionText:"${friendly} was turned ${newVals[0]} [${origin}]"],[name: "level", value: newVals[1], type: origin, descriptionText:"${friendly} level was set to ${newVals[1]}"],[name: "colorMode", value: newVals[2], descriptionText:"${friendly} color mode was set to ${newVals[2]}"],[name: "hue", value: newVals[3], descriptionText:"${friendly} hue was set to ${newVals[3]}"],[name: "saturation", value: newVals[4], descriptionText:"${friendly} saturation was set to ${newVals[4]}"],[name: "colorTemperature", value: newVals[5] ?: 'emulated', descriptionText:"${friendly} color temperature was set to ${newVals[5] ?: 'emulated'}°K"],[name: "lightEffects", value: newVals[6]],[name: "effectName", value: newVals[7] ?: "none", descriptionText:"${friendly} effect was set to ${newVals[7] ?: 'none'}"]]],
+            rgbw: [type: "Generic Component RGBW",                      event: [[name: "switch", value: newVals[0], type: origin, descriptionText:"${friendly} was turned ${newVals[0]} [${origin}]"],[name: "level", value: newVals[1], type: origin, descriptionText:"${friendly} level was set to ${newVals[1]}"],[name: "colorMode", value: newVals[2], descriptionText:"${friendly} color mode was set to ${newVals[2]}"],[name: "hue", value: newVals[3], descriptionText:"${friendly} hue was set to ${newVals[3]}"],[name: "saturation", value: newVals[4], descriptionText:"${friendly} saturation was set to ${newVals[4]}"],[name: "colorTemperature", value: newVals[5], descriptionText:"${friendly} color temperature was set to ${newVals[5]}°K"]]],
+            rgb: [type: "Generic Component RGB",                        event: [[name: "switch", value: newVals[0], type: origin, descriptionText:"${friendly} was turned ${newVals[0]} [${origin}]"],[name: "level", value: newVals[1], type: origin, descriptionText:"${friendly} level was set to ${newVals[1]}"],[name: "colorMode", value: newVals[2], descriptionText:"${friendly} color mode was set to ${newVals[2]}"],[name: "hue", value: newVals[3], descriptionText:"${friendly} hue was set to ${newVals[3]}"],[name: "saturation", value: newVals[4], descriptionText:"${friendly} saturation was set to ${newVals[4]}"]]],
+            ct: [type: "Generic Component CT",                          event: [[name: "switch", value: newVals[0], type: origin, descriptionText:"${friendly} was turned ${newVals[0]} [${origin}]"],[name: "level", value: newVals[1], type: origin, descriptionText:"${friendly} level was set to ${newVals[1]}"],[name: "colorMode", value: newVals[2], descriptionText:"${friendly} color mode was set to ${newVals[2]}"],[name: "colorTemperature", value: newVals[3], descriptionText:"${friendly} color temperature was set to ${newVals[3]}°K"]]],
+            dimmer: [type: "Generic Component Dimmer",                  event: [[name: "switch", value: newVals[0], type: origin, descriptionText:"${friendly} was turned ${newVals[0]} [${origin}]"],[name: "level", value: newVals[1], type: origin, descriptionText:"${friendly} level was set to ${newVals[1]} [${origin}]"],[name: "colorMode", value: newVals[2], descriptionText:"${friendly} color mode was set to ${newVals[2]}"]]],
         ]
     return mapping[device_class]
 }
@@ -630,11 +645,12 @@ def componentSetSaturation(ch, saturation, transition=1) {
 
 def componentSetEffect(ch, effectNumber) {
     if (logEnable) log.info("received setEffect request from ${ch.label}")
-    def effectsList = ch.currentValue("lightEffects")?.tokenize(',[]')
-    def max = effectsList.size()
+    def effectsList = ch.currentValue("lightEffects")?.tokenize(',=[]')
+    def max = effectsList.size() / 2
+    max = max.toInteger()
     effectNumber = effectNumber.toInteger()
     effectNumber = (effectNumber < 1) ? 1 : ((effectNumber > max) ? max : effectNumber)   
-    data = [effect: effectsList[effectNumber - 1].trim()]
+    data = [effect: effectsList[(effectNumber * 2) - 1].trim().replaceAll("}","")]
     executeCommand(ch, "turn_on", data)
 }
 
@@ -820,6 +836,22 @@ def componentSetThermostatFanMode(ch, fanmode) {
     else {    
         executeCommand(ch, "set_fan_mode", [fan_mode: fanmode])
     }
+}
+
+def componentSetHumidifierMode(ch, modeNumber) {
+    if (logEnable) log.info("received set mode request from ${ch.label}")
+    def modesList = ch.currentValue("supportedModes")?.tokenize(',=[]')
+    def max = modesList.size() / 2
+    max = max.toInteger()
+    modeNumber = modeNumber.toInteger()
+    modeNumber = (modeNumber < 1) ? 1 : ((modeNumber > max) ? max : modeNumber)   
+    data = [mode: modesList[(modeNumber * 2) - 1].trim().replaceAll("}","")]
+    executeCommand(ch, "set_mode", data)
+}
+
+def componentSetHumidity(ch, target) {
+    if (logEnable) log.info("received set humidity request from ${ch.label}")
+    executeCommand(ch, "set_humidity", target_humidity: target)
 }
 
 def componentAuto(ch) {

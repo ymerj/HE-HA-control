@@ -313,7 +313,7 @@ def parse(String description) {
                         break
                     case {it.intersect(["color_temp"])}:
                         device_class = "ct"
-                        newVals += ["CT", ct]
+                        newVals += ["white", ct]
                         break
                     default:
                         device_class = "dimmer"

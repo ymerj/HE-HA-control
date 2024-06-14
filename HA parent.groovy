@@ -292,7 +292,7 @@ def parse(String description) {
                 def ct = newState?.attributes?.color_temp
                 if (ct) ct = Math.round(1000000/ct)
                 def effectsList = []
-                effectsList = newState?.attributes?.effect_list.indexed(1)
+                effectsList = newState?.attributes?.effect_list?.indexed(1)
                 def effectName = newState?.attributes?.effect
                 def lightType = []
                 lightType = newState?.attributes?.supported_color_modes
@@ -428,7 +428,7 @@ def parse(String description) {
             case "humidifier":
                 humidifierMode = newState?.attributes?.mode
                 def supportedModes = []
-                supportedModes = newState?.attributes?.available_modes.indexed(1)
+                supportedModes = newState?.attributes?.available_modes?.indexed(1)
                 def maxHumidity = newState?.attributes?.max_humidity
                 def minHumidity = newState?.attributes?.min_humidity
                 def currentHumidity = newState?.attributes?.current_humidity

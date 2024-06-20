@@ -222,34 +222,45 @@ def parse(String description) {
         switch (domain) {
             case "fan":
                 def speed = newState?.attributes?.speed?.toLowerCase()
-                choices =  ["low","medium-low","medium","medium-high","high","auto"]
-                if (!(choices.contains(speed)))
+                choices =  ["off","low","medium-low","medium","medium-high","high","auto"]
+                if speed
                     {
-                    if (logEnable) log.info("Invalid fan speed received - ${speed}")
-                    speed = null
+                    if (!(choices.contains(speed)))
+                        {
+                        if (logEnable) log.info("Invalid fan speed received - ${speed}")
+                        speed = null
+                        }
                     }
                 def percentage = newState?.attributes?.percentage
-                switch (percentage.toInteger()) {
-                    case 0: 
-                        speed = "off"
-                        break
-                    case 25: 
-                        speed = "low"
-                        break
-                    case 50: 
-                        speed = "medium"
-                        break
-                    case 75: 
-                        speed = "medium-high"
-                        break
-                    case 100: 
-                        speed = "high"
-                    default:
-                        if (logEnable) log.info("Invalid fan percentage received - ${percentage}")
-                }
+                if percentage
+                    {
+                    switch (percentage.toInteger())
+                        {
+                        case 0: 
+                            speed = "off"
+                            break
+                        case 1..30: 
+                            speed = "low"
+                            break
+                        case 31..50: 
+                            speed = "medium-low"
+                            break
+                        case 51..70: 
+                            speed = "medium"
+                            break
+                        case 71..90: 
+                            speed = "medium-high"
+                            break
+                        case 91..100: 
+                            speed = "high"
+                        default:
+                            if (logEnable) log.info("Invalid fan percentage received - ${percentage}")
+                        }
+                    }
                 newVals += speed
                 newVals += percentage
                 mapping = translateDevices(domain, newVals, friendly, origin)
+                if (!percentage) mapping.event.remove(2)
                 if (!speed) mapping.event.remove(1)
                 if (mapping) updateChildDevice(mapping, entity, friendly)
                 break
@@ -592,16 +603,19 @@ def componentSetLevel(ch, level, transition=1) {
             case 0:
                 componentSetSpeed(ch, "off")
             break
-            case 1..25:
+            case 1..30:
                 componentSetSpeed(ch, "low")
             break
-            case 26..50:
+            case 31..50:
+                componentSetSpeed(ch, "medium-low")
+            break
+            case 51..70:
                 componentSetSpeed(ch, "medium")
             break
-            case 51..75:
+            case 71..90:
                 componentSetSpeed(ch, "medium-high")
             break
-            case 76..100:
+            case 91..100:
                 componentSetSpeed(ch, "high")
             break
             default:
@@ -675,17 +689,20 @@ def componentSetSpeed(ch, speed) {
             executeCommand(ch, "turn_off", data)
             break
         case "low":
+            data = [percentage: "20"]
+            executeCommand(ch, "turn_on", data)
+            break
         case "medium-low":
-            data = [percentage: "25"]
+            data = [percentage: "40"]
             executeCommand(ch, "turn_on", data)
             break
         case "auto":
         case "medium":
-            data = [percentage: "50"]
+            data = [percentage: "60"]
             executeCommand(ch, "turn_on", data)
             break
         case "medium-high":
-            data = [percentage: "75"]
+            data = [percentage: "80"]
             executeCommand(ch, "turn_on", data)
             break
         case "high":
@@ -704,6 +721,8 @@ def componentCycleSpeed(ch) {
             speed = "low"
             break
         case "low":
+            speed = "medium-low"
+            break
         case "medium-low":
             speed = "medium"
             break

@@ -32,7 +32,8 @@
 * 2.0        2024-01-20 Yves Mercier       Introduce entity subscription model
 * 2.3        2024-03-26 Yves Mercier       Add support for buttons
 * 2.5        2024-05-08 Yves Mercier       Add support for valves
-* 2.6        2024-05-31 Yves Mercier       Add support for humidifier
+* 2.6        2024-05-31 Yves Mercier       Add support for humidifiers
+* 2.7        2024-06-29 Yves Mercier       Add support for events
 */
 
 definition(

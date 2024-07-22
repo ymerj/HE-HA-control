@@ -224,7 +224,7 @@ def parse(String description) {
             case "fan":
                 def speed = newState?.attributes?.speed?.toLowerCase()
                 choices =  ["off","low","medium-low","medium","medium-high","high","auto"]
-                if speed
+                if (speed)
                     {
                     if (!(choices.contains(speed)))
                         {
@@ -233,7 +233,7 @@ def parse(String description) {
                         }
                     }
                 def percentage = newState?.attributes?.percentage
-                if percentage
+                if (percentage)
                     {
                     switch (percentage.toInteger())
                         {

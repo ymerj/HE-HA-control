@@ -370,6 +370,7 @@ def parse(String description) {
                 def target_temp_high = newState?.attributes?.target_temp_high
                 def target_temp_low = newState?.attributes?.target_temp_low
                 def hvac_modes = newState?.attributes?.hvac_modes
+/*
                 if (hvac_modes)
                     {
                     hvac_modes = hvac_modes.minus(["auto"])
@@ -380,8 +381,10 @@ def parse(String description) {
                     {
                     hvac_modes = ["heat"]
                     }
+*/		    
                 def supportedTmodes = JsonOutput.toJson(hvac_modes)
                 def fan_modes = newState?.attributes?.fan_modes
+/*
                 if (fan_modes)
                     {
                     if (fan_modes.minus(["auto", "on"])) fan_modes = fan_modes + "circulate"
@@ -391,7 +394,9 @@ def parse(String description) {
                     {
                     fan_modes = ["on"]
                     }
+*/
                 def supportedFmodes = JsonOutput.toJson(fan_modes)
+/*
                 switch (fan_mode) {
                     case "off":
                         thermostat_mode = "off"
@@ -427,6 +432,7 @@ def parse(String description) {
                         hvac_action = "pending heat"
                         break
                 }
+*/
                 newVals = [thermostat_mode, current_temperature, hvac_action, fan_mode, target_temperature, target_temp_high, target_temp_low, supportedTmodes, supportedFmodes, current_humidity]
                 mapping = translateDevices(domain, newVals, friendly, origin)
                 if (!current_humidity) mapping.event.remove(9) // some thermostats don't provide humidity reading
@@ -811,25 +817,25 @@ def componentRefresh(ch) {
 
 def componentSetThermostatMode(ch, thermostatmode) {
     if (logEnable) log.info("received setThermostatMode request from ${ch.label}")
-    switch(thermostatmode)
-	{
-	case "auto":
-	    data = [hvac_mode: "heat_cool"]
-        break
-	case "emergencyHeat":
-	    thermostatmode = "heat"
-	case "heat":
-	case "cool":
-	case "off":
+//    switch(thermostatmode)
+//	{
+//	case "auto":
+//	    data = [hvac_mode: "heat_cool"]
+//        break
+//	case "emergencyHeat":
+//	    thermostatmode = "heat"
+//	case "heat":
+//	case "cool":
+//	case "off":
 	    data =  [hvac_mode: thermostatmode]
-	break
-	}
+//	break
+//	}
     executeCommand(ch, "set_hvac_mode", data)
 }
 
 def componentSetCoolingSetpoint(ch, temperature) {
     if (logEnable) log.info("received setCoolingSetpoint request from ${ch.label}")
-    if (ch.currentValue("thermostatMode") == "auto") {
+    if (ch.currentValue("thermostatMode") == "heat_cool") { // if (ch.currentValue("thermostatMode") == "auto") {
         data = [target_temp_high: temperature, target_temp_low: ch.currentValue("heatingSetpoint")]
     }
     else {
@@ -840,8 +846,8 @@ def componentSetCoolingSetpoint(ch, temperature) {
 
 def componentSetHeatingSetpoint(ch, temperature) {
     if (logEnable) log.info("received setHeatingSetpoint request from ${ch.label}")
-    if (ch.currentValue("thermostatMode") == "auto") {
-	data = [target_temp_high: ch.currentValue("coolingSetpoint"), target_temp_low: temperature]
+    if (ch.currentValue("thermostatMode") == "heat_cool") { // if (ch.currentValue("thermostatMode") == "auto") {
+        data = [target_temp_high: ch.currentValue("coolingSetpoint"), target_temp_low: temperature]
     }
     else {
 	data = [temperature: temperature] 
@@ -851,13 +857,12 @@ def componentSetHeatingSetpoint(ch, temperature) {
 
 def componentSetThermostatFanMode(ch, fanmode) {
     if (logEnable) log.info("received ${fanmode} request from ${ch.label}")
-
-    if (fanmode == "circulate") {
-        executeCommand(ch, "set_hvac_mode", [hvac_mode: "fan_only"])
-    }
-    else {    
+//    if (fanmode == "circulate") {
+//        executeCommand(ch, "set_hvac_mode", [hvac_mode: "fan_only"])
+//    }
+//    else {    
         executeCommand(ch, "set_fan_mode", [fan_mode: fanmode])
-    }
+//    }
 }
 
 def componentSetHumidifierMode(ch, modeNumber) {

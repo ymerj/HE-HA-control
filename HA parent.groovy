@@ -369,7 +369,7 @@ def parse(String description) {
                 def target_temperature = newState?.attributes?.temperature
                 def target_temp_high = newState?.attributes?.target_temp_high
                 def target_temp_low = newState?.attributes?.target_temp_low
-                def hvac_modes = newState?.attributes?.hvac_modes
+                def hvac_modes = newState?.attributes?.hvac_modes + newState?.attributes?.preset_modes
 /*
                 if (hvac_modes)
                     {

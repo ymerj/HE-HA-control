@@ -20,7 +20,7 @@ Change history:
 
 0.1 - ritchierich - initial version
 2.4 - Yves Mercier - Modified healthCheck handling
-
+2.7 - Yves Mercier - Add presets
 */
 
 metadata
@@ -40,9 +40,13 @@ metadata
         input name: "logEnable", type: "bool", title: "Enable debug logging", defaultValue: true
         input name: "txtEnable", type: "bool", title: "Enable descriptionText logging", defaultValue: true
     }
+
+    command "setPreset", [[name: "presetNumber", type: "NUMBER", description: "Preset number"]]
+    
     attribute "healthStatus", "enum", ["offline", "online"]
     attribute "supportedThermostatFanModes", "JSON_OBJECT"
     attribute "supportedThermostatModes", "JSON_OBJECT"
+    attribute "supportedPresetModes", "string"
 }
 
 void installed() {
@@ -119,6 +123,10 @@ void fanCirculate() {
 
 void fanOn() {
     parent?.componentFanOn(this.device)
+}
+
+def setPreset(modeNumber) {
+    parent?.componentSetHumidifierMode(this.device, modeNumber)
 }
 
 def logsOff(){

@@ -46,8 +46,8 @@ metadata
     attribute "healthStatus", "enum", ["offline", "online"]
     attribute "supportedThermostatFanModes", "JSON_OBJECT"
     attribute "supportedThermostatModes", "JSON_OBJECT"
-    attribute "supportedPresetModes", "string"
-    attribute "preset", "string"
+    attribute "supportedPresets", "string"
+    attribute "currenPreset", "string"
 }
 
 void installed() {
@@ -126,8 +126,8 @@ void fanOn() {
     parent?.componentFanOn(this.device)
 }
 
-def setPreset(modeNumber) {
-    parent?.componentSetHumidifierMode(this.device, modeNumber)
+def setPreset(presetNumber) {
+    parent?.componentSetPreset(this.device, presetNumber)
 }
 
 def logsOff(){

@@ -268,7 +268,7 @@ def parse(String description) {
             case "cover":
                 def pos = newState?.attributes?.current_position?.toInteger()
                 newVals += pos
-                def tilt = newState?.attributes?.current_tilt_position?.toInteger() // or perhaps newState?.attributes?.current_cover_tilt_position?.toInteger(). Ambiguity in the docs.
+                def tilt = newState?.attributes?.current_tilt_position?.toInteger()
                 newVals += tilt
                 switch (device_class) {
                    case {it in ["blind","shutter","window"]}:
@@ -369,7 +369,10 @@ def parse(String description) {
                 def target_temperature = newState?.attributes?.temperature
                 def target_temp_high = newState?.attributes?.target_temp_high
                 def target_temp_low = newState?.attributes?.target_temp_low
-                def hvac_modes = newState?.attributes?.hvac_modes + newState?.attributes?.preset_modes
+                def hvac_modes = newState?.attributes?.hvac_modes
+                def supportedPmodes = []
+                supportedPmodes = newState?.attributes?.preset_modes?.indexed(1)
+                def hvac_modes = newState?.attributes?.hvac_modes
 /*
                 if (hvac_modes)
                     {
@@ -433,9 +436,9 @@ def parse(String description) {
                         break
                 }
 */
-                newVals = [thermostat_mode, current_temperature, hvac_action, fan_mode, target_temperature, target_temp_high, target_temp_low, supportedTmodes, supportedFmodes, current_humidity]
-                mapping = translateDevices(domain, newVals, friendly, origin)
-                if (!current_humidity) mapping.event.remove(9) // some thermostats don't provide humidity reading
+                newVals = [thermostat_mode, current_temperature, hvac_action, fan_mode, target_temperature, target_temp_high, target_temp_low, supportedTmodes, supportedFmodes, supportedPmodes, current_humidity]
+		mapping = translateDevices(domain, newVals, friendly, origin)
+                if (!current_humidity) mapping.event.remove(10) // some thermostats don't provide humidity reading
                 if (mapping) updateChildDevice(mapping, entity, friendly)
                 break
             case "button":
@@ -540,7 +543,7 @@ def translateDevices(domain, newVals, friendly, origin)
             switch: [type: "Generic Component Switch",                  event: [[name: "switch", value: newVals[0], type: origin, descriptionText:"${friendly} was turned ${newVals[0]} [${origin}]"]]],
             device_tracker: [type: "Generic Component Presence Sensor", event: [[name: "presence", value: newVals[0] == "home" ? "present":"not present", descriptionText:"${friendly} is updated"]], namespace: "community"],
             lock: [type: "Generic Component Lock",                      event: [[name: "lock", value: newVals[0] ?: "unknown", type: origin, descriptionText:"${friendly} was turned ${newVals[0]} [${origin}]"]]],
-            climate: [type: "HADB Generic Component Thermostat",        event: [[name: "thermostatMode", value: newVals[0], descriptionText: "${friendly} is set to ${newVals[0]}"],[name: "temperature", value: newVals[1], descriptionText: "${friendly}'s current temperature is ${newVals[1]} degree"],[name: "thermostatOperatingState", value: newVals[2], descriptionText: "${friendly}'s mode is ${newVals[2]}"],[name: "thermostatFanMode", value: newVals[3], descriptionText: "${friendly}'s fan is set to ${newVals[3]}"],[name: "thermostatSetpoint", value: newVals[4], descriptionText: "${friendly}'s temperature is set to ${newVals[4]} degree"],[name: "coolingSetpoint", value: newVals[5] ?: newVals[4], descriptionText: "${friendly}'s cooling temperature is set to ${newVals[5] ?: newVals[4]} degrees"],[name: "heatingSetpoint", value: newVals[6] ?: newVals[4], descriptionText: "${friendly}'s heating temperature is set to ${newVals[6] ?: newVals[4]} degrees"],[name: "supportedThermostatModes", value: newVals[7], descriptionText: "${friendly} supportedThermostatModes were set to ${newVals[7]}"],[name: "supportedThermostatFanModes", value: newVals[8], descriptionText: "${friendly} supportedThermostatFanModes were set to ${newVals[8]}"],[name: "humidity", value: newVals[9], unit: "%", descriptionText:"${friendly} humidity is ${newVals[9]}%"]], namespace: "community"],
+            climate: [type: "HADB Generic Component Thermostat",        event: [[name: "thermostatMode", value: newVals[0], descriptionText: "${friendly} is set to ${newVals[0]}"],[name: "temperature", value: newVals[1], descriptionText: "${friendly}'s current temperature is ${newVals[1]} degree"],[name: "thermostatOperatingState", value: newVals[2], descriptionText: "${friendly}'s mode is ${newVals[2]}"],[name: "thermostatFanMode", value: newVals[3], descriptionText: "${friendly}'s fan is set to ${newVals[3]}"],[name: "thermostatSetpoint", value: newVals[4], descriptionText: "${friendly}'s temperature is set to ${newVals[4]} degree"],[name: "coolingSetpoint", value: newVals[5] ?: newVals[4], descriptionText: "${friendly}'s cooling temperature is set to ${newVals[5] ?: newVals[4]} degrees"],[name: "heatingSetpoint", value: newVals[6] ?: newVals[4], descriptionText: "${friendly}'s heating temperature is set to ${newVals[6] ?: newVals[4]} degrees"],[name: "supportedThermostatModes", value: newVals[7], descriptionText: "${friendly} supportedThermostatModes were set to ${newVals[7]}"],[name: "supportedThermostatFanModes", value: newVals[8], descriptionText: "${friendly} supportedThermostatFanModes were set to ${newVals[8]}"],[name: "supportedPmodes", value: newVals[9], descriptionText: "${friendly} supportedPmodes were set to ${newVals[9]}"],[name: "humidity", value: newVals[10], unit: "%", descriptionText:"${friendly} humidity is ${newVals[10]}%"]], namespace: "community"],
             input_boolean: [type: "Generic Component Switch",           event: [[name: "switch", value: newVals[0], type: origin, descriptionText:"${friendly} was turned ${newVals[0]} [${origin}]"]]],
             humidifier: [type: "HADB Generic Component Humidifier",     event: [[name: "switch", value: newVals[0], type: origin, descriptionText:"${friendly} was turned ${newVals[0]} [${origin}]"],[name: "humidifierMode", value: newVals[1], descriptionText: "${friendly}'s humidifier is set to ${newVals[1]}"],[name: "supportedModes", value: newVals[2], descriptionText: "${friendly} supportedModes were set to ${newVals[2]}"],[name: "maxHumidity", value: newVals[3] ?: 100, descriptionText:"${friendly} max humidity is ${newVals[3] ?: 100}"],[name: "minHumidity", value: newVals[4] ?: 0, descriptionText:"${friendly} min humidity is ${newVals[4] ?: 0}"],[name: "humidity", value: newVals[5], unit: "%", descriptionText:"${friendly} current humidity is ${newVals[5]}%"],[name: "targetHumidity", value: newVals[6], unit: "%", descriptionText:"${friendly} target humidity is set to ${newVals[6]}%"]], namespace: "community"],
             valve: [type: "HADB Generic Component Valve",               event: [[name: "valve", value: newVals[0] == "closed" ? "closed":"open", type: origin, descriptionText:"${friendly} was turned ${newVals[0]} [${origin}]"]], namespace: "community"],
@@ -863,6 +866,17 @@ def componentSetThermostatFanMode(ch, fanmode) {
 //    else {    
         executeCommand(ch, "set_fan_mode", [fan_mode: fanmode])
 //    }
+}
+
+def componentSetPresetMode(ch, modeNumber) {
+    if (logEnable) log.info("received set  preset mode request from ${ch.label}")
+    def modesList = ch.currentValue("supportedPresetModes")?.tokenize(',=[]')
+    def max = modesList.size() / 2
+    max = max.toInteger()
+    modeNumber = modeNumber.toInteger()
+    modeNumber = (modeNumber < 1) ? 1 : ((modeNumber > max) ? max : modeNumber)   
+    data = [mode: modesList[(modeNumber * 2) - 1].trim().replaceAll("}","")]
+    executeCommand(ch, "set_preset_mode", data)
 }
 
 def componentSetHumidifierMode(ch, modeNumber) {

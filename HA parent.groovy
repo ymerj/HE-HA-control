@@ -868,14 +868,14 @@ def componentSetThermostatFanMode(ch, fanmode) {
 //    }
 }
 
-def componentSetPresetMode(ch, modeNumber) {
-    if (logEnable) log.info("received set  preset mode request from ${ch.label}")
-    def modesList = ch.currentValue("supportedPresetModes")?.tokenize(',=[]')
-    def max = modesList.size() / 2
+def componentSetPreset(ch, presetNumber) {
+    if (logEnable) log.info("received set preset request from ${ch.label}")
+    def presetsList = ch.currentValue("supportedPresets")?.tokenize(',=[]')
+    def max = presetsList.size() / 2
     max = max.toInteger()
-    modeNumber = modeNumber.toInteger()
-    modeNumber = (modeNumber < 1) ? 1 : ((modeNumber > max) ? max : modeNumber)   
-    data = [mode: modesList[(modeNumber * 2) - 1].trim().replaceAll("}","")]
+    presetNumber = presetNumber.toInteger()
+    presetNumber = (presetNumber < 1) ? 1 : ((presetNumber > max) ? max : presetNumber)   
+    data = [mode: presetsList[(presetNumber * 2) - 1].trim().replaceAll("}","")]
     executeCommand(ch, "set_preset_mode", data)
 }
 

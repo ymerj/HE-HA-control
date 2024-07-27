@@ -126,9 +126,18 @@ void fanOn() {
     parent?.componentFanOn(this.device)
 }
 
-def setPreset(presetNumber) {
-    parent?.componentSetPreset(this.device, presetNumber)
-}
+def setPreset(presetNumber)
+    {
+    if (this.device.currentValue("supportedPresets") == "none")
+        {
+        log.warn "no supported presets defined"
+        }
+    else
+        {
+        parent?.componentSetPreset(this.device, presetNumber)
+        }
+    }
+
 
 def logsOff(){
     log.warn("debug logging disabled...")

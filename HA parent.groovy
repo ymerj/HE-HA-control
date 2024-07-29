@@ -371,7 +371,7 @@ def parse(String description) {
                 def target_temp_low = newState?.attributes?.target_temp_low
                 def supportedPmodes = []
                 supportedPmodes = newState?.attributes?.preset_modes?.indexed(1)
-                def currentPreset = newState?.attributes?.preset
+                def currentPreset = newState?.attributes?.preset_mode
                 def hvac_modes = newState?.attributes?.hvac_modes
                 if (!hvac_modes) hvac_modes = ["heat"]
 /*

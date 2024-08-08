@@ -20,6 +20,9 @@ metadata
     {
         capability "Refresh"
         capability "PushableButton"
+        capability "DoubleTapableButton"
+        capability "HoldableButton"
+//        capability "ReleasableButton"
         capability "Health Check"
     }
     preferences 
@@ -63,6 +66,17 @@ def push(bn = 1) {
     log.warn "Button not pushable"
 }
 
+def hold(bn = 1) {
+    log.warn "Button not holdable"
+}
+
+def doubleTap(bn = 1) {
+    log.warn "Button not doubletapable"
+}
+
+def release(bn = 1) {
+    log.warn "Button not releasable"
+}
 void refresh() {
     parent?.componentRefresh(this.device)
 }

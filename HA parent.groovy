@@ -294,6 +294,9 @@ def parse(String description) {
                     case {it.contains("hold")}:
                         eventType = "held"
                         break
+                    case {it.contains("release")}:
+                        eventType = "released"
+                        break
                     default:
                         eventType = "pushed"
                  }

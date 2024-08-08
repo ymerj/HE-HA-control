@@ -22,7 +22,7 @@ metadata
         capability "PushableButton"
         capability "DoubleTapableButton"
         capability "HoldableButton"
-//        capability "ReleasableButton"
+        capability "ReleasableButton"
         capability "Health Check"
     }
     preferences 
@@ -50,15 +50,8 @@ void parse(String description) { log.warn "parse(String description) not impleme
 
 void parse(List<Map> description) {
     description.each {
-        if (it.name in ["timestamp"]) {
-            if (txtEnable) log.info it.descriptionText
-            sendEvent(it)
-            sendEvent(name: "pushed", value: 1, descriptionText: "${device.label} pushed", isStateChange: true)
-        }
-        if (it.name in ["healthStatus"]) {
-            if (txtEnable) log.info it.descriptionText
-            sendEvent(it)
-        }
+        if (txtEnable) log.info it.descriptionText
+        sendEvent(it)
     }
 }
 

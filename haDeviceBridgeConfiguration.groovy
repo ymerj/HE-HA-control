@@ -33,7 +33,7 @@
 * 2.3        2024-03-26 Yves Mercier       Add support for buttons
 * 2.5        2024-05-08 Yves Mercier       Add support for valves
 * 2.6        2024-05-31 Yves Mercier       Add support for humidifiers
-* 2.7        2024-06-29 Yves Mercier       Add support for events
+* 2.7        2024-06-29 Yves Mercier       Add support for events, remove HA states response from debug log
 */
 
 definition(
@@ -101,7 +101,7 @@ def discoveryPage(params)
             def domain
             // query HA to get entity_id list
             def resp = httpGetExec(genParamsMain("states"))
-            logDebug("states response = ${resp?.data}")
+            // logDebug("states response = ${resp?.data}")
             
             if(resp?.data)
             {

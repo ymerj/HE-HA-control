@@ -88,7 +88,7 @@
 * 2.4    2024-04-27 Yves Mercier       Add humidity to climate entity
 * 2.5    2024-05-24 Yves Mercier       Add support for valve entity and add supported fan modes for climate entity
 * 2.6    2024-06-11 Yves Mercier       Add support for humidifier entity
-* 2.7    2024-06-29 Yves Mercier       Add support for events, change fan error handling, remap fan percentage to accomodate for missing named speed, forgo thermostat mode translation, add thermostat presets.
+* 2.7    2024-06-29 Yves Mercier       Add support for events, change fan error handling, remap fan percentage to accomodate for missing named speed, forgo thermostat mode translation, add thermostat presets, use device ID instead of device name for service call.
 */
 
 import groovy.json.JsonSlurper
@@ -977,7 +977,7 @@ def callService(entity, service, data) {
 }
 
 def executeCommand(ch, service, data) {    
-    entity = ch?.name
+    entity = ch?.getDeviceNetworkId().split("-")[1]
     domain = entity?.tokenize(".")[0]
     messUpd = [id: state.id, type: "call_service", domain: domain, service: service, service_data : [entity_id: entity] + data]
     state.id = state.id + 1

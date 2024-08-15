@@ -88,7 +88,7 @@
 * 2.4    2024-04-27 Yves Mercier       Add humidity to climate entity
 * 2.5    2024-05-24 Yves Mercier       Add support for valve entity and add supported fan modes for climate entity
 * 2.6    2024-06-11 Yves Mercier       Add support for humidifier entity
-* 2.7    2024-06-29 Yves Mercier       Add support for events, change fan error handling, remap fan percentage to accomodate for missing named speed, forgo thermostat mode translation, add thermostat presets, use device ID instead of device name for service call.
+* 2.7    2024-09-15 Yves Mercier       Add support for events, change fan error handling, remap fan percentage to accomodate for missing named speed, forgo thermostat mode translation, add thermostat presets, use device ID instead of device name for service call.
 */
 
 import groovy.json.JsonSlurper
@@ -391,71 +391,11 @@ def parse(String description) {
                 supportedPmodes = newState?.attributes?.preset_modes?.indexed(1)
                 def currentPreset = newState?.attributes?.preset_mode
                 def hvac_modes = newState?.attributes?.hvac_modes
-                if (!hvac_modes) hvac_modes = ["heat"]
-/*
-                if (hvac_modes)
-                    {
-                    hvac_modes = hvac_modes.minus(["auto"])
-                    if (hvac_modes.contains("heat_cool")) hvac_modes = hvac_modes - "heat_cool" + "auto"
-                    hvac_modes = hvac_modes.intersect(["auto", "off", "heat", "emergency heat", "cool"])
-                    }
-                else
-                    {
-                    hvac_modes = ["heat"]
-                    }
-*/		    
+                if (!hvac_modes) hvac_modes = ["heat"]	    
                 def supportedTmodes = JsonOutput.toJson(hvac_modes)
                 def fan_modes = newState?.attributes?.fan_modes
                 if (!fan_modes) fan_modes = ["on"]
-/*
-                if (fan_modes)
-                    {
-                    if (fan_modes.minus(["auto", "on"])) fan_modes = fan_modes + "circulate"
-                    fan_modes = fan_modes.intersect(["auto", "on", "circulate"])
-                    }
-                else
-                    {
-                    fan_modes = ["on"]
-                    }
-*/
                 def supportedFmodes = JsonOutput.toJson(fan_modes)
-/*
-                switch (fan_mode) {
-                    case "off":
-                        thermostat_mode = "off"
-                        break
-                    case "auto":
-                        break
-                    default:
-                    	fan_mode = "on"
-                }
-                switch (thermostat_mode) {
-                    case "dry":
-                    case "auto":
-                        return
-                        break
-                    case "fan_only":
-                        fan_mode = "circulate"
-                        break
-                    case "heat_cool":
-                        thermostat_mode = "auto"
-                        break
-                }
-                switch (hvac_action) {
-                    case "drying":
-                        return
-                        break
-                    case "off":
-                        hvac_action = "idle"
-                        break
-                    case "fan":
-                        hvac_action = "fan only"
-                        break
-                    case "preheating":
-                        hvac_action = "pending heat"
-                        break
-                }
-*/
                 newVals = [thermostat_mode, current_temperature, hvac_action, fan_mode, target_temperature, target_temp_high, target_temp_low, supportedTmodes, supportedFmodes, supportedPmodes, currentPreset, current_humidity]
                 mapping = translateDevices(domain, newVals, friendly, origin)
                 if (!current_humidity) mapping.event.remove(11) // some thermostats don't provide humidity reading
@@ -840,25 +780,12 @@ def componentRefresh(ch) {
 
 def componentSetThermostatMode(ch, thermostatmode) {
     if (logEnable) log.info("received setThermostatMode request from ${ch.label}")
-//    switch(thermostatmode)
-//	{
-//	case "auto":
-//	    data = [hvac_mode: "heat_cool"]
-//        break
-//	case "emergencyHeat":
-//	    thermostatmode = "heat"
-//	case "heat":
-//	case "cool":
-//	case "off":
-	    data =  [hvac_mode: thermostatmode]
-//	break
-//	}
-    executeCommand(ch, "set_hvac_mode", data)
+    executeCommand(ch, "set_hvac_mode", [hvac_mode: thermostatmode])
 }
 
 def componentSetCoolingSetpoint(ch, temperature) {
     if (logEnable) log.info("received setCoolingSetpoint request from ${ch.label}")
-    if (ch.currentValue("thermostatMode") == "heat_cool") { // if (ch.currentValue("thermostatMode") == "auto") {
+    if (ch.currentValue("thermostatMode") == "heat_cool") {
         data = [target_temp_high: temperature, target_temp_low: ch.currentValue("heatingSetpoint")]
     }
     else {
@@ -869,7 +796,7 @@ def componentSetCoolingSetpoint(ch, temperature) {
 
 def componentSetHeatingSetpoint(ch, temperature) {
     if (logEnable) log.info("received setHeatingSetpoint request from ${ch.label}")
-    if (ch.currentValue("thermostatMode") == "heat_cool") { // if (ch.currentValue("thermostatMode") == "auto") {
+    if (ch.currentValue("thermostatMode") == "heat_cool") {
         data = [target_temp_high: ch.currentValue("coolingSetpoint"), target_temp_low: temperature]
     }
     else {
@@ -880,12 +807,8 @@ def componentSetHeatingSetpoint(ch, temperature) {
 
 def componentSetThermostatFanMode(ch, fanmode) {
     if (logEnable) log.info("received ${fanmode} request from ${ch.label}")
-//    if (fanmode == "circulate") {
-//        executeCommand(ch, "set_hvac_mode", [hvac_mode: "fan_only"])
-//    }
-//    else {    
-        executeCommand(ch, "set_fan_mode", [fan_mode: fanmode])
-//    }
+    executeCommand(ch, "set_fan_mode", [fan_mode: fanmode])
+
 }
 
 def componentSetPreset(ch, presetNumber) {

@@ -88,6 +88,7 @@
 * 2.4    2024-04-27 Yves Mercier       Add humidity to climate entity
 * 2.5    2024-05-24 Yves Mercier       Add support for valve entity and add supported fan modes for climate entity
 * 2.6    2024-06-11 Yves Mercier       Add support for humidifier entity
+* 2.7    2024-09-15 Yves Mercier       Add support for events, change fan error handling, remap fan percentage to accomodate for missing named speed, forgo thermostat mode translation, add thermostat presets, use device ID instead of device name for service call.
 */
 
 import groovy.json.JsonSlurper
@@ -222,41 +223,52 @@ def parse(String description) {
         switch (domain) {
             case "fan":
                 def speed = newState?.attributes?.speed?.toLowerCase()
-                choices =  ["low","medium-low","medium","medium-high","high","auto"]
-                if (!(choices.contains(speed)))
+                choices =  ["off","low","medium-low","medium","medium-high","high","auto"]
+                if (speed)
                     {
-                    if (logEnable) log.info("Invalid fan speed received - ${speed}")
-                    speed = null
+                    if (!(choices.contains(speed)))
+                        {
+                        if (logEnable) log.info("Invalid fan speed received - ${speed}")
+                        speed = null
+                        }
                     }
                 def percentage = newState?.attributes?.percentage
-                switch (percentage.toInteger()) {
-                    case 0: 
-                        speed = "off"
-                        break
-                    case 25: 
-                        speed = "low"
-                        break
-                    case 50: 
-                        speed = "medium"
-                        break
-                    case 75: 
-                        speed = "medium-high"
-                        break
-                    case 100: 
-                        speed = "high"
-                    default:
-                        if (logEnable) log.info("Invalid fan percentage received - ${percentage}")
-                }
+                if (percentage)
+                    {
+                    switch (percentage.toInteger())
+                        {
+                        case 0: 
+                            speed = "off"
+                            break
+                        case 1..30: 
+                            speed = "low"
+                            break
+                        case 31..50: 
+                            speed = "medium-low"
+                            break
+                        case 51..70: 
+                            speed = "medium"
+                            break
+                        case 71..90: 
+                            speed = "medium-high"
+                            break
+                        case 91..100: 
+                            speed = "high"
+                        default:
+                            if (logEnable) log.info("Invalid fan percentage received - ${percentage}")
+                        }
+                    }
                 newVals += speed
                 newVals += percentage
                 mapping = translateDevices(domain, newVals, friendly, origin)
+                if (!percentage) mapping.event.remove(2)
                 if (!speed) mapping.event.remove(1)
                 if (mapping) updateChildDevice(mapping, entity, friendly)
                 break
             case "cover":
                 def pos = newState?.attributes?.current_position?.toInteger()
                 newVals += pos
-                def tilt = newState?.attributes?.current_tilt_position?.toInteger() // or perhaps newState?.attributes?.current_cover_tilt_position?.toInteger(). Ambiguity in the docs.
+                def tilt = newState?.attributes?.current_tilt_position?.toInteger()
                 newVals += tilt
                 switch (device_class) {
                    case {it in ["blind","shutter","window"]}:
@@ -271,6 +283,25 @@ def parse(String description) {
                        device_class = "door"
                 }
                 mapping = translateCovers(device_class, newVals, friendly, origin)
+                if (mapping) updateChildDevice(mapping, entity, friendly)
+                break
+            case "event":
+                def eventType = newState?.attributes?.event_type
+                switch (eventType) {
+                    case {it.contains("double")}:
+                        eventType = "doubleTapped"
+                        break
+                    case {it.contains("hold")}:
+                        eventType = "held"
+                        break
+                    case {it.contains("release")}:
+                        eventType = "released"
+                        break
+                    default:
+                        eventType = "pushed"
+                 }
+                newVals += eventType
+                mapping = translateDevices(domain, newVals, friendly, origin)
                 if (mapping) updateChildDevice(mapping, entity, friendly)
                 break
             case "lock":
@@ -356,67 +387,18 @@ def parse(String description) {
                 def target_temperature = newState?.attributes?.temperature
                 def target_temp_high = newState?.attributes?.target_temp_high
                 def target_temp_low = newState?.attributes?.target_temp_low
+                def supportedPmodes = []
+                supportedPmodes = newState?.attributes?.preset_modes?.indexed(1)
+                def currentPreset = newState?.attributes?.preset_mode
                 def hvac_modes = newState?.attributes?.hvac_modes
-                if (hvac_modes)
-                    {
-                    hvac_modes = hvac_modes.minus(["auto"])
-                    if (hvac_modes.contains("heat_cool")) hvac_modes = hvac_modes - "heat_cool" + "auto"
-                    hvac_modes = hvac_modes.intersect(["auto", "off", "heat", "emergency heat", "cool"])
-                    }
-                else
-                    {
-                    hvac_modes = ["heat"]
-                    }
+                if (!hvac_modes) hvac_modes = ["heat"]	    
                 def supportedTmodes = JsonOutput.toJson(hvac_modes)
                 def fan_modes = newState?.attributes?.fan_modes
-                if (fan_modes)
-                    {
-                    if (fan_modes.minus(["auto", "on"])) fan_modes = fan_modes + "circulate"
-                    fan_modes = fan_modes.intersect(["auto", "on", "circulate"])
-                    }
-                else
-                    {
-                    fan_modes = ["on"]
-                    }
+                if (!fan_modes) fan_modes = ["on"]
                 def supportedFmodes = JsonOutput.toJson(fan_modes)
-                switch (fan_mode) {
-                    case "off":
-                        thermostat_mode = "off"
-                        break
-                    case "auto":
-                        break
-                    default:
-                    	fan_mode = "on"
-                }
-                switch (thermostat_mode) {
-                    case "dry":
-                    case "auto":
-                        return
-                        break
-                    case "fan_only":
-                        fan_mode = "circulate"
-                        break
-                    case "heat_cool":
-                        thermostat_mode = "auto"
-                        break
-                }
-                switch (hvac_action) {
-                    case "drying":
-                        return
-                        break
-                    case "off":
-                        hvac_action = "idle"
-                        break
-                    case "fan":
-                        hvac_action = "fan only"
-                        break
-                    case "preheating":
-                        hvac_action = "pending heat"
-                        break
-                }
-                newVals = [thermostat_mode, current_temperature, hvac_action, fan_mode, target_temperature, target_temp_high, target_temp_low, supportedTmodes, supportedFmodes, current_humidity]
+                newVals = [thermostat_mode, current_temperature, hvac_action, fan_mode, target_temperature, target_temp_high, target_temp_low, supportedTmodes, supportedFmodes, supportedPmodes, currentPreset, current_humidity]
                 mapping = translateDevices(domain, newVals, friendly, origin)
-                if (!current_humidity) mapping.event.remove(9) // some thermostats don't provide humidity reading
+                if (!current_humidity) mapping.event.remove(11) // some thermostats don't provide humidity reading
                 if (mapping) updateChildDevice(mapping, entity, friendly)
                 break
             case "button":
@@ -521,10 +503,11 @@ def translateDevices(domain, newVals, friendly, origin)
             switch: [type: "Generic Component Switch",                  event: [[name: "switch", value: newVals[0], type: origin, descriptionText:"${friendly} was turned ${newVals[0]} [${origin}]"]]],
             device_tracker: [type: "Generic Component Presence Sensor", event: [[name: "presence", value: newVals[0] == "home" ? "present":"not present", descriptionText:"${friendly} is updated"]], namespace: "community"],
             lock: [type: "Generic Component Lock",                      event: [[name: "lock", value: newVals[0] ?: "unknown", type: origin, descriptionText:"${friendly} was turned ${newVals[0]} [${origin}]"]]],
-            climate: [type: "HADB Generic Component Thermostat",        event: [[name: "thermostatMode", value: newVals[0], descriptionText: "${friendly} is set to ${newVals[0]}"],[name: "temperature", value: newVals[1], descriptionText: "${friendly}'s current temperature is ${newVals[1]} degree"],[name: "thermostatOperatingState", value: newVals[2], descriptionText: "${friendly}'s mode is ${newVals[2]}"],[name: "thermostatFanMode", value: newVals[3], descriptionText: "${friendly}'s fan is set to ${newVals[3]}"],[name: "thermostatSetpoint", value: newVals[4], descriptionText: "${friendly}'s temperature is set to ${newVals[4]} degree"],[name: "coolingSetpoint", value: newVals[5] ?: newVals[4], descriptionText: "${friendly}'s cooling temperature is set to ${newVals[5] ?: newVals[4]} degrees"],[name: "heatingSetpoint", value: newVals[6] ?: newVals[4], descriptionText: "${friendly}'s heating temperature is set to ${newVals[6] ?: newVals[4]} degrees"],[name: "supportedThermostatModes", value: newVals[7], descriptionText: "${friendly} supportedThermostatModes were set to ${newVals[7]}"],[name: "supportedThermostatFanModes", value: newVals[8], descriptionText: "${friendly} supportedThermostatFanModes were set to ${newVals[8]}"],[name: "humidity", value: newVals[9], unit: "%", descriptionText:"${friendly} humidity is ${newVals[9]}%"]], namespace: "community"],
+            climate: [type: "HADB Generic Component Thermostat",        event: [[name: "thermostatMode", value: newVals[0], descriptionText: "${friendly} is set to ${newVals[0]}"],[name: "temperature", value: newVals[1], descriptionText: "${friendly} current temperature is ${newVals[1]} degree"],[name: "thermostatOperatingState", value: newVals[2], descriptionText: "${friendly} mode is ${newVals[2]}"],[name: "thermostatFanMode", value: newVals[3] ?: "on", descriptionText: "${friendly} fan is set to ${newVals[3] ?: 'on'}"],[name: "thermostatSetpoint", value: newVals[4], descriptionText: "${friendly} temperature is set to ${newVals[4]} degree"],[name: "coolingSetpoint", value: newVals[5] ?: newVals[4], descriptionText: "${friendly} cooling temperature is set to ${newVals[5] ?: newVals[4]} degrees"],[name: "heatingSetpoint", value: newVals[6] ?: newVals[4], descriptionText: "${friendly} heating temperature is set to ${newVals[6] ?: newVals[4]} degrees"],[name: "supportedThermostatModes", value: newVals[7], descriptionText: "${friendly} supportedThermostatModes were set to ${newVals[7]}"],[name: "supportedThermostatFanModes", value: newVals[8], descriptionText: "${friendly} supportedThermostatFanModes were set to ${newVals[8]}"],[name: "supportedPresets", value: newVals[9] ?: "none", descriptionText: "${friendly} supportedPresets were set to ${newVals[9] ?: 'none'}"],[name: "currentPreset", value: newVals[10] ?: "none", descriptionText: "${friendly} currentPreset was set to ${newVals[10] ?: 'none'}"],[name: "humidity", value: newVals[11], unit: "%", descriptionText:"${friendly} humidity is ${newVals[11]}%"]], namespace: "community"],
             input_boolean: [type: "Generic Component Switch",           event: [[name: "switch", value: newVals[0], type: origin, descriptionText:"${friendly} was turned ${newVals[0]} [${origin}]"]]],
             humidifier: [type: "HADB Generic Component Humidifier",     event: [[name: "switch", value: newVals[0], type: origin, descriptionText:"${friendly} was turned ${newVals[0]} [${origin}]"],[name: "humidifierMode", value: newVals[1], descriptionText: "${friendly}'s humidifier is set to ${newVals[1]}"],[name: "supportedModes", value: newVals[2], descriptionText: "${friendly} supportedModes were set to ${newVals[2]}"],[name: "maxHumidity", value: newVals[3] ?: 100, descriptionText:"${friendly} max humidity is ${newVals[3] ?: 100}"],[name: "minHumidity", value: newVals[4] ?: 0, descriptionText:"${friendly} min humidity is ${newVals[4] ?: 0}"],[name: "humidity", value: newVals[5], unit: "%", descriptionText:"${friendly} current humidity is ${newVals[5]}%"],[name: "targetHumidity", value: newVals[6], unit: "%", descriptionText:"${friendly} target humidity is set to ${newVals[6]}%"]], namespace: "community"],
             valve: [type: "HADB Generic Component Valve",               event: [[name: "valve", value: newVals[0] == "closed" ? "closed":"open", type: origin, descriptionText:"${friendly} was turned ${newVals[0]} [${origin}]"]], namespace: "community"],
+            event: [type: "HADB Generic Component Event",               event: [[name: "timestamp", value: newVals[0], descriptionText:"${friendly} event received at ${newVals[0]}"],[name: newVals[1], value: 1, descriptionText: "${friendly} was ${newVals[1]}", isStateChange: true]], namespace: "community"],
             input_number: [type: "Generic Component Number",            event: [[name: "number", value: newVals[0], unit: newVals[1] ?: "", type: origin, descriptionText:"${friendly} was set to ${newVals[0]} ${newVals[1] ?: ''} [${origin}]"],[name: "minimum", value: newVals[2], descriptionText:"${friendly} minimum value is ${newVals[2]}"],[name: "maximum", value: newVals[3], descriptionText:"${friendly} maximum value is ${newVals[3]}"],[name: "step", value: newVals[4], descriptionText:"${friendly} step is ${newVals[4]}"]], namespace: "community"],
             number: [type: "Generic Component Number",                  event: [[name: "number", value: newVals[0], unit: newVals[1] ?: "", type: origin, descriptionText:"${friendly} was set to ${newVals[0]} ${newVals[1] ?: ''} [${origin}]"],[name: "minimum", value: newVals[2], descriptionText:"${friendly} minimum value is ${newVals[2]}"],[name: "maximum", value: newVals[3], descriptionText:"${friendly} maximum value is ${newVals[3]}"],[name: "step", value: newVals[4], descriptionText:"${friendly} step is ${newVals[4]}"]], namespace: "community"],
         ]
@@ -592,16 +575,19 @@ def componentSetLevel(ch, level, transition=1) {
             case 0:
                 componentSetSpeed(ch, "off")
             break
-            case 1..25:
+            case 1..30:
                 componentSetSpeed(ch, "low")
             break
-            case 26..50:
+            case 31..50:
+                componentSetSpeed(ch, "medium-low")
+            break
+            case 51..70:
                 componentSetSpeed(ch, "medium")
             break
-            case 51..75:
+            case 71..90:
                 componentSetSpeed(ch, "medium-high")
             break
-            case 76..100:
+            case 91..100:
                 componentSetSpeed(ch, "high")
             break
             default:
@@ -675,17 +661,20 @@ def componentSetSpeed(ch, speed) {
             executeCommand(ch, "turn_off", data)
             break
         case "low":
+            data = [percentage: "20"]
+            executeCommand(ch, "turn_on", data)
+            break
         case "medium-low":
-            data = [percentage: "25"]
+            data = [percentage: "40"]
             executeCommand(ch, "turn_on", data)
             break
         case "auto":
         case "medium":
-            data = [percentage: "50"]
+            data = [percentage: "60"]
             executeCommand(ch, "turn_on", data)
             break
         case "medium-high":
-            data = [percentage: "75"]
+            data = [percentage: "80"]
             executeCommand(ch, "turn_on", data)
             break
         case "high":
@@ -704,6 +693,8 @@ def componentCycleSpeed(ch) {
             speed = "low"
             break
         case "low":
+            speed = "medium-low"
+            break
         case "medium-low":
             speed = "medium"
             break
@@ -789,25 +780,12 @@ def componentRefresh(ch) {
 
 def componentSetThermostatMode(ch, thermostatmode) {
     if (logEnable) log.info("received setThermostatMode request from ${ch.label}")
-    switch(thermostatmode)
-	{
-	case "auto":
-	    data = [hvac_mode: "heat_cool"]
-        break
-	case "emergencyHeat":
-	    thermostatmode = "heat"
-	case "heat":
-	case "cool":
-	case "off":
-	    data =  [hvac_mode: thermostatmode]
-	break
-	}
-    executeCommand(ch, "set_hvac_mode", data)
+    executeCommand(ch, "set_hvac_mode", [hvac_mode: thermostatmode])
 }
 
 def componentSetCoolingSetpoint(ch, temperature) {
     if (logEnable) log.info("received setCoolingSetpoint request from ${ch.label}")
-    if (ch.currentValue("thermostatMode") == "auto") {
+    if (ch.currentValue("thermostatMode") == "heat_cool") {
         data = [target_temp_high: temperature, target_temp_low: ch.currentValue("heatingSetpoint")]
     }
     else {
@@ -818,8 +796,8 @@ def componentSetCoolingSetpoint(ch, temperature) {
 
 def componentSetHeatingSetpoint(ch, temperature) {
     if (logEnable) log.info("received setHeatingSetpoint request from ${ch.label}")
-    if (ch.currentValue("thermostatMode") == "auto") {
-	data = [target_temp_high: ch.currentValue("coolingSetpoint"), target_temp_low: temperature]
+    if (ch.currentValue("thermostatMode") == "heat_cool") {
+        data = [target_temp_high: ch.currentValue("coolingSetpoint"), target_temp_low: temperature]
     }
     else {
 	data = [temperature: temperature] 
@@ -829,13 +807,19 @@ def componentSetHeatingSetpoint(ch, temperature) {
 
 def componentSetThermostatFanMode(ch, fanmode) {
     if (logEnable) log.info("received ${fanmode} request from ${ch.label}")
+    executeCommand(ch, "set_fan_mode", [fan_mode: fanmode])
 
-    if (fanmode == "circulate") {
-        executeCommand(ch, "set_hvac_mode", [hvac_mode: "fan_only"])
-    }
-    else {    
-        executeCommand(ch, "set_fan_mode", [fan_mode: fanmode])
-    }
+}
+
+def componentSetPreset(ch, presetNumber) {
+    if (logEnable) log.info("received set preset request from ${ch.label}")
+    def presetsList = ch.currentValue("supportedPresets")?.tokenize(',=[]')
+    def max = presetsList.size() / 2
+    max = max.toInteger()
+    presetNumber = presetNumber.toInteger()
+    presetNumber = (presetNumber < 1) ? 1 : ((presetNumber > max) ? max : presetNumber)   
+    data = [mode: presetsList[(presetNumber * 2) - 1].trim().replaceAll("}","")]
+    executeCommand(ch, "set_preset_mode", data)
 }
 
 def componentSetHumidifierMode(ch, modeNumber) {
@@ -916,7 +900,7 @@ def callService(entity, service, data) {
 }
 
 def executeCommand(ch, service, data) {    
-    entity = ch?.name
+    entity = ch?.getDeviceNetworkId().split("-")[1]
     domain = entity?.tokenize(".")[0]
     messUpd = [id: state.id, type: "call_service", domain: domain, service: service, service_data : [entity_id: entity] + data]
     state.id = state.id + 1

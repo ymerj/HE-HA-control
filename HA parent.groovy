@@ -890,7 +890,14 @@ def callService(entity, service) {
 
 def callService(entity, service, data) {
     def cvData = [:]
-    cvData = data.tokenize(",").collectEntries{it.tokenize(":").with{[(it[0]):it[1]]}}
+    if (data.contains("&"))
+        {
+        cvData = data.tokenize(",").collectEntries{it.tokenize("&").with{[(it[0]):it[1]]}}
+        }
+    else
+        {
+        cvData = data.tokenize(",").collectEntries{it.tokenize(":").with{[(it[0]):it[1]]}}
+        }
     domain = entity?.tokenize(".")[0]
     messUpd = [id: state.id, type: "call_service", domain: domain, service: service, service_data : [entity_id: entity] + cvData]
     state.id = state.id + 1

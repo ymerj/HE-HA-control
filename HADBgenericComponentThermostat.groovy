@@ -21,6 +21,7 @@ Change history:
 0.1 - ritchierich - initial version
 2.4 - Yves Mercier - Modified healthCheck handling
 2.7 - Yves Mercier - Add support for presets
+2.8 - Yves Mercier - corrected typo
 */
 
 metadata

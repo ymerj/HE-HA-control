@@ -88,7 +88,8 @@
 * 2.4    2024-04-27 Yves Mercier       Add humidity to climate entity
 * 2.5    2024-05-24 Yves Mercier       Add support for valve entity and add supported fan modes for climate entity
 * 2.6    2024-06-11 Yves Mercier       Add support for humidifier entity
-* 2.7    2024-09-15 Yves Mercier       Add support for events, change fan error handling, remap fan percentage to accomodate for missing named speed, forgo thermostat mode translation, add thermostat presets, use device ID instead of device name for service call.
+* 2.7    2024-08-15 Yves Mercier       Add support for events, change fan error handling, remap fan percentage to accomodate for missing named speed, forgo thermostat mode translation, add thermostat presets, use device ID instead of device name for service call.
+* 2.8    2024-09-03 Yves Mercier       Fix custom call sevice to allow colons in data, fix thermostat set_preset calls.
 */
 
 import groovy.json.JsonSlurper
@@ -818,7 +819,7 @@ def componentSetPreset(ch, presetNumber) {
     max = max.toInteger()
     presetNumber = presetNumber.toInteger()
     presetNumber = (presetNumber < 1) ? 1 : ((presetNumber > max) ? max : presetNumber)   
-    data = [mode: presetsList[(presetNumber * 2) - 1].trim().replaceAll("}","")]
+    data = [preset_mode: presetsList[(presetNumber * 2) - 1].trim().replaceAll("}","")]
     executeCommand(ch, "set_preset_mode", data)
 }
 

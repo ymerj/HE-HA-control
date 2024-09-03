@@ -47,7 +47,7 @@ metadata
     attribute "supportedThermostatFanModes", "JSON_OBJECT"
     attribute "supportedThermostatModes", "JSON_OBJECT"
     attribute "supportedPresets", "string"
-    attribute "currenPreset", "string"
+    attribute "currentPreset", "string"
 }
 
 void installed() {

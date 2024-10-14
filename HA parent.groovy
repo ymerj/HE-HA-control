@@ -650,6 +650,14 @@ def componentSetPreviousEffect(ch) {
     log.warn("setPreviousEffect not implemented")
 }
 
+def componentStartLevelChange(ch) {
+    log.warn("StartLevelChange not available")
+}
+
+def componentStopLevelChange(ch) {
+    log.warn("StopLevelChange not available")
+}
+
 def componentSetSpeed(ch, speed) {
     if (logEnable) log.info("received setSpeed request from ${ch.label}, with speed = ${speed}")
     int percentage = 0

@@ -69,7 +69,7 @@ void parse(List<Map> description) {
         }
         //All attributes passed from HA are available and can be leveraged by a custom driver
         if (it.name in ["attributes"]) {
-            state.attbributes = it.value
+            state.attributes = it.value
         }
     }
 }

@@ -90,7 +90,7 @@
 * 2.6    2024-06-11 Yves Mercier       Add support for humidifier entity
 * 2.7    2024-08-15 Yves Mercier       Add support for events, change fan error handling, remap fan percentage to accomodate for missing named speed, forgo thermostat mode translation, add thermostat presets, use device ID instead of device name for service call.
 * 2.8    2024-09-03 Yves Mercier       Fix custom call sevice to allow colons in data, fix thermostat set_preset calls.
-* 2.9    2024-10-04 Yves Mercier       Add windowsShade attribute to blinds
+* 2.9    2024-10-29 Yves Mercier       Add windowsShade attribute to blinds, add attrinute to unknown sensor, add support for espresense.
 */
 
 import groovy.json.JsonSlurper
@@ -374,9 +374,17 @@ def parse(String description) {
                 if (mapping) updateChildDevice(mapping, entity, friendly)
                 break
             case "sensor":
-                def unit_of_measurement = newState?.attributes?.unit_of_measurement
-                if ((!device_class) && (unit_of_measurement in ["Bq/m³","pCi/L"])) device_class = "radon" // if there is no device_class, we need to infer from the units
-                newVals << unit_of_measurement
+                def unit = newState?.attributes?.unit_of_measurement
+                def attributes = newState?.attributes
+                newVals += unit
+                if ((!device_class) && (attributes.containsKey("distance")))
+                    {
+                    device_class = "occupancy"
+                    def distance = newState?.attributes?.distance
+                    newVals = newVals[0] + distance
+                    }
+                if ((!device_class) && (unit in ["Bq/m³","pCi/L"])) device_class = "radon" // if there is no device_class, we need to infer from the units
+                newVals += attributes
                 mapping = translateSensors(device_class, newVals, friendly, origin)
                 if (mapping) updateChildDevice(mapping, entity, friendly)
                 break
@@ -475,7 +483,8 @@ def translateSensors(device_class, newVals, friendly, origin)
             temperature: [type: "Generic Component Temperature Sensor",       event: [[name: "temperature", value: newVals[0], unit: newVals[1] ?: "°", descriptionText:"${friendly} temperature is ${newVals[0]} ${newVals[1] ?: '°'}"]]],
             voltage: [type: "Generic Component Voltage Sensor",               event: [[name: "voltage", value: newVals[0], unit: newVals[1] ?: "V", descriptionText:"${friendly} voltage is ${newVals[0]} ${newVals[1] ?: 'V'}"]]],
             energy: [type: "Generic Component Energy Meter",                  event: [[name: "energy", value: newVals[0], unit: newVals[1] ?: "kWh", descriptionText:"${friendly} energy is ${newVals[0]} ${newVals[1] ?: 'kWh'}"]]],
-            unknown: [type: "Generic Component Unknown Sensor",               event: [[name: "unknown", value: newVals[0], unit: newVals[1] ?: "", descriptionText:"${friendly} value is ${newVals[0]} ${newVals[1] ?: ''}"]], namespace: "community"],
+            unknown: [type: "Generic Component Unknown Sensor",               event: [[name: "unknown", value: newVals[0], unit: newVals[1] ?: "", descriptionText:"${friendly} value is ${newVals[0]} ${newVals[1] ?: ''}"],[name: "attributes", value: newVals[2]]], namespace: "community"],
+            occupancy: [type: "HADBgeneric Component Occupancy Sensor",       event: [[name: "room", value: newVals[0], descriptionText:"${friendly} room is ${newVals[0]} "],[name: "distance", value: newVals[1], descriptionText:"${friendly} distance is ${newVals[1]}"],[name: "attributes", value: newVals[2]]], namespace: "community"],                
             timestamp: [type: "Generic Component TimeStamp Sensor",           event: [[name: "timestamp", value: newVals[0], descriptionText:"${friendly} time is ${newVals[0]}"]], namespace: "community"],
             pm25: [type: "Generic Component pm25 Sensor",                     event: [[name: "pm25", value: newVals[0], unit: newVals[1] ?: "µg/m³", descriptionText:"${friendly} pm2.5 is ${newVals[0]} ${newVals[1] ?: 'µg/m³'}"]], namespace: "community"],
         ]

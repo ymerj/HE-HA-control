@@ -38,6 +38,7 @@ metadata
     }
     attribute "value", "number"
     attribute "valueStr", "string"
+    attribute "unit", "string"
     attribute "healthStatus", "enum", ["offline", "online"]
 }
 
@@ -60,6 +61,7 @@ void parse(List<Map> description) {
             if (txtEnable) log.info it.descriptionText
             sendEvent(name: "value", value: it.value, unit: it.unit, descriptionText: it.descriptionText)
             sendEvent(name: "valueStr", value: it.value)
+            sendEvent(name: "unit", value: it.unit ?: "none")
         }
         if (it.name in ["healthStatus"]) {
             if (txtEnable) log.info it.descriptionText

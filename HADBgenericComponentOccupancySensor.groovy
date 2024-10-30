@@ -63,7 +63,7 @@ void parse(List<Map> description)
             }
         if (it.name in ["room"])
             {
-            if (it.value in ["home", "not_home"]
+            if (it.value in ["home", "not_home"])
                 {
                 def presence = (it.value == "home") ? "present" : "not present"
                 def descriptionText = "presence was set to ${presence}"

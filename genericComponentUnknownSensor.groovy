@@ -22,6 +22,7 @@ Change history:
 0.1.52 - Yves mercier - Add health check capability
 0.1.56 - Yves Mercier - Refactored to handle null units
 0.1.59 - Yves Mercier - Change healthStatus handling
+2.9    - ritchierich  - Passes all attributes
 
 */
 
@@ -37,7 +38,6 @@ metadata
     }
     attribute "value", "number"
     attribute "valueStr", "string"
-    attribute "unit", "string"
     attribute "healthStatus", "enum", ["offline", "online"]
 }
 
@@ -60,11 +60,14 @@ void parse(List<Map> description) {
             if (txtEnable) log.info it.descriptionText
             sendEvent(name: "value", value: it.value, unit: it.unit, descriptionText: it.descriptionText)
             sendEvent(name: "valueStr", value: it.value)
-            sendEvent(name: "unit", value: it.unit ?: "none")
         }
         if (it.name in ["healthStatus"]) {
             if (txtEnable) log.info it.descriptionText
             sendEvent(it)
+        }
+        //All attributes passed from HA are available and can be leveraged by a custom driver
+        if (it.name in ["attributes"]) {
+            state.attbributes = it.value
         }
     }
 }

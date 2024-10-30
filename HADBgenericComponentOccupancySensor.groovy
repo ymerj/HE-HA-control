@@ -56,20 +56,19 @@ void parse(List<Map> description)
     {
     description.each
         {
-        if (it.name in ["room", "distance", "healthStatus"])
+        if (it.name in ["room"])
             {
             if (txtEnable) log.info it.descriptionText
             sendEvent(it)
+            def presence = (it.value == "not_home") ? "not present" : "present"
+            def descriptionText = "presence was set to ${presence}"
+            sendEvent(name: "presence", value: presence, descriptionText: descriptionText)
+            if (txtEnable) log.info descriptionText
             }
-        if (it.name in ["room"])
+        if (it.name in ["distance", "healthStatus"])
             {
-            if (it.value in ["home", "not_home"])
-                {
-                def presence = (it.value == "home") ? "present" : "not present"
-                def descriptionText = "presence was set to ${presence}"
-                sendEvent(name: "presence", value: presence, descriptionText: descriptionText)
-                if (txtEnable) log.info descriptionText
-                }
+            if (txtEnable) log.info it.descriptionText
+            sendEvent(it)
             }
         if (it.name in ["attributes"]) state.attributes = it.value
         }

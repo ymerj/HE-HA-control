@@ -18,9 +18,26 @@ limitations under the License.
 
 Change history:
 
-2.9    - Yves Mercier  - initial version
+2.8    - Yves Mercier  - initial version
+2.9    - ritchierich   - Added a distanceThreshold input and code to control how often events are logged
 
 */
+
+import groovy.transform.Field
+
+@Field static Map distanceOpts = [
+	defaultValue: "0.2",
+	defaultText: "On 0.2m change",
+	options:[
+		"0.2":"On 0.2m change",
+		"0.5":"On 0.5m change",
+		"1.0":"On 1.0m change",
+		"1.5":"On 1.5m change",
+		"-1.0":"log10 precision 1",
+		"0.0":"log10 precision 0",
+		"disable":"Disable"
+	]
+]
 
 metadata
 {
@@ -31,11 +48,11 @@ metadata
         capability "PresenceSensor"
     }
     preferences {
+        input name:"distanceThreshold", title:"Distance Reporting (default:${distanceOpts.defaultText})", type:"enum", options:distanceOpts.options , defaultValue:distanceOpts.defaultValue
         input name: "txtEnable", type: "bool", title: "Enable descriptionText logging", defaultValue: true
     }
     attribute "distance", "number"
     attribute "room", "string"
-    attribute "presence", "enum", ["present", "not present"]
     attribute "healthStatus", "enum", ["offline", "online"]
 }
 
@@ -52,27 +69,40 @@ void installed() {
 
 void parse(String description) { log.warn "parse(String description) not implemented" }
 
-void parse(List<Map> description)
-    {
-    description.each
-        {
-        if (it.name in ["room"])
-            {
+void parse(List<Map> description) {
+    description.each {
+        if (it.name in ["room"]) {
             if (txtEnable) log.info it.descriptionText
             sendEvent(it)
             def presence = (it.value == "not_home") ? "not present" : "present"
             def descriptionText = "presence was set to ${presence}"
             sendEvent(name: "presence", value: presence, descriptionText: descriptionText)
             if (txtEnable) log.info descriptionText
-            }
-        if (it.name in ["distance", "healthStatus"])
-            {
+        }
+        if (it.name in ["healthStatus"]) {
             if (txtEnable) log.info it.descriptionText
             sendEvent(it)
-            }
+        }
         if (it.name in ["attributes"]) state.attributes = it.value
+        if (it.name in ["distance"]) {
+            if (txtEnable) log.info it.descriptionText
+            def value = it.value.toDouble()
+            def previousValue = device.currentValue("distance") ?: 0.0
+            if (value == previousValue) return
+            
+            if (settings.distanceThreshold != "disable") {
+                def distanceThreshold = (settings.distanceThreshold?:distanceOpts.defaultValue).toDouble()
+                if (distanceThreshold <= 0.0) {
+                    distanceThreshold = Math.abs(distanceThreshold)
+                    if (Math.log10(value).round(distanceThreshold) == Math.log10(previousValue).round(distanceThreshold)) return
+                } else if (Math.abs(value-previousValue) < distanceThreshold) {
+                    return
+                }
+            }
+            sendEvent(it)
         }
     }
+}
 
 void refresh() {
     parent?.componentRefresh(this.device)

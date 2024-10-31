@@ -22,6 +22,7 @@ Change history:
 0.1.52 - Yves mercier - Add health check capability
 0.1.56 - Yves Mercier - Refactored to handle null units
 0.1.59 - Yves Mercier - Change healthStatus handling
+2.9    - ritchierich  - Passes all attributes
 
 */
 
@@ -65,6 +66,10 @@ void parse(List<Map> description) {
         if (it.name in ["healthStatus"]) {
             if (txtEnable) log.info it.descriptionText
             sendEvent(it)
+        }
+        //All attributes passed from HA are available and can be leveraged by a custom driver
+        if (it.name in ["attributes"]) {
+            state.attributes = it.value
         }
     }
 }

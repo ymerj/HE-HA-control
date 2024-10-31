@@ -22,6 +22,7 @@ Change history:
 0.1.52 - Yves Mercier - Add health check capability
 0.1.59 - Yves Mercier - Change healthStatus handling
 2.2    - Yves Mercier - Modified from shade to use with blind type entities
+2.9    - Yves Mercier - Add windowShade attribute
 
 */
 
@@ -37,6 +38,7 @@ metadata
         input name: "txtEnable", type: "bool", title: "Enable descriptionText logging", defaultValue: true
     }
     attribute "healthStatus", "enum", ["offline", "online"]
+    attribute "windowShade", "enum", ["opening", "partially open", "closed", "open", "closing", "unknown"]
 }
 
 void updated() {
@@ -54,7 +56,7 @@ void parse(String description) { log.warn "parse(String description) not impleme
 
 void parse(List<Map> description) {   
     description.each {
-        if (it.name in ["position", "windowBlind", "tilt", "healthStatus"]) {
+        if (it.name in ["position", "windowBlind", "windowShade", "tilt", "healthStatus"]) {
             if (txtEnable) log.info it.descriptionText
             sendEvent(it)
         }

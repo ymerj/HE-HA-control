@@ -306,6 +306,8 @@ def parse(String description) {
                 mapping = translateDevices(domain, newVals, friendly, origin)
                 if (mapping) updateChildDevice(mapping, entity, friendly)
                 break
+            case "input_text":
+            case "text":
             case "lock":
             case "device_tracker":
             case "valve":
@@ -520,6 +522,8 @@ def translateDevices(domain, newVals, friendly, origin)
             humidifier: [type: "HADB Generic Component Humidifier",     event: [[name: "switch", value: newVals[0], type: origin, descriptionText:"${friendly} was turned ${newVals[0]} [${origin}]"],[name: "humidifierMode", value: newVals[1], descriptionText: "${friendly}'s humidifier is set to ${newVals[1]}"],[name: "supportedModes", value: newVals[2], descriptionText: "${friendly} supportedModes were set to ${newVals[2]}"],[name: "maxHumidity", value: newVals[3] ?: 100, descriptionText:"${friendly} max humidity is ${newVals[3] ?: 100}"],[name: "minHumidity", value: newVals[4] ?: 0, descriptionText:"${friendly} min humidity is ${newVals[4] ?: 0}"],[name: "humidity", value: newVals[5], unit: "%", descriptionText:"${friendly} current humidity is ${newVals[5]}%"],[name: "targetHumidity", value: newVals[6], unit: "%", descriptionText:"${friendly} target humidity is set to ${newVals[6]}%"]], namespace: "community"],
             valve: [type: "HADB Generic Component Valve",               event: [[name: "valve", value: newVals[0] == "closed" ? "closed":"open", type: origin, descriptionText:"${friendly} was turned ${newVals[0]} [${origin}]"]], namespace: "community"],
             event: [type: "HADB Generic Component Event",               event: [[name: "timestamp", value: newVals[0], descriptionText:"${friendly} event received at ${newVals[0]}"],[name: newVals[1], value: 1, descriptionText: "${friendly} was ${newVals[1]}", isStateChange: true]], namespace: "community"],
+            input_text: [type: "HADB Generic Component Text",           event: [[name: "text", value: newVals[0], type: origin, descriptionText:"${friendly} was set to ${newVals[0]} [${origin}]"]], namespace: "community"],
+            text: [type: "HADB Generic Component Text",                 event: [[name: "text", value: newVals[0], type: origin, descriptionText:"${friendly} was set to ${newVals[0]} [${origin}]"]], namespace: "community"],
             input_number: [type: "Generic Component Number",            event: [[name: "number", value: newVals[0], unit: newVals[1] ?: "", type: origin, descriptionText:"${friendly} was set to ${newVals[0]} ${newVals[1] ?: ''} [${origin}]"],[name: "minimum", value: newVals[2], descriptionText:"${friendly} minimum value is ${newVals[2]}"],[name: "maximum", value: newVals[3], descriptionText:"${friendly} maximum value is ${newVals[3]}"],[name: "step", value: newVals[4], descriptionText:"${friendly} step is ${newVals[4]}"]], namespace: "community"],
             number: [type: "Generic Component Number",                  event: [[name: "number", value: newVals[0], unit: newVals[1] ?: "", type: origin, descriptionText:"${friendly} was set to ${newVals[0]} ${newVals[1] ?: ''} [${origin}]"],[name: "minimum", value: newVals[2], descriptionText:"${friendly} minimum value is ${newVals[2]}"],[name: "maximum", value: newVals[3], descriptionText:"${friendly} maximum value is ${newVals[3]}"],[name: "step", value: newVals[4], descriptionText:"${friendly} step is ${newVals[4]}"]], namespace: "community"],
         ]
@@ -780,6 +784,11 @@ def componentSetNumber(ch, newValue) {
     executeCommand(ch, "set_value", [value: newValue])
 }
 
+def componentSetText(ch, newValue) {
+    if (logEnable) log.info("received set text to ${newValue} request from ${ch.label}")
+    executeCommand(ch, "set_value", [value: newValue])
+}
+        
 def componentRefresh(ch) {
     if (logEnable) log.info("received refresh request from ${ch.label}")
     // special handling since domain is fixed 

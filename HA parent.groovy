@@ -435,6 +435,14 @@ def parse(String description) {
                 if (!currentHumidity) mapping.event.remove(5)
                 if (mapping) updateChildDevice(mapping, entity, friendly)
                 break
+            case "vacuum":
+                def speed = newState?.attributes?.fan_speed
+                def fanSpeedList = []
+                fanSpeedList = newState?.attributes?.fan_speed_list
+                newVals += [speed, fanSpeedList]
+                mapping = translateDevices(domain, newVals, friendly, origin)
+                if (mapping) updateChildDevice(mapping, entity, friendly)
+                break
             default:
                 if (logEnable) log.info("No mapping exists for domain: ${domain}, device_class: ${device_class}.  Please contact devs to have this added.")
         }
@@ -527,6 +535,7 @@ def translateDevices(domain, newVals, friendly, origin)
             text: [type: "HADB Generic Component Text",                 event: [[name: "text", value: newVals[0], type: origin, descriptionText:"${friendly} was set to ${newVals[0]} [${origin}]"]], namespace: "community"],
             input_number: [type: "Generic Component Number",            event: [[name: "number", value: newVals[0], unit: newVals[1] ?: "", type: origin, descriptionText:"${friendly} was set to ${newVals[0]} ${newVals[1] ?: ''} [${origin}]"],[name: "minimum", value: newVals[2], descriptionText:"${friendly} minimum value is ${newVals[2]}"],[name: "maximum", value: newVals[3], descriptionText:"${friendly} maximum value is ${newVals[3]}"],[name: "step", value: newVals[4], descriptionText:"${friendly} step is ${newVals[4]}"]], namespace: "community"],
             number: [type: "Generic Component Number",                  event: [[name: "number", value: newVals[0], unit: newVals[1] ?: "", type: origin, descriptionText:"${friendly} was set to ${newVals[0]} ${newVals[1] ?: ''} [${origin}]"],[name: "minimum", value: newVals[2], descriptionText:"${friendly} minimum value is ${newVals[2]}"],[name: "maximum", value: newVals[3], descriptionText:"${friendly} maximum value is ${newVals[3]}"],[name: "step", value: newVals[4], descriptionText:"${friendly} step is ${newVals[4]}"]], namespace: "community"],
+            vacuum: [type: "HADB Generic Component Vacuum",             event: [[name: "vacuum", value: newVals[0], type: origin, descriptionText:"${friendly} is ${newVals[0]} [${origin}]"],[name: "speed", value: newVals[1], type: origin, descriptionText:"${friendly} speed was set to ${newVals[1]} [${origin}]"],[name: "fanSeedList", value: newVals[2], type: origin, descriptionText:"${friendly} speed list is ${newVals[2]} [${origin}]"]], namespace: "community"],
         ]
     return mapping[domain]
 }
@@ -898,6 +907,41 @@ def componentStartLevelChange(ch) {
 
 def componentStopLevelChange(ch) {
     log.warn("Stop level change not supported")
+}
+
+void componentCleanSpot(ch) {
+    if (logEnable) log.info("received clean spot request from ${ch.label}")
+    //executeCommand(ch, "clean_spot", [:])
+}
+
+void componentLocate(ch) {
+    if (logEnable) log.info("received locate request from ${ch.label}")
+    executeCommand(ch, "locate", [:])
+}
+
+void componentPause(ch) {
+    if (logEnable) log.info("received pause request from ${ch.label}")
+    executeCommand(ch, "pause", [:])
+}
+
+void componentReturnToBase(ch) {
+    if (logEnable) log.info("received return to base request from ${ch.label}")
+    executeCommand(ch, "return_to_base", [:])
+}
+
+void componentSetFanSpeed(ch, speed) {
+    if (logEnable) log.info("received set fan speed request from ${ch.label}")
+    executeCommand(ch, "set_fan_speed", [value: speed])
+}
+
+void componentStart(ch) {
+    if (logEnable) log.info("received start request from ${ch.label}")
+    executeCommand(ch, "start", [:])
+}
+
+void componentStop(ch) {
+    if (logEnable) log.info("received stop request from ${ch.label}")
+    executeCommand(ch, "stop", [:])
 }
 
 def closeConnection() {

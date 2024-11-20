@@ -30,14 +30,11 @@ metadata
         capability "Variable"
         capability "Refresh"
         capability "Health Check"
-
-        //command "setText", [[ name: "newValue", type: "STRING", description: "Define new value" ]]
         }
     preferences
         {
         input name: "txtEnable", type: "bool", title: "Enable descriptionText logging", defaultValue: true
         }
-    //attribute "text", "string"
     attribute "healthStatus", "enum", ["offline", "online"]
     }
 

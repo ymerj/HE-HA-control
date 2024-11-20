@@ -784,13 +784,13 @@ void componentStopPositionChange(ch) {
 void componentStartTiltChange(ch, dir) {
     if(["open", "close"].contains(dir)) {
         if (logEnable) log.info("received ${dir} tilt request from ${ch.label}")
-        executeCommand(ch, dir + "_cover", [:])
+        executeCommand(ch, dir + "_cover_tilt", [:])
     }
 }
 
 void componentStopTiltChange(ch) {
     if (logEnable) log.info("received stop tilt request from ${ch.label}")
-    executeCommand(ch, "stop_cover", [:])
+    executeCommand(ch, "stop_cover_tilt", [:])
 }
 
 void componentLock(ch) {

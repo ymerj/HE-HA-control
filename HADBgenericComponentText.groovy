@@ -27,16 +27,17 @@ metadata
     definition(name: "HADB Generic Component Text", namespace: "community", author: "community", importUrl: "https://raw.githubusercontent.com/ymerj/HE-HA-control/main/HADBgenericComponentText.groovy")
         {
         capability "Actuator"
+        capability "Variable"
         capability "Refresh"
         capability "Health Check"
 
-        command "setText", [[ name: "newValue", type: "STRING", description: "Define new value" ]]
+        //command "setText", [[ name: "newValue", type: "STRING", description: "Define new value" ]]
         }
     preferences
         {
         input name: "txtEnable", type: "bool", title: "Enable descriptionText logging", defaultValue: true
         }
-    attribute "text", "string"
+    //attribute "text", "string"
     attribute "healthStatus", "enum", ["offline", "online"]
     }
 
@@ -59,7 +60,7 @@ void parse(List<Map> description)
     {
     description.each
         {
-        if (it.name in ["text", "healthStatus"])
+        if (it.name in ["variable", "healthStatus"])
             {
             if (txtEnable) log.info it.descriptionText
             sendEvent(it)
@@ -69,7 +70,7 @@ void parse(List<Map> description)
 
 void setText(newValue)
     {
-    parent?.componentSetText(this.device, newValue)
+    parent?.componentSetVariable(this.device, variable)
     }
 
 void refresh()

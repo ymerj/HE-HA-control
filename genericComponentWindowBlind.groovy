@@ -33,6 +33,9 @@ metadata
         capability "WindowBlind"
         capability "Refresh"
         capability "Health Check"
+
+        command "openTilt"
+        command "closeTilt"
     }
     preferences {
         input name: "txtEnable", type: "bool", title: "Enable descriptionText logging", defaultValue: true
@@ -85,6 +88,14 @@ void startPositionChange(direction) {
 
 void stopPositionChange() {
     parent?.componentStopPositionChange(this.device)
+}
+
+void closeTilt() {
+    parent?.componentCloseTilt(this.device)
+}
+
+void openTilt() {
+    parent?.componentOpenTilt(this.device)
 }
 
 void setTiltLevel(tilt) {

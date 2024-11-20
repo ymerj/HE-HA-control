@@ -754,6 +754,16 @@ void componentSetPosition(ch, pos) {
     executeCommand(ch, "set_cover_position", [position: pos])
 }
 
+void componentCloseTilt(ch) {
+    if (logEnable) log.info("received close tilt request from ${ch.label}")
+    executeCommand(ch, "close_cover_tilt", [:])
+}
+
+void componentOpenTilt(ch) {
+    if (logEnable) log.info("received open tilt request from ${ch.label}")
+    executeCommand(ch, "open_cover_tilt", [:])
+}
+
 void componentSetTiltLevel(ch, tilt) {
     if (logEnable) log.info("received set tilt request from ${ch.label}")
     executeCommand(ch, "set_cover_tilt_position", [position: tilt])

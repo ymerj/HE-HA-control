@@ -23,7 +23,7 @@ Change history:
 0.1.59 - Yves Mercier - Change healthStatus handling
 2.2    - Yves Mercier - Modified from shade to use with blind type entities
 2.9    - Yves Mercier - Add windowShade attribute
-2.10   - Yves mercier - Add enhanced tilt functions
+2.10   - Yves mercier - Add extra blind commands
 
 */
 

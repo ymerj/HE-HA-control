@@ -91,6 +91,7 @@
 * 2.7    2024-08-15 Yves Mercier       Add support for events, change fan error handling, remap fan percentage to accomodate for missing named speed, forgo thermostat mode translation, add thermostat presets, use device ID instead of device name for service call.
 * 2.8    2024-09-03 Yves Mercier       Fix custom call sevice to allow colons in data, fix thermostat set_preset calls.
 * 2.9    2024-10-29 Yves Mercier       Add windowsShade attribute to blinds, add attributes to unknown sensor, add support for espresense.
+* 2.10   2024-11-24 yves Mercier       Add support for text and vacuum entities. Add extra blind commands. 
 */
 
 import groovy.json.JsonSlurper
@@ -306,6 +307,8 @@ def parse(String description) {
                 mapping = translateDevices(domain, newVals, friendly, origin)
                 if (mapping) updateChildDevice(mapping, entity, friendly)
                 break
+            case "input_text":
+            case "text":
             case "lock":
             case "device_tracker":
             case "valve":
@@ -432,6 +435,14 @@ def parse(String description) {
                 if (!currentHumidity) mapping.event.remove(5)
                 if (mapping) updateChildDevice(mapping, entity, friendly)
                 break
+            case "vacuum":
+                def speed = newState?.attributes?.fan_speed
+                def fanSpeedList = []
+                fanSpeedList = newState?.attributes?.fan_speed_list
+                newVals += [speed, fanSpeedList]
+                mapping = translateDevices(domain, newVals, friendly, origin)
+                if (mapping) updateChildDevice(mapping, entity, friendly)
+                break
             default:
                 if (logEnable) log.info("No mapping exists for domain: ${domain}, device_class: ${device_class}.  Please contact devs to have this added.")
         }
@@ -520,8 +531,11 @@ def translateDevices(domain, newVals, friendly, origin)
             humidifier: [type: "HADB Generic Component Humidifier",     event: [[name: "switch", value: newVals[0], type: origin, descriptionText:"${friendly} was turned ${newVals[0]} [${origin}]"],[name: "humidifierMode", value: newVals[1], descriptionText: "${friendly}'s humidifier is set to ${newVals[1]}"],[name: "supportedModes", value: newVals[2], descriptionText: "${friendly} supportedModes were set to ${newVals[2]}"],[name: "maxHumidity", value: newVals[3] ?: 100, descriptionText:"${friendly} max humidity is ${newVals[3] ?: 100}"],[name: "minHumidity", value: newVals[4] ?: 0, descriptionText:"${friendly} min humidity is ${newVals[4] ?: 0}"],[name: "humidity", value: newVals[5], unit: "%", descriptionText:"${friendly} current humidity is ${newVals[5]}%"],[name: "targetHumidity", value: newVals[6], unit: "%", descriptionText:"${friendly} target humidity is set to ${newVals[6]}%"]], namespace: "community"],
             valve: [type: "HADB Generic Component Valve",               event: [[name: "valve", value: newVals[0] == "closed" ? "closed":"open", type: origin, descriptionText:"${friendly} was turned ${newVals[0]} [${origin}]"]], namespace: "community"],
             event: [type: "HADB Generic Component Event",               event: [[name: "timestamp", value: newVals[0], descriptionText:"${friendly} event received at ${newVals[0]}"],[name: newVals[1], value: 1, descriptionText: "${friendly} was ${newVals[1]}", isStateChange: true]], namespace: "community"],
+            input_text: [type: "HADB Generic Component Text",           event: [[name: "variable", value: newVals[0], type: origin, descriptionText:"${friendly} was set to ${newVals[0]} [${origin}]"]], namespace: "community"],
+            text: [type: "HADB Generic Component Text",                 event: [[name: "variable", value: newVals[0], type: origin, descriptionText:"${friendly} was set to ${newVals[0]} [${origin}]"]], namespace: "community"],
             input_number: [type: "Generic Component Number",            event: [[name: "number", value: newVals[0], unit: newVals[1] ?: "", type: origin, descriptionText:"${friendly} was set to ${newVals[0]} ${newVals[1] ?: ''} [${origin}]"],[name: "minimum", value: newVals[2], descriptionText:"${friendly} minimum value is ${newVals[2]}"],[name: "maximum", value: newVals[3], descriptionText:"${friendly} maximum value is ${newVals[3]}"],[name: "step", value: newVals[4], descriptionText:"${friendly} step is ${newVals[4]}"]], namespace: "community"],
             number: [type: "Generic Component Number",                  event: [[name: "number", value: newVals[0], unit: newVals[1] ?: "", type: origin, descriptionText:"${friendly} was set to ${newVals[0]} ${newVals[1] ?: ''} [${origin}]"],[name: "minimum", value: newVals[2], descriptionText:"${friendly} minimum value is ${newVals[2]}"],[name: "maximum", value: newVals[3], descriptionText:"${friendly} maximum value is ${newVals[3]}"],[name: "step", value: newVals[4], descriptionText:"${friendly} step is ${newVals[4]}"]], namespace: "community"],
+            vacuum: [type: "HADB Generic Component Vacuum",             event: [[name: "vacuum", value: newVals[0], type: origin, descriptionText:"${friendly} is ${newVals[0]} [${origin}]"],[name: "speed", value: newVals[1], type: origin, descriptionText:"${friendly} speed was set to ${newVals[1]} [${origin}]"],[name: "fanSeedList", value: newVals[2], type: origin, descriptionText:"${friendly} speed list is ${newVals[2]} [${origin}]"]], namespace: "community"],
         ]
     return mapping[domain]
 }
@@ -740,6 +754,16 @@ void componentSetPosition(ch, pos) {
     executeCommand(ch, "set_cover_position", [position: pos])
 }
 
+void componentCloseTilt(ch) {
+    if (logEnable) log.info("received close tilt request from ${ch.label}")
+    executeCommand(ch, "close_cover_tilt", [:])
+}
+
+void componentOpenTilt(ch) {
+    if (logEnable) log.info("received open tilt request from ${ch.label}")
+    executeCommand(ch, "open_cover_tilt", [:])
+}
+
 void componentSetTiltLevel(ch, tilt) {
     if (logEnable) log.info("received set tilt request from ${ch.label}")
     executeCommand(ch, "set_cover_tilt_position", [position: tilt])
@@ -755,6 +779,18 @@ void componentStartPositionChange(ch, dir) {
 void componentStopPositionChange(ch) {
     if (logEnable) log.info("received stop request from ${ch.label}")
     executeCommand(ch, "stop_cover", [:])
+}
+
+void componentStartTiltChange(ch, dir) {
+    if(["open", "close"].contains(dir)) {
+        if (logEnable) log.info("received ${dir} tilt request from ${ch.label}")
+        executeCommand(ch, dir + "_cover_tilt", [:])
+    }
+}
+
+void componentStopTiltChange(ch) {
+    if (logEnable) log.info("received stop tilt request from ${ch.label}")
+    executeCommand(ch, "stop_cover_tilt", [:])
 }
 
 void componentLock(ch) {
@@ -780,6 +816,11 @@ def componentSetNumber(ch, newValue) {
     executeCommand(ch, "set_value", [value: newValue])
 }
 
+def componentSetVariable(ch, newValue) {
+    if (logEnable) log.info("received set variable to ${newValue} request from ${ch.label}")
+    executeCommand(ch, "set_value", [value: newValue])
+}
+        
 def componentRefresh(ch) {
     if (logEnable) log.info("received refresh request from ${ch.label}")
     // special handling since domain is fixed 
@@ -888,6 +929,41 @@ def componentStartLevelChange(ch) {
 
 def componentStopLevelChange(ch) {
     log.warn("Stop level change not supported")
+}
+
+void componentCleanSpot(ch) {
+    if (logEnable) log.info("received clean spot request from ${ch.label}")
+    //executeCommand(ch, "clean_spot", [:])
+}
+
+void componentLocate(ch) {
+    if (logEnable) log.info("received locate request from ${ch.label}")
+    executeCommand(ch, "locate", [:])
+}
+
+void componentPause(ch) {
+    if (logEnable) log.info("received pause request from ${ch.label}")
+    executeCommand(ch, "pause", [:])
+}
+
+void componentReturnToBase(ch) {
+    if (logEnable) log.info("received return to base request from ${ch.label}")
+    executeCommand(ch, "return_to_base", [:])
+}
+
+void componentSetFanSpeed(ch, speed) {
+    if (logEnable) log.info("received set fan speed request from ${ch.label}")
+    executeCommand(ch, "set_fan_speed", [value: speed])
+}
+
+void componentStart(ch) {
+    if (logEnable) log.info("received start request from ${ch.label}")
+    executeCommand(ch, "start", [:])
+}
+
+void componentStop(ch) {
+    if (logEnable) log.info("received stop request from ${ch.label}")
+    executeCommand(ch, "stop", [:])
 }
 
 def closeConnection() {

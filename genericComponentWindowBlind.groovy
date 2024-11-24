@@ -23,6 +23,7 @@ Change history:
 0.1.59 - Yves Mercier - Change healthStatus handling
 2.2    - Yves Mercier - Modified from shade to use with blind type entities
 2.9    - Yves Mercier - Add windowShade attribute
+2.10   - Yves mercier - Add extra blind commands
 
 */
 
@@ -33,6 +34,11 @@ metadata
         capability "WindowBlind"
         capability "Refresh"
         capability "Health Check"
+
+        command "openTilt"
+        command "closeTilt"
+        command "startTiltChange", [["name":"Tilt*", "type":"ENUM", "constraints":["open","close"]]]
+        command "stopTiltChange"
     }
     preferences {
         input name: "txtEnable", type: "bool", title: "Enable descriptionText logging", defaultValue: true
@@ -85,6 +91,22 @@ void startPositionChange(direction) {
 
 void stopPositionChange() {
     parent?.componentStopPositionChange(this.device)
+}
+
+void startTiltChange(direction) {
+    parent?.componentStartTiltChange(this.device, direction)
+}
+
+void stopTiltChange() {
+    parent?.componentStopTiltChange(this.device)
+}
+
+void closeTilt() {
+    parent?.componentCloseTilt(this.device)
+}
+
+void openTilt() {
+    parent?.componentOpenTilt(this.device)
 }
 
 void setTiltLevel(tilt) {

@@ -1,7 +1,7 @@
 {
   "packageName": "HE-HA-control",
   "author": "ymerj",
-  "version": "2.9",
+  "version": "2.10",
   "minimumHEVersion": "2.1.9",
   "dateReleased": "2021-03-19",
   "drivers": [
@@ -157,6 +157,20 @@
       "name": "HADB Generic Component Occupancy Sensor",
       "namespace": "community",
       "location": "https://raw.githubusercontent.com/ymerj/HE-HA-control/main/HADBgenericComponentOccupancySensor.groovy",
+      "required": true
+    },
+    {
+      "id": "d31cc626-0afe-4ad5-a512-f5782358bf97",
+      "name": "HADB Generic Component Text",
+      "namespace": "community",
+      "location": "https://raw.githubusercontent.com/ymerj/HE-HA-control/main/HADBgenericComponentText.groovy",
+      "required": true
+    },
+    {
+      "id": "d31cc626-0afe-4ad5-a512-f5782358bf98",
+      "name": "HADB Generic Component Vacuum",
+      "namespace": "community",
+      "location": "https://raw.githubusercontent.com/ymerj/HE-HA-control/main/HADBgenericComponentVacuum.groovy",
       "required": true
     }
   ],

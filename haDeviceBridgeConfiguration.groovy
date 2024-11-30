@@ -35,6 +35,7 @@
 * 2.6        2024-05-31 Yves Mercier       Add support for humidifiers
 * 2.7        2024-08-13 Yves Mercier       Add support for events, remove HA states response from debug log
 * 2.10       2024-11-12 Yves Mercier       Add support for text and vacuums
+* 2.11       2024-11-30 Yves Mercier       Add limited support for media_player entity
 */
 
 definition(
@@ -109,7 +110,7 @@ def discoveryPage(params)
                 resp.data.each
                 {
                     domain = it.entity_id?.tokenize(".")?.getAt(0)
-                    if(["fan", "switch", "light", "binary_sensor", "sensor", "device_tracker", "cover", "lock", "climate", "input_boolean", "number", "input_number", "button", "input_button", "valve", "humidifier", "event", "text", "input_text", "vacuum"].contains(domain))
+                    if(["fan", "switch", "light", "binary_sensor", "sensor", "device_tracker", "cover", "lock", "climate", "input_boolean", "number", "input_number", "button", "input_button", "valve", "humidifier", "event", "text", "input_text", "vacuum", "media_player"].contains(domain))
                     {
                         state.entityList.put(it.entity_id, "${it.attributes?.friendly_name} (${it.entity_id})")
                     }

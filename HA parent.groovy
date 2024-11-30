@@ -91,7 +91,8 @@
 * 2.7    2024-08-15 Yves Mercier       Add support for events, change fan error handling, remap fan percentage to accomodate for missing named speed, forgo thermostat mode translation, add thermostat presets, use device ID instead of device name for service call.
 * 2.8    2024-09-03 Yves Mercier       Fix custom call sevice to allow colons in data, fix thermostat set_preset calls.
 * 2.9    2024-10-29 Yves Mercier       Add windowsShade attribute to blinds, add attributes to unknown sensor, add support for espresense.
-* 2.10   2024-11-24 yves Mercier       Add support for text and vacuum entities. Add extra blind commands. 
+* 2.10   2024-11-24 Yves Mercier       Add support for text and vacuum entities. Add extra blind commands.
+* 2.11   2024-11-30 Yves Mercier       Add limited support for media_player entity.
 */
 
 import groovy.json.JsonSlurper
@@ -443,6 +444,26 @@ def parse(String description) {
                 mapping = translateDevices(domain, newVals, friendly, origin)
                 if (mapping) updateChildDevice(mapping, entity, friendly)
                 break
+            case "media_player":
+                def status = newVals[0]
+                if (newVals[0] == "off") status = "unknown"
+                def volume = newState?.attributes?.volume_level
+                if (volume) volume = Math.round((volume * 100).toInteger())
+                def mute = newState?.attributes?.is_volume_muted
+                def mediaType = newState?.attributes?.media_content_type
+                def duration = newState?.attributes?.media_duration
+                def position = newState?.attributes?.media_position
+                def trackData = newState?.attributes?.media_content_id
+                def title = newState?.attributes?.media_title ?: '---'
+                def artist = newState?.attributes?.media_artist ?: '---' 
+                def album = newState?.attributes?.media_album_name ?: '---' 
+                def trackDescription = "title: " + title + ", artist: " + artist + ", album: " + album
+                def mediaInputSource = newState?.attributes?.input_source
+                def supportedInputs = newState?.attributes?.source_list
+                newVals += [status, mute, volume, mediaType, duration, position, trackData, trackDescription] //, mediaInputSource, supportedInputs]
+                mapping = translateDevices(domain, newVals, friendly, origin)
+                if (mapping) updateChildDevice(mapping, entity, friendly)
+                break
             default:
                 if (logEnable) log.info("No mapping exists for domain: ${domain}, device_class: ${device_class}.  Please contact devs to have this added.")
         }
@@ -536,6 +557,7 @@ def translateDevices(domain, newVals, friendly, origin)
             input_number: [type: "Generic Component Number",            event: [[name: "number", value: newVals[0], unit: newVals[1] ?: "", type: origin, descriptionText:"${friendly} was set to ${newVals[0]} ${newVals[1] ?: ''} [${origin}]"],[name: "minimum", value: newVals[2], descriptionText:"${friendly} minimum value is ${newVals[2]}"],[name: "maximum", value: newVals[3], descriptionText:"${friendly} maximum value is ${newVals[3]}"],[name: "step", value: newVals[4], descriptionText:"${friendly} step is ${newVals[4]}"]], namespace: "community"],
             number: [type: "Generic Component Number",                  event: [[name: "number", value: newVals[0], unit: newVals[1] ?: "", type: origin, descriptionText:"${friendly} was set to ${newVals[0]} ${newVals[1] ?: ''} [${origin}]"],[name: "minimum", value: newVals[2], descriptionText:"${friendly} minimum value is ${newVals[2]}"],[name: "maximum", value: newVals[3], descriptionText:"${friendly} maximum value is ${newVals[3]}"],[name: "step", value: newVals[4], descriptionText:"${friendly} step is ${newVals[4]}"]], namespace: "community"],
             vacuum: [type: "HADB Generic Component Vacuum",             event: [[name: "vacuum", value: newVals[0], type: origin, descriptionText:"${friendly} is ${newVals[0]} [${origin}]"],[name: "speed", value: newVals[1], type: origin, descriptionText:"${friendly} speed was set to ${newVals[1]} [${origin}]"],[name: "fanSeedList", value: newVals[2], type: origin, descriptionText:"${friendly} speed list is ${newVals[2]} [${origin}]"]], namespace: "community"],
+            media_player: [type: "HADB Generic Component Media Player", event: [[name: "switch", value: newVals[0] == "off" ? "off":"on", type: origin, descriptionText:"${friendly} was turned ${newVals[0] == 'off' ? 'off':'on'} [${origin}]"],[name: "status", value: newVals[1], type: origin, descriptionText:"${friendly} status was set to ${newVals[1]} [${origin}]"],[name: "mute", value: newVals[2] ? "muted":"unmuted", type: origin, descriptionText:"${friendly} volume was ${newVals[2] ? 'muted':'unmuted'} [${origin}]"],[name: "volume", value: newVals[3], type: origin, descriptionText:"${friendly} volume was set to ${newVals[3]} [${origin}]"],[name: "mediaType", value: newVals[4], type: origin, descriptionText:"${friendly} mediaType was set to ${newVals[4]} [${origin}]"],[name: "duration", value: newVals[5], type: origin, descriptionText:"${friendly} duration was set to ${newVals[5]} [${origin}]"],[name: "position", value: newVals[6], type: origin, descriptionText:"${friendly} position was set to ${newVals[6]} [${origin}]"],[name: "trackData", value: newVals[7], type: origin, descriptionText:"${friendly} track was set to ${newVals[7]} [${origin}]"],[name: "trackDescription", value: newVals[8], type: origin, descriptionText:"${friendly} trackDescription was set to ${newVals[8]} [${origin}]"]], namespace: "community"],
         ]
     return mapping[domain]
 }
@@ -964,6 +986,92 @@ void componentStart(ch) {
 void componentStop(ch) {
     if (logEnable) log.info("received stop request from ${ch.label}")
     executeCommand(ch, "stop", [:])
+}
+
+void componentMute(ch) {
+    if (logEnable) log.info("received mute request from ${ch.label}")
+    executeCommand(ch, "volume_mute", [is_volume_muted: "true"])
+}
+
+void componentUnmute(ch) {
+    if (logEnable) log.info("received unmute request from ${ch.label}")
+    executeCommand(ch, "volume_mute", [is_volume_muted: "false"])
+}
+
+void  componentVolumeUp(ch) {
+    if (logEnable) log.info("received volume up request from ${ch.label}")
+    executeCommand(ch, "volume_up", [:])
+}
+
+void componentVolumeDown(ch) {
+    if (logEnable) log.info("received volume down request from ${ch.label}")
+    executeCommand(ch, "volume_down", [:])
+}
+
+void componentSetVolume(ch, volume) {
+    if (logEnable) log.info("received set volume level request from ${ch.label}")
+    volume = volume / 100
+    executeCommand(ch, "volume_set", [volume_level: volume])
+}
+
+void componentSupportedInputs(ch, sourceList) {
+}
+
+void componentMediaInputSource(ch, source) {
+    if (logEnable) log.info("received input source from ${ch.label}")
+    executeCommand(ch, "select_source", [source: source])
+}
+
+void componentPauseMedia(ch) {
+    if (logEnable) log.info("received pause from ${ch.label}")
+    executeCommand(ch, "media_pause", [:])
+}
+
+void componentPlay(ch) {
+    if (logEnable) log.info("received play from ${ch.label}")
+    executeCommand(ch, "media_play", [:])
+}
+
+void componentStopMedia(ch) {
+    if (logEnable) log.info("received stop from ${ch.label}")
+    executeCommand(ch, "media_stop", [:])
+}
+
+void componentPlayText(ch, text) {
+}
+
+void componentPlayTrack(ch, mediaType, trackUri) {
+    if (logEnable) log.info("received play track from ${ch.label}")
+    executeCommand(ch, "play_media", [media_content_type: mediaType, media_content_id: trackUri])
+}
+
+void componentPreviousTrack(ch) {
+    if (logEnable) log.info("received previous from ${ch.label}")
+    executeCommand(ch, "media_previous_track", [:])
+}
+
+void componentNextTrack(ch) {
+    if (logEnable) log.info("received next from ${ch.label}")
+    executeCommand(ch, "media_next_track", [:])
+}
+
+void componentShuffle(ch, value) {
+    if (logEnable) log.info("received shuffle from ${ch.label}")
+    executeCommand(ch, "suffle_set", [suffle: value])
+}
+
+void componentRepeat(ch, value) {
+    if (logEnable) log.info("received repeat from ${ch.label}")
+    executeCommand(ch, "repeat_set", [repeat: value])
+}
+
+void componentRestoreTrack(ch, trackUri) {
+}
+
+void componentResumeTrack(ch, trackUri) {
+}
+
+void componentSetTrack(ch, trackUri) {
 }
 
 def closeConnection() {

@@ -838,8 +838,8 @@ def componentSetThermostatFanMode(ch, fanmode) {
     executeCommand(ch, "set_fan_mode", [fan_mode: fanmode])
 }
 
-def componentSetPreset(ch, presetNumber) {
-    if (logEnable) log.info("received set preset request from ${ch.label}")
+def componentSetPresetNumber(ch, presetNumber) { 
+    if (logEnable) log.info("received set preset number request from ${ch.label}")
     def presetsList = ch.currentValue("supportedPresets")?.tokenize(',=[]')
     def max = presetsList.size() / 2
     max = max.toInteger()
@@ -849,8 +849,13 @@ def componentSetPreset(ch, presetNumber) {
     executeCommand(ch, "set_preset_mode", data)
 }
 
-def componentSetHumidifierMode(ch, modeNumber) {
-    if (logEnable) log.info("received set mode request from ${ch.label}")
+def componentSetPresetName(ch, presetName) {
+    if (logEnable) log.info("received set preset name request from ${ch.label}")
+    executeCommand(ch, "set_preset_mode", [preset_mode: presetName])
+}
+	
+def componentSetHumidifierModeNumber(ch, modeNumber) {
+    if (logEnable) log.info("received set mode number request from ${ch.label}")
     def modesList = ch.currentValue("supportedModes")?.tokenize(',=[]')
     def max = modesList.size() / 2
     max = max.toInteger()
@@ -860,8 +865,13 @@ def componentSetHumidifierMode(ch, modeNumber) {
     executeCommand(ch, "set_mode", data)
 }
 
-def componentselect(ch, optionNumber) {
-    if (logEnable) log.info("received select option request from ${ch.label}")
+def componentSetHumidifierModeName(ch, modeName) {
+    if (logEnable) log.info("received set mode name request from ${ch.label}")
+    executeCommand(ch, "set_mode", [mode: modeName])
+}
+
+def componentselectNumber(ch, optionNumber) {
+    if (logEnable) log.info("received select option number request from ${ch.label}")
     def optionsList = ch.currentValue("options")?.tokenize(',=[]')
     def max = optionsList.size() / 2
     max = max.toInteger()
@@ -869,6 +879,11 @@ def componentselect(ch, optionNumber) {
     optionNumber = (optionNumber < 1) ? 1 : ((optionNumber > max) ? max : optionNumber)   
     data = [option: optionsList[(optionNumber * 2) - 1].trim().replaceAll("}","")]
     executeCommand(ch, "select_option", data)
+}
+
+def componentSelectName(ch, optionName) {
+    if (logEnable) log.info("received select option name request from ${ch.label}")
+    executeCommand(ch, "select_option", [option: optionName])
 }
 
 def componentSetHumidity(ch, target) {

@@ -135,28 +135,14 @@ def setPreset(preset){
     setPresetNumber(preset)
 }
 
-def setPresetNumber(presetNumber)
-    {
-    if (this.device.currentValue("supportedPresets") == "none")
-        {
-        log.warn "no supported presets defined"
-        }
-    else
-        {
-        parent?.componentSetPresetNumber(this.device, presetNumber)
-        }
+def setPresetNumber(presetNumber) {
+    if (this.device.currentValue("supportedPresets") == "none") log.warn "no supported presets defined"
+    else parent?.componentSetPresetNumber(this.device, presetNumber)
     }
 
-def setPresetName(presetName)
-    {
-    if (this.device.currentValue("supportedPresets") == "none")
-        {
-        log.warn "no supported presets defined"
-        }
-    else
-        {
-        parent?.componentSetPresetName(this.device, presetName)
-        }
+def setPresetName(presetName) {
+    if (this.device.currentValue("supportedPresets") == "none") log.warn "no supported presets defined"
+    else parent?.componentSetPresetName(this.device, presetName)
     }
 
 def logsOff(){

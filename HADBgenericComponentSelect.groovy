@@ -30,7 +30,8 @@ metadata
         capability "Refresh"
         capability "Health Check"
 
-        command "selectOption", [[ name: "newValue", type: "NUMBER", description: "Select an option" ]]
+        command "selectOptionNumber", [[ name: "optionNumber", type: "NUMBER", description: "Select option number" ]]
+        command "selectOptionName", [[ name: "optionName", type: "STRING", description: "Select option name" ]]
         }
     preferences
         {
@@ -68,9 +69,14 @@ void parse(List<Map> description)
         }
     }
 
-void selectOption(newValue)
+void selectOptionNumber(optionNumber)
     {
-    parent?.componentSetVariable(this.device, newValue)
+    parent?.componentSelectOptionNumber(this.device, optionNumber)
+    }
+
+void selectOptionName(optionName)
+    {
+    parent?.componentSelectOptionName(this.device, optionName)
     }
 
 void refresh()

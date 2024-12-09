@@ -11,7 +11,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 -------------------------------------------
 Change history:
-2.6 - Yves Mercier - initial version
+2.6  - Yves Mercier - initial version
+2.12 - Yves Mercier - add mode by name
 
 */
 

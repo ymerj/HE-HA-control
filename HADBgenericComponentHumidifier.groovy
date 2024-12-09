@@ -76,15 +76,17 @@ void off() {
 }
 
 def setMode(mode) {
-    parent?.componentSetHumidifierModeNumber(this.device, mode)
+    setModeNumber(mode)
 }
 
-def setModeNumber(modeNumber) {
-    parent?.componentSetHumidifierModeNumber(this.device, modeNumber)
+def setModeNumber(modeNumber){
+    if (this.device.currentValue("supportedModes") == "none") log.warn "no supported modes defined"
+    else parent?.componentSetHumidifierModeNumber(this.device, modeNumber)
 }
 
 def setModeName(modeName) {
-    parent?.componentSetHumidifierModeName(this.device, modeName)
+    if (this.device.currentValue("supportedModes") == "none") log.warn "no supported modes defined"
+    else parent?.componentSetHumidifierModeName(this.device, modeName)
 }
 
 def setHumidity(target) {

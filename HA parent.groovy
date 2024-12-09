@@ -870,7 +870,7 @@ def componentSetHumidifierModeName(ch, modeName) {
     executeCommand(ch, "set_mode", [mode: modeName])
 }
 
-def componentselectNumber(ch, optionNumber) {
+def componentselectOptionNumber(ch, optionNumber) {
     if (logEnable) log.info("received select option number request from ${ch.label}")
     def optionsList = ch.currentValue("options")?.tokenize(',=[]')
     def max = optionsList.size() / 2
@@ -881,7 +881,7 @@ def componentselectNumber(ch, optionNumber) {
     executeCommand(ch, "select_option", data)
 }
 
-def componentSelectName(ch, optionName) {
+def componentSelectOptionName(ch, optionName) {
     if (logEnable) log.info("received select option name request from ${ch.label}")
     executeCommand(ch, "select_option", [option: optionName])
 }

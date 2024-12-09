@@ -91,7 +91,7 @@
 * 2.7    2024-08-15 Yves Mercier       Add support for events, change fan error handling, remap fan percentage to accomodate for missing named speed, forgo thermostat mode translation, add thermostat presets, use device ID instead of device name for service call.
 * 2.8    2024-09-03 Yves Mercier       Fix custom call sevice to allow colons in data, fix thermostat set_preset calls.
 * 2.9    2024-10-29 Yves Mercier       Add windowsShade attribute to blinds, add attributes to unknown sensor, add support for espresense.
-* 2.10   2024-11-12 yves Mercier       Add support for text and vacuum entities. Enhance blind control.
+* 2.10   2024-11-24 Yves Mercier       Add support for text and vacuum entities. Add extra blind commands.
 * 2.11   2024-11-30 Yves Mercier       Add limited support for media_player entity.
 * 2.12   2024-12-15 Yves Mercier       Add support for select entity. Clean code.
 */
@@ -362,7 +362,7 @@ def parse(String description) {
                 if ((!device_class) && (unit in ["Bq/m³","pCi/L"])) {
                     device_class = "radon" // if there is no device_class, we need to infer from the units
                 }
-		        else if ((!device_class) && (attributes.containsKey("distance"))) {
+                else if ((!device_class) && (attributes.containsKey("distance"))) {
                     device_class = "occupancy"
                     def distance = attributes.distance
                     newVals = [newVals[0]] + distance

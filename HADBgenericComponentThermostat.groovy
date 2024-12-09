@@ -18,10 +18,12 @@ limitations under the License.
 
 Change history:
 
-0.1 - ritchierich - initial version
-2.4 - Yves Mercier - Modified healthCheck handling
-2.7 - Yves Mercier - Add support for presets
-2.8 - mluck - corrected typo
+0.1  - ritchierich - initial version
+2.4  - Yves Mercier - Modified healthCheck handling
+2.7  - Yves Mercier - Add support for presets
+2.8  - mluck - corrected typo
+2.12 - Yves Mercier -  Add presets by name
+
 */
 
 metadata
@@ -42,7 +44,9 @@ metadata
         input name: "txtEnable", type: "bool", title: "Enable descriptionText logging", defaultValue: true
     }
 
-    command "setPreset", [[name: "presetNumber", type: "NUMBER", description: "Preset number"]]
+    command "setPreset", [[name: "preset", type: "NUMBER", description: "Preset number"]]
+    command "setPresetName", [[name: "presetName", type: "STRING", description: "Preset name"]]
+    command "setPresetNumber", [[name: "presetNumber", type: "NUMBER", description: "Preset number"]]
     
     attribute "healthStatus", "enum", ["offline", "online"]
     attribute "supportedThermostatFanModes", "JSON_OBJECT"
@@ -127,7 +131,11 @@ void fanOn() {
     parent?.componentFanOn(this.device)
 }
 
-def setPreset(presetNumber)
+def setPreset(preset){
+    setPresetNumber(preset)
+}
+
+def setPresetNumber(presetNumber)
     {
     if (this.device.currentValue("supportedPresets") == "none")
         {
@@ -135,7 +143,19 @@ def setPreset(presetNumber)
         }
     else
         {
-        parent?.componentSetPreset(this.device, presetNumber)
+        parent?.componentSetPresetNumber(this.device, presetNumber)
+        }
+    }
+
+def setPresetName(presetName)
+    {
+    if (this.device.currentValue("supportedPresets") == "none")
+        {
+        log.warn "no supported presets defined"
+        }
+    else
+        {
+        parent?.componentSetPresetName(this.device, presetName)
         }
     }
 

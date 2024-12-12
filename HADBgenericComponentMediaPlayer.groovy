@@ -19,6 +19,7 @@ limitations under the License.
 Change history:
 
 2.11 - Yves Mercier - Initial version
+2.12 - Yves Mercier - Default to music as type for included playTrack command
 
 */
 
@@ -134,8 +135,8 @@ void playText(text) {
 }
 
 void playTrack(trackUri) {
-    //parent?.componentPlayTrack(this.device, trackUri)
-    log.error "media type mandatory for play track"
+    parent?.componentPlayTrack(this.device, "music", trackUri)
+    log.warn "media type set to music for default playTrack command"
 }
 
 void playTrack(trackUri, mediaType) {

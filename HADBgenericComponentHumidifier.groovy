@@ -75,7 +75,7 @@ void off() {
 
 def setMode(mode){
     if (this.device.currentValue("supportedModes") == "none") log.warn "no supported modes defined"
-    else parent?.componentSetHumidifierModeNumber(this.device, mode)
+    else parent?.componentSetHumidifierMode(this.device, mode)
 }
 
 def setHumidity(target) {

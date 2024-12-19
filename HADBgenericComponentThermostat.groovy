@@ -44,10 +44,8 @@ metadata
         input name: "txtEnable", type: "bool", title: "Enable descriptionText logging", defaultValue: true
     }
 
-    command "setPreset", [[name: "preset", type: "NUMBER", description: "Preset number"]]
-    command "setPresetName", [[name: "presetName", type: "STRING", description: "Preset name"]]
-    command "setPresetNumber", [[name: "presetNumber", type: "NUMBER", description: "Preset number"]]
-    
+    command "setPreset", [[name: "preset", type: "STRING", description: "Preset"]]
+
     attribute "healthStatus", "enum", ["offline", "online"]
     attribute "supportedThermostatFanModes", "JSON_OBJECT"
     attribute "supportedThermostatModes", "JSON_OBJECT"
@@ -132,18 +130,9 @@ void fanOn() {
 }
 
 def setPreset(preset){
-    setPresetNumber(preset)
+    if (this.device.currentValue("supportedPresets") == "none") log.warn "no supported presets defined"
+    else parent?.componentSetPreset(this.device, preset)
 }
-
-def setPresetNumber(presetNumber) {
-    if (this.device.currentValue("supportedPresets") == "none") log.warn "no supported presets defined"
-    else parent?.componentSetPresetNumber(this.device, presetNumber)
-    }
-
-def setPresetName(presetName) {
-    if (this.device.currentValue("supportedPresets") == "none") log.warn "no supported presets defined"
-    else parent?.componentSetPresetName(this.device, presetName)
-    }
 
 def logsOff(){
     log.warn("debug logging disabled...")

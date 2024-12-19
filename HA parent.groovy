@@ -428,6 +428,7 @@ def parse(String description) {
                 break
             
             case "select":
+            case "input_select":
                 def options = []
                 options = newState?.attributes?.options?.indexed(1)
                 newVals += options
@@ -461,9 +462,11 @@ def parse(String description) {
                     case "channel": trackDescription = "Channel: " + channel; break
                     }
                 def mediaInputSource = newState?.attributes?.input_source
-                def supportedInputs = newState?.attributes?.source_list
-                newVals += [status, mute, volume, mediaType, duration, position, trackData, trackDescription] //, mediaInputSource, supportedInputs]
+                def supportedInputs = newState?.attributes?.source_list?.indexed(1)
+                newVals += [status, mute, volume, mediaType, duration, position, trackData, trackDescription, mediaInputSource, supportedInputs]
                 mapping = translateDevices(domain, newVals, friendly, origin)
+                if (!supportedInputs) mapping.event.remove(10)
+                if (!mediaInputSource) mapping.event.remove(9)
                 if (mapping) updateChildDevice(mapping, entity, friendly)
                 break
             
@@ -560,8 +563,9 @@ def translateDevices(domain, newVals, friendly, origin)
             input_number: [type: "Generic Component Number",            event: [[name: "number", value: newVals[0], unit: newVals[1] ?: "", type: origin, descriptionText:"${friendly} was set to ${newVals[0]} ${newVals[1] ?: ''} [${origin}]"],[name: "minimum", value: newVals[2], descriptionText:"${friendly} minimum value is ${newVals[2]}"],[name: "maximum", value: newVals[3], descriptionText:"${friendly} maximum value is ${newVals[3]}"],[name: "step", value: newVals[4], descriptionText:"${friendly} step is ${newVals[4]}"]], namespace: "community"],
             number: [type: "Generic Component Number",                  event: [[name: "number", value: newVals[0], unit: newVals[1] ?: "", type: origin, descriptionText:"${friendly} was set to ${newVals[0]} ${newVals[1] ?: ''} [${origin}]"],[name: "minimum", value: newVals[2], descriptionText:"${friendly} minimum value is ${newVals[2]}"],[name: "maximum", value: newVals[3], descriptionText:"${friendly} maximum value is ${newVals[3]}"],[name: "step", value: newVals[4], descriptionText:"${friendly} step is ${newVals[4]}"]], namespace: "community"],
             vacuum: [type: "HADB Generic Component Vacuum",             event: [[name: "vacuum", value: newVals[0], type: origin, descriptionText:"${friendly} is ${newVals[0]} [${origin}]"],[name: "speed", value: newVals[1], type: origin, descriptionText:"${friendly} speed was set to ${newVals[1]} [${origin}]"],[name: "fanSeedList", value: newVals[2], type: origin, descriptionText:"${friendly} speed list is ${newVals[2]} [${origin}]"]], namespace: "community"],
-            media_player: [type: "HADB Generic Component Media Player", event: [[name: "switch", value: newVals[0] == "off" ? "off":"on", type: origin, descriptionText:"${friendly} was turned ${newVals[0] == 'off' ? 'off':'on'} [${origin}]"],[name: "status", value: newVals[1], type: origin, descriptionText:"${friendly} status was set to ${newVals[1]} [${origin}]"],[name: "mute", value: newVals[2] ? "muted":"unmuted", type: origin, descriptionText:"${friendly} volume was ${newVals[2] ? 'muted':'unmuted'} [${origin}]"],[name: "volume", value: newVals[3], type: origin, descriptionText:"${friendly} volume was set to ${newVals[3]} [${origin}]"],[name: "mediaType", value: newVals[4], type: origin, descriptionText:"${friendly} mediaType was set to ${newVals[4]} [${origin}]"],[name: "duration", value: newVals[5], type: origin, descriptionText:"${friendly} duration was set to ${newVals[5]} [${origin}]"],[name: "position", value: newVals[6], type: origin, descriptionText:"${friendly} position was set to ${newVals[6]} [${origin}]"],[name: "trackData", value: newVals[7], type: origin, descriptionText:"${friendly} track was set to ${newVals[7]} [${origin}]"],[name: "trackDescription", value: newVals[8], type: origin, descriptionText:"${friendly} trackDescription was set to ${newVals[8]} [${origin}]"]], namespace: "community"],
+            media_player: [type: "HADB Generic Component Media Player", event: [[name: "switch", value: newVals[0] == "off" ? "off":"on", type: origin, descriptionText:"${friendly} was turned ${newVals[0] == 'off' ? 'off':'on'} [${origin}]"],[name: "status", value: newVals[1], type: origin, descriptionText:"${friendly} status was set to ${newVals[1]} [${origin}]"],[name: "mute", value: newVals[2] ? "muted":"unmuted", type: origin, descriptionText:"${friendly} volume was ${newVals[2] ? 'muted':'unmuted'} [${origin}]"],[name: "volume", value: newVals[3], type: origin, descriptionText:"${friendly} volume was set to ${newVals[3]} [${origin}]"],[name: "mediaType", value: newVals[4], type: origin, descriptionText:"${friendly} mediaType was set to ${newVals[4]} [${origin}]"],[name: "duration", value: newVals[5], type: origin, descriptionText:"${friendly} duration was set to ${newVals[5]} [${origin}]"],[name: "position", value: newVals[6], type: origin, descriptionText:"${friendly} position was set to ${newVals[6]} [${origin}]"],[name: "trackData", value: newVals[7], type: origin, descriptionText:"${friendly} track was set to ${newVals[7]} [${origin}]"],[name: "trackDescription", value: newVals[8], type: origin, descriptionText:"${friendly} trackDescription was set to ${newVals[8]} [${origin}]"],[name: "mediaInputSource", value: newVals[9], type: origin, descriptionText:"${friendly} mediaInputSource was set to ${newVals[9]} [${origin}]"],[name: "supportedInputs", value: newVals[10], type: origin, descriptionText:"${friendly} supportedInputs was set to ${newVals[10]} [${origin}]"]], namespace: "community"],
             select: [type: "HADB Generic Component Select",             event: [[name: "currentOption", value: newVals[0], type: origin, descriptionText:"${friendly} was set to ${newVals[0]} [${origin}]"],[name: "options", value: newVals[1], descriptionText: "${friendly} options were set to ${newVals[1]}"]], namespace: "community"],
+            input_select: [type: "HADB Generic Component Select",       event: [[name: "currentOption", value: newVals[0], type: origin, descriptionText:"${friendly} was set to ${newVals[0]} [${origin}]"],[name: "options", value: newVals[1], descriptionText: "${friendly} options were set to ${newVals[1]}"]], namespace: "community"],
         ]
     return mapping[domain]
 }
@@ -838,52 +842,49 @@ def componentSetThermostatFanMode(ch, fanmode) {
     executeCommand(ch, "set_fan_mode", [fan_mode: fanmode])
 }
 
-def componentSetPresetNumber(ch, presetNumber) { 
+def componentSetPreset(ch, preset) { 
     if (logEnable) log.info("received set preset number request from ${ch.label}")
-    def presetsList = ch.currentValue("supportedPresets")?.tokenize(',=[]')
-    def max = presetsList.size() / 2
-    max = max.toInteger()
-    presetNumber = presetNumber.toInteger()
-    presetNumber = (presetNumber < 1) ? 1 : ((presetNumber > max) ? max : presetNumber)   
-    data = [preset_mode: presetsList[(presetNumber * 2) - 1].trim().replaceAll("}","")]
+    if (preset.toString().isNumber())
+        {
+        def presetsList = ch.currentValue("supportedPresets")?.tokenize(',=[]')
+        def max = presetsList.size() / 2
+        max = max.toInteger()
+        preset = preset.toInteger()
+        preset = (preset < 1) ? 1 : ((preset > max) ? max : preset)   
+        data = [preset_mode: presetsList[(preset * 2) - 1].trim().replaceAll("}","")]
+        }
+    else data = [preset_mode: preset]
     executeCommand(ch, "set_preset_mode", data)
 }
-
-def componentSetPresetName(ch, presetName) {
-    if (logEnable) log.info("received set preset name request from ${ch.label}")
-    executeCommand(ch, "set_preset_mode", [preset_mode: presetName])
-}
 	
-def componentSetHumidifierModeNumber(ch, modeNumber) {
+def componentSetHumidifierMode(ch, mode) {
     if (logEnable) log.info("received set mode number request from ${ch.label}")
-    def modesList = ch.currentValue("supportedModes")?.tokenize(',=[]')
-    def max = modesList.size() / 2
-    max = max.toInteger()
-    modeNumber = modeNumber.toInteger()
-    modeNumber = (modeNumber < 1) ? 1 : ((modeNumber > max) ? max : modeNumber)   
-    data = [mode: modesList[(modeNumber * 2) - 1].trim().replaceAll("}","")]
+    if (mode.toString().isNumber())
+        {
+        def modesList = ch.currentValue("supportedModes")?.tokenize(',=[]')
+        def max = modesList.size() / 2
+        max = max.toInteger()
+        mode = mode.toInteger()
+        mode = (mode < 1) ? 1 : ((mode > max) ? max : mode)   
+        data = [mode: modesList[(mode * 2) - 1].trim().replaceAll("}","")]
+        }
+    else data = [mode: mode]
     executeCommand(ch, "set_mode", data)
 }
 
-def componentSetHumidifierModeName(ch, modeName) {
-    if (logEnable) log.info("received set mode name request from ${ch.label}")
-    executeCommand(ch, "set_mode", [mode: modeName])
-}
-
-def componentselectOptionNumber(ch, optionNumber) {
+def componentSelectOption(ch, option) {
     if (logEnable) log.info("received select option number request from ${ch.label}")
-    def optionsList = ch.currentValue("options")?.tokenize(',=[]')
-    def max = optionsList.size() / 2
-    max = max.toInteger()
-    optionNumber = optionNumber.toInteger()
-    optionNumber = (optionNumber < 1) ? 1 : ((optionNumber > max) ? max : optionNumber)   
-    data = [option: optionsList[(optionNumber * 2) - 1].trim().replaceAll("}","")]
+    if (option.toString().isNumber())
+        {
+        def optionsList = ch.currentValue("options")?.tokenize(',=[]')
+        def max = optionsList.size() / 2
+        max = max.toInteger()
+        option = option.toInteger()
+        option = (option < 1) ? 1 : ((option > max) ? max : option)   
+        data = [option: optionsList[(option * 2) - 1].trim().replaceAll("}","")]
+        }
+    else data = [option: option]
     executeCommand(ch, "select_option", data)
-}
-
-def componentSelectOptionName(ch, optionName) {
-    if (logEnable) log.info("received select option name request from ${ch.label}")
-    executeCommand(ch, "select_option", [option: optionName])
 }
 
 def componentSetHumidity(ch, target) {
@@ -992,12 +993,19 @@ void componentSetVolume(ch, volume) {
     executeCommand(ch, "volume_set", [volume_level: volume])
 }
 
-void componentSupportedInputs(ch, sourceList) {
-}
-
-void componentMediaInputSource(ch, source) {
-    if (logEnable) log.info("received input source from ${ch.label}")
-    executeCommand(ch, "select_source", [source: source])
+void componentSetInputSource(ch, source) {
+    if (logEnable) log.info("received set input source from ${ch.label}")
+    if (source.toString().isNumber())
+        {
+        def sourcesList = ch.currentValue("supportedInputs")?.tokenize(',=[]')
+        def max = sourcesList.size() / 2
+        max = max.toInteger()
+        source = source.toInteger()
+        source = (source < 1) ? 1 : ((source > max) ? max : source)   
+        data = [source: sourcesList[(source * 2) - 1].trim().replaceAll("}","")]
+        }
+    else data = [source: source]
+    executeCommand(ch, "select_source", data)
 }
 
 void componentPauseMedia(ch) {

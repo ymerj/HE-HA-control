@@ -32,9 +32,7 @@ metadata
         input name: "txtEnable", type: "bool", title: "Enable descriptionText logging", defaultValue: true
         }
 
-    command "setMode", [[name: "mode", type: "NUMBER", description: "Mode number"]]
-    command "setModeName", [[name: "modeName", type: "STRING", description: "Mode name"]]
-    command "setModeNumber", [[name: "modeNumber", type: "NUMBER", description: "Mode number"]]
+    command "setMode", [[name: "mode", type: "STRING", description: "Mode"]]
     command "setHumidity", [[name: "target", type: "NUMBER", description: "Target humidity"]]
 
     attribute "healthStatus", "enum", ["offline", "online"]
@@ -75,18 +73,9 @@ void off() {
     parent?.componentOff(this.device)
 }
 
-def setMode(mode) {
-    setModeNumber(mode)
-}
-
-def setModeNumber(modeNumber){
+def setMode(mode){
     if (this.device.currentValue("supportedModes") == "none") log.warn "no supported modes defined"
-    else parent?.componentSetHumidifierModeNumber(this.device, modeNumber)
-}
-
-def setModeName(modeName) {
-    if (this.device.currentValue("supportedModes") == "none") log.warn "no supported modes defined"
-    else parent?.componentSetHumidifierModeName(this.device, modeName)
+    else parent?.componentSetHumidifierModeNumber(this.device, mode)
 }
 
 def setHumidity(target) {

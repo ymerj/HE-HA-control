@@ -19,7 +19,6 @@ limitations under the License.
 Change history:
 
 2.11 - Yves Mercier - Initial version
-2.12 - Yves Mercier - Default to music as type for included playTrack command
 
 */
 
@@ -108,13 +107,8 @@ void setLevel(level) {
     parent?.componentSetVolume(this.device, level)
 }
 
-void supportedInputs(sourceList) {
-    //parent?.componentSupportedInputs(this.device, sourceList)
-    log.warn "supportedInputs is not implemented"
-}
-
-void mediaInputSource(source) {
-    parent?.componentMediaInputSource(this.device, source)
+void setInputSource(source) {
+    parent?.componentSetInputSource(this.device, source)
 }
 
 void pause() {

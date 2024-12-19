@@ -93,7 +93,7 @@
 * 2.9    2024-10-29 Yves Mercier       Add windowsShade attribute to blinds, add attributes to unknown sensor, add support for espresense.
 * 2.10   2024-11-24 Yves Mercier       Add support for text and vacuum entities. Add extra blind commands.
 * 2.11   2024-11-30 Yves Mercier       Add limited support for media_player entity.
-* 2.12   2024-12-15 Yves Mercier       Add support for select entity. Clean code.
+* 2.12   2024-12-15 Yves Mercier       Add support for select entity. Clean code. Add item selection by name.
 */
 
 import groovy.json.JsonSlurper
@@ -461,7 +461,7 @@ def parse(String description) {
                     case "episode": trackDescription += ", Serie: " + seriesTitle + ", Season: " + season + ", Episode: " + episode; break
                     case "channel": trackDescription = "Channel: " + channel; break
                     }
-                def mediaInputSource = newState?.attributes?.input_source
+                def mediaInputSource = newState?.attributes?.source
                 def supportedInputs = newState?.attributes?.source_list?.indexed(1)
                 newVals += [status, mute, volume, mediaType, duration, position, trackData, trackDescription, mediaInputSource, supportedInputs]
                 mapping = translateDevices(domain, newVals, friendly, origin)

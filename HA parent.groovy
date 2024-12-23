@@ -93,6 +93,7 @@
 * 2.9    2024-10-29 Yves Mercier       Add windowsShade attribute to blinds, add attributes to unknown sensor, add support for espresense.
 * 2.10   2024-11-24 Yves Mercier       Add support for text and vacuum entities. Add extra blind commands.
 * 2.11   2024-11-30 Yves Mercier       Add limited support for media_player entity.
+* 2.12   2024-12-15 Yves Mercier       Add support for select entity. Clean code. Add item selection by name. Fix button event.
 */
 
 import groovy.json.JsonSlurper
@@ -169,7 +170,6 @@ def uninstalled() {
 
 def webSocketStatus(String status){
     if (logEnable) log.debug("webSocket ${status}")
-
     if ((status == "status: closing") && (state.wasExpectedClose)) {
         state.wasExpectedClose = false
         sendEvent(name: "Connection", value: "Closed")
@@ -195,7 +195,6 @@ def reconnectWebSocket() {
     state.reconnectDelay = (state.reconnectDelay ?: 1) * 2
     // don't let delay get too crazy, max it out at 10 minutes
     if(state.reconnectDelay > 600) state.reconnectDelay = 600
-
     //If the Home Assistant Hub is offline, give it some time before trying to reconnect
     runIn(state.reconnectDelay, initialize)
 }
@@ -203,28 +202,23 @@ def reconnectWebSocket() {
 def parse(String description) {
     if (logEnable) log.debug("parse(): description = ${description}")
     def response = null;
-    try{
+    try {
         response = new groovy.json.JsonSlurper().parseText(description)
-	
-	if (response.type != "event") return
-	def newState = response?.event?.variables?.trigger?.to_state
-	if (newState?.state?.toLowerCase() == "unknown") return
-        
+	    if (response.type != "event") return
+	    def newState = response?.event?.variables?.trigger?.to_state
+	    if (newState?.state?.toLowerCase() == "unknown") return
         def origin = "physical"
         if (newState?.context?.user_id) origin = "digital"
-        
         def newVals = []
         def entity = response?.event?.variables?.trigger?.entity_id        
         def domain = entity?.tokenize(".")?.getAt(0)
         def device_class = newState?.attributes?.device_class
         def friendly = newState?.attributes?.friendly_name
-
         newVals << newState?.state
-        def mapping = null
-        
+        def mapping = null       
         if (logEnable) log.debug("parse: domain: ${domain}, device_class: ${device_class}, entity: ${entity}, newVals: ${newVals}, friendly: ${friendly}")
-        
-        switch (domain) {
+        switch (domain)
+            {
             case "fan":
                 def speed = newState?.attributes?.speed?.toLowerCase()
                 choices =  ["off","low","medium-low","medium","medium-high","high","auto"]
@@ -241,25 +235,13 @@ def parse(String description) {
                     {
                     switch (percentage.toInteger())
                         {
-                        case 0: 
-                            speed = "off"
-                            break
-                        case 1..30: 
-                            speed = "low"
-                            break
-                        case 31..50: 
-                            speed = "medium-low"
-                            break
-                        case 51..70: 
-                            speed = "medium"
-                            break
-                        case 71..90: 
-                            speed = "medium-high"
-                            break
-                        case 91..100: 
-                            speed = "high"
-                        default:
-                            if (logEnable) log.info("Invalid fan percentage received - ${percentage}")
+                        case 0: speed = "off"; break
+                        case 1..30: speed = "low"; break
+                        case 31..50: speed = "medium-low"; break
+                        case 51..70: speed = "medium"; break
+                        case 71..90: speed = "medium-high"; break
+                        case 91..100: speed = "high"; break
+                        default: if (logEnable) log.info("Invalid fan percentage received - ${percentage}")
                         }
                     }
                 newVals += speed
@@ -269,45 +251,37 @@ def parse(String description) {
                 if (!speed) mapping.event.remove(1)
                 if (mapping) updateChildDevice(mapping, entity, friendly)
                 break
+            
             case "cover":
                 def pos = newState?.attributes?.current_position?.toInteger()
                 newVals += pos
                 def tilt = newState?.attributes?.current_tilt_position?.toInteger()
                 newVals += tilt
-                switch (device_class) {
-                   case {it in ["blind","shutter","window"]}:
-                       device_class = "blind"
-                       break
-                   case {it in ["curtain","shade"]}:
-                       device_class = "shade"
-                       break
-                   case "garage":
-                       break
-                   default:
-                       device_class = "door"
-                }
+                switch (device_class)
+                   {
+                   case {it in ["blind","shutter","window"]}: device_class = "blind"; break
+                   case {it in ["curtain","shade"]}: device_class = "shade"; break
+                   case "garage": break
+                   default: device_class = "door"
+                   }
                 mapping = translateCovers(device_class, newVals, friendly, origin)
                 if (mapping) updateChildDevice(mapping, entity, friendly)
                 break
+            
             case "event":
                 def eventType = newState?.attributes?.event_type
-                switch (eventType) {
-                    case {it.contains("double")}:
-                        eventType = "doubleTapped"
-                        break
-                    case {it.contains("hold")}:
-                        eventType = "held"
-                        break
-                    case {it.contains("release")}:
-                        eventType = "released"
-                        break
-                    default:
-                        eventType = "pushed"
-                 }
+                switch (eventType)
+                    {
+                    case {it.contains("double")}: eventType = "doubleTapped"; break
+                    case {it.contains("hold")}: eventType = "held"; break
+                    case {it.contains("release")}: eventType = "released"; break
+                    default: eventType = "pushed"
+                    }
                 newVals += eventType
                 mapping = translateDevices(domain, newVals, friendly, origin)
                 if (mapping) updateChildDevice(mapping, entity, friendly)
                 break
+                
             case "input_text":
             case "text":
             case "lock":
@@ -318,6 +292,7 @@ def parse(String description) {
                 mapping = translateDevices(domain, newVals, friendly, origin)
                 if (mapping) updateChildDevice(mapping, entity, friendly)
                 break
+            
             case "light":
                 def level = newState?.attributes?.brightness
                 if (level) level = Math.round((level.toInteger() * 100 / 255))
@@ -363,10 +338,12 @@ def parse(String description) {
                     }
                 if (mapping) updateChildDevice(mapping, entity, friendly)
                 break
+            
             case "binary_sensor":
                 mapping = translateBinarySensors(device_class, newVals, friendly, origin)
                 if (mapping) updateChildDevice(mapping, entity, friendly)
                 break
+            
             case "input_number":
             case "number":
                 def minimum = newState?.attributes?.min
@@ -377,6 +354,7 @@ def parse(String description) {
                 mapping = translateDevices(domain, newVals, friendly, origin)
                 if (mapping) updateChildDevice(mapping, entity, friendly)
                 break
+            
             case "sensor":
                 def attributes = newState?.attributes
                 def unit = attributes?.unit_of_measurement
@@ -384,7 +362,7 @@ def parse(String description) {
                 if ((!device_class) && (unit in ["Bq/m³","pCi/L"])) {
                     device_class = "radon" // if there is no device_class, we need to infer from the units
                 }
-		else if ((!device_class) && (attributes.containsKey("distance"))) {
+                else if ((!device_class) && (attributes.containsKey("distance"))) {
                     device_class = "occupancy"
                     def distance = attributes.distance
                     newVals = [newVals[0]] + distance
@@ -393,6 +371,7 @@ def parse(String description) {
                 mapping = translateSensors(device_class, newVals, friendly, origin)
                 if (mapping) updateChildDevice(mapping, entity, friendly)
                 break
+            
             case "climate":
                 def thermostat_mode = newState?.state
                 def current_temperature = newState?.attributes?.current_temperature
@@ -416,12 +395,14 @@ def parse(String description) {
                 if (!current_humidity) mapping.event.remove(11) // some thermostats don't provide humidity reading
                 if (mapping) updateChildDevice(mapping, entity, friendly)
                 break
+            
             case "button":
             case "input_button":
                 newVals = [1]
                 mapping = translateDevices(domain, newVals, friendly, origin)
                 if (mapping) updateChildDevice(mapping, entity, friendly)
                 break
+            
             case "humidifier":
                 humidifierMode = newState?.attributes?.mode
                 def supportedModes = []
@@ -436,6 +417,7 @@ def parse(String description) {
                 if (!currentHumidity) mapping.event.remove(5)
                 if (mapping) updateChildDevice(mapping, entity, friendly)
                 break
+            
             case "vacuum":
                 def speed = newState?.attributes?.fan_speed
                 def fanSpeedList = []
@@ -444,6 +426,16 @@ def parse(String description) {
                 mapping = translateDevices(domain, newVals, friendly, origin)
                 if (mapping) updateChildDevice(mapping, entity, friendly)
                 break
+            
+            case "select":
+            case "input_select":
+                def options = []
+                options = newState?.attributes?.options?.indexed(1)
+                newVals += options
+                mapping = translateDevices(domain, newVals, friendly, origin)
+                if (mapping) updateChildDevice(mapping, entity, friendly)
+                break
+                
             case "media_player":
                 def status = newVals[0]
                 if (newVals[0] == "off") status = "unknown"
@@ -455,18 +447,32 @@ def parse(String description) {
                 def position = newState?.attributes?.media_position
                 def trackData = newState?.attributes?.media_content_id
                 def title = newState?.attributes?.media_title ?: '---'
-                def artist = newState?.attributes?.media_artist ?: '---' 
-                def album = newState?.attributes?.media_album_name ?: '---' 
-                def trackDescription = "title: " + title + ", artist: " + artist + ", album: " + album
-                def mediaInputSource = newState?.attributes?.input_source
-                def supportedInputs = newState?.attributes?.source_list
-                newVals += [status, mute, volume, mediaType, duration, position, trackData, trackDescription] //, mediaInputSource, supportedInputs]
+                def trackDescription = "Title: " + title
+                def artist = newState?.attributes?.media_artist ?: '---'
+                def album = newState?.attributes?.media_album_name ?: '---'                
+                def playlist = newState?.attributes?.media_playlist ?: '---'
+                def channel = newState?.attributes?.media_channel ?: '---'
+                def episode = newState?.attributes?.media_episode ?: '---'
+                def season = newState?.attributes?.media_season ?: '---'
+                def seriesTitle = newState?.attributes?.media_series_title ?: '---'
+                switch (mediaType)
+                    {
+                    case "music": trackDescription += ", Artist: " + artist + ", Album: " + album + ", Playlist: " + playlist; break
+                    case "episode": trackDescription += ", Serie: " + seriesTitle + ", Season: " + season + ", Episode: " + episode; break
+                    case "channel": trackDescription = "Channel: " + channel; break
+                    }
+                def mediaInputSource = newState?.attributes?.source
+                def supportedInputs = newState?.attributes?.source_list?.indexed(1)
+                newVals += [status, mute, volume, mediaType, duration, position, trackData, trackDescription, mediaInputSource, supportedInputs]
                 mapping = translateDevices(domain, newVals, friendly, origin)
+                if (!supportedInputs) mapping.event.remove(10)
+                if (!mediaInputSource) mapping.event.remove(9)
                 if (mapping) updateChildDevice(mapping, entity, friendly)
                 break
+            
             default:
                 if (logEnable) log.info("No mapping exists for domain: ${domain}, device_class: ${device_class}.  Please contact devs to have this added.")
-        }
+            }
         return
     }  
     catch(e) {
@@ -517,7 +523,7 @@ def translateSensors(device_class, newVals, friendly, origin)
             voltage: [type: "Generic Component Voltage Sensor",               event: [[name: "voltage", value: newVals[0], unit: newVals[1] ?: "V", descriptionText:"${friendly} voltage is ${newVals[0]} ${newVals[1] ?: 'V'}"]]],
             energy: [type: "Generic Component Energy Meter",                  event: [[name: "energy", value: newVals[0], unit: newVals[1] ?: "kWh", descriptionText:"${friendly} energy is ${newVals[0]} ${newVals[1] ?: 'kWh'}"]]],
             unknown: [type: "Generic Component Unknown Sensor",               event: [[name: "unknown", value: newVals[0], unit: newVals[1] ?: "", descriptionText:"${friendly} value is ${newVals[0]} ${newVals[1] ?: ''}"],[name: "attributes", value: newVals[2]]], namespace: "community"],
-            occupancy: [type: "HADBgeneric Component Occupancy Sensor",       event: [[name: "room", value: newVals[0], descriptionText:"${friendly} room is ${newVals[0]} "],[name: "distance", value: newVals[1], unit: "m", descriptionText:"${friendly} distance is ${newVals[1]} m"],[name: "attributes", value: newVals[2]]], namespace: "community"],                
+            occupancy: [type: "HADB Generic Component Occupancy Sensor",      event: [[name: "room", value: newVals[0], descriptionText:"${friendly} room is ${newVals[0]} "],[name: "distance", value: newVals[1], unit: "m", descriptionText:"${friendly} distance is ${newVals[1]} m"],[name: "attributes", value: newVals[2]]], namespace: "community"],                
             timestamp: [type: "Generic Component TimeStamp Sensor",           event: [[name: "timestamp", value: newVals[0], descriptionText:"${friendly} time is ${newVals[0]}"]], namespace: "community"],
             pm25: [type: "Generic Component pm25 Sensor",                     event: [[name: "pm25", value: newVals[0], unit: newVals[1] ?: "µg/m³", descriptionText:"${friendly} pm2.5 is ${newVals[0]} ${newVals[1] ?: 'µg/m³'}"]], namespace: "community"],
         ]
@@ -541,15 +547,15 @@ def translateDevices(domain, newVals, friendly, origin)
 {
     def mapping =
         [
-            button: [type: "Generic Component Pushable Button",         event: [[name: "push", value: newVals[0], type: origin, descriptionText:"${friendly} button ${newVals[0]} was pushed [${origin}]"]], namespace: "community"],
-            input_button: [type: "Generic Component Pushable Button",   event: [[name: "push", value: newVals[0], type: origin, descriptionText:"${friendly} button ${newVals[0]} was pushed [${origin}]"]], namespace: "community"],
+            button: [type: "Generic Component Pushable Button",         event: [[name: "pushed", value: newVals[0], type: origin, descriptionText:"${friendly} button ${newVals[0]} was pushed [${origin}]", isStateChange: true]], namespace: "community"],
+            input_button: [type: "Generic Component Pushable Button",   event: [[name: "pushed", value: newVals[0], type: origin, descriptionText:"${friendly} button ${newVals[0]} was pushed [${origin}]", isStateChange: true]], namespace: "community"],
             fan: [type: "Generic Component Fan Control",                event: [[name: "switch", value: newVals[0], type: origin, descriptionText:"${friendly} was turned ${newVals[0]} [${origin}]"],[name: "speed", value: newVals[1], type: origin, descriptionText:"${friendly} speed was set to ${newVals[1]} [${origin}]"],[name: "level", value: newVals[2], type: origin, descriptionText:"${friendly} level was set to ${newVals[2]} [${origin}]"]]],
             switch: [type: "Generic Component Switch",                  event: [[name: "switch", value: newVals[0], type: origin, descriptionText:"${friendly} was turned ${newVals[0]} [${origin}]"]]],
             device_tracker: [type: "Generic Component Presence Sensor", event: [[name: "presence", value: newVals[0] == "home" ? "present":"not present", descriptionText:"${friendly} is updated"]], namespace: "community"],
             lock: [type: "Generic Component Lock",                      event: [[name: "lock", value: newVals[0] ?: "unknown", type: origin, descriptionText:"${friendly} was turned ${newVals[0]} [${origin}]"]]],
             climate: [type: "HADB Generic Component Thermostat",        event: [[name: "thermostatMode", value: newVals[0], descriptionText: "${friendly} is set to ${newVals[0]}"],[name: "temperature", value: newVals[1], descriptionText: "${friendly} current temperature is ${newVals[1]} degree"],[name: "thermostatOperatingState", value: newVals[2], descriptionText: "${friendly} mode is ${newVals[2]}"],[name: "thermostatFanMode", value: newVals[3] ?: "on", descriptionText: "${friendly} fan is set to ${newVals[3] ?: 'on'}"],[name: "thermostatSetpoint", value: newVals[4], descriptionText: "${friendly} temperature is set to ${newVals[4]} degree"],[name: "coolingSetpoint", value: newVals[5] ?: newVals[4], descriptionText: "${friendly} cooling temperature is set to ${newVals[5] ?: newVals[4]} degrees"],[name: "heatingSetpoint", value: newVals[6] ?: newVals[4], descriptionText: "${friendly} heating temperature is set to ${newVals[6] ?: newVals[4]} degrees"],[name: "supportedThermostatModes", value: newVals[7], descriptionText: "${friendly} supportedThermostatModes were set to ${newVals[7]}"],[name: "supportedThermostatFanModes", value: newVals[8], descriptionText: "${friendly} supportedThermostatFanModes were set to ${newVals[8]}"],[name: "supportedPresets", value: newVals[9] ?: "none", descriptionText: "${friendly} supportedPresets were set to ${newVals[9] ?: 'none'}"],[name: "currentPreset", value: newVals[10] ?: "none", descriptionText: "${friendly} currentPreset was set to ${newVals[10] ?: 'none'}"],[name: "humidity", value: newVals[11], unit: "%", descriptionText:"${friendly} humidity is ${newVals[11]}%"]], namespace: "community"],
             input_boolean: [type: "Generic Component Switch",           event: [[name: "switch", value: newVals[0], type: origin, descriptionText:"${friendly} was turned ${newVals[0]} [${origin}]"]]],
-            humidifier: [type: "HADB Generic Component Humidifier",     event: [[name: "switch", value: newVals[0], type: origin, descriptionText:"${friendly} was turned ${newVals[0]} [${origin}]"],[name: "humidifierMode", value: newVals[1], descriptionText: "${friendly}'s humidifier is set to ${newVals[1]}"],[name: "supportedModes", value: newVals[2], descriptionText: "${friendly} supportedModes were set to ${newVals[2]}"],[name: "maxHumidity", value: newVals[3] ?: 100, descriptionText:"${friendly} max humidity is ${newVals[3] ?: 100}"],[name: "minHumidity", value: newVals[4] ?: 0, descriptionText:"${friendly} min humidity is ${newVals[4] ?: 0}"],[name: "humidity", value: newVals[5], unit: "%", descriptionText:"${friendly} current humidity is ${newVals[5]}%"],[name: "targetHumidity", value: newVals[6], unit: "%", descriptionText:"${friendly} target humidity is set to ${newVals[6]}%"]], namespace: "community"],
+            humidifier: [type: "HADB Generic Component Humidifier",     event: [[name: "switch", value: newVals[0], type: origin, descriptionText:"${friendly} was turned ${newVals[0]} [${origin}]"],[name: "humidifierMode", value: newVals[1] ?: "none", descriptionText: "${friendly}'s humidifier mode is set to ${newVals[1] ?: 'none'}"],[name: "supportedModes", value: newVals[2] ?: "none", descriptionText: "${friendly} supportedModes were set to ${newVals[2] ?: 'none'}"],[name: "maxHumidity", value: newVals[3] ?: 100, descriptionText:"${friendly} max humidity is ${newVals[3] ?: 100}"],[name: "minHumidity", value: newVals[4] ?: 0, descriptionText:"${friendly} min humidity is ${newVals[4] ?: 0}"],[name: "humidity", value: newVals[5], unit: "%", descriptionText:"${friendly} current humidity is ${newVals[5]}%"],[name: "targetHumidity", value: newVals[6], unit: "%", descriptionText:"${friendly} target humidity is set to ${newVals[6]}%"]], namespace: "community"],
             valve: [type: "HADB Generic Component Valve",               event: [[name: "valve", value: newVals[0] == "closed" ? "closed":"open", type: origin, descriptionText:"${friendly} was turned ${newVals[0]} [${origin}]"]], namespace: "community"],
             event: [type: "HADB Generic Component Event",               event: [[name: "timestamp", value: newVals[0], descriptionText:"${friendly} event received at ${newVals[0]}"],[name: newVals[1], value: 1, descriptionText: "${friendly} was ${newVals[1]}", isStateChange: true]], namespace: "community"],
             input_text: [type: "HADB Generic Component Text",           event: [[name: "variable", value: newVals[0], type: origin, descriptionText:"${friendly} was set to ${newVals[0]} [${origin}]"]], namespace: "community"],
@@ -557,7 +563,9 @@ def translateDevices(domain, newVals, friendly, origin)
             input_number: [type: "Generic Component Number",            event: [[name: "number", value: newVals[0], unit: newVals[1] ?: "", type: origin, descriptionText:"${friendly} was set to ${newVals[0]} ${newVals[1] ?: ''} [${origin}]"],[name: "minimum", value: newVals[2], descriptionText:"${friendly} minimum value is ${newVals[2]}"],[name: "maximum", value: newVals[3], descriptionText:"${friendly} maximum value is ${newVals[3]}"],[name: "step", value: newVals[4], descriptionText:"${friendly} step is ${newVals[4]}"]], namespace: "community"],
             number: [type: "Generic Component Number",                  event: [[name: "number", value: newVals[0], unit: newVals[1] ?: "", type: origin, descriptionText:"${friendly} was set to ${newVals[0]} ${newVals[1] ?: ''} [${origin}]"],[name: "minimum", value: newVals[2], descriptionText:"${friendly} minimum value is ${newVals[2]}"],[name: "maximum", value: newVals[3], descriptionText:"${friendly} maximum value is ${newVals[3]}"],[name: "step", value: newVals[4], descriptionText:"${friendly} step is ${newVals[4]}"]], namespace: "community"],
             vacuum: [type: "HADB Generic Component Vacuum",             event: [[name: "vacuum", value: newVals[0], type: origin, descriptionText:"${friendly} is ${newVals[0]} [${origin}]"],[name: "speed", value: newVals[1], type: origin, descriptionText:"${friendly} speed was set to ${newVals[1]} [${origin}]"],[name: "fanSeedList", value: newVals[2], type: origin, descriptionText:"${friendly} speed list is ${newVals[2]} [${origin}]"]], namespace: "community"],
-            media_player: [type: "HADB Generic Component Media Player", event: [[name: "switch", value: newVals[0] == "off" ? "off":"on", type: origin, descriptionText:"${friendly} was turned ${newVals[0] == 'off' ? 'off':'on'} [${origin}]"],[name: "status", value: newVals[1], type: origin, descriptionText:"${friendly} status was set to ${newVals[1]} [${origin}]"],[name: "mute", value: newVals[2] ? "muted":"unmuted", type: origin, descriptionText:"${friendly} volume was ${newVals[2] ? 'muted':'unmuted'} [${origin}]"],[name: "volume", value: newVals[3], type: origin, descriptionText:"${friendly} volume was set to ${newVals[3]} [${origin}]"],[name: "mediaType", value: newVals[4], type: origin, descriptionText:"${friendly} mediaType was set to ${newVals[4]} [${origin}]"],[name: "duration", value: newVals[5], type: origin, descriptionText:"${friendly} duration was set to ${newVals[5]} [${origin}]"],[name: "position", value: newVals[6], type: origin, descriptionText:"${friendly} position was set to ${newVals[6]} [${origin}]"],[name: "trackData", value: newVals[7], type: origin, descriptionText:"${friendly} track was set to ${newVals[7]} [${origin}]"],[name: "trackDescription", value: newVals[8], type: origin, descriptionText:"${friendly} trackDescription was set to ${newVals[8]} [${origin}]"]], namespace: "community"],
+            media_player: [type: "HADB Generic Component Media Player", event: [[name: "switch", value: newVals[0] == "off" ? "off":"on", type: origin, descriptionText:"${friendly} was turned ${newVals[0] == 'off' ? 'off':'on'} [${origin}]"],[name: "status", value: newVals[1], type: origin, descriptionText:"${friendly} status was set to ${newVals[1]} [${origin}]"],[name: "mute", value: newVals[2] ? "muted":"unmuted", type: origin, descriptionText:"${friendly} volume was ${newVals[2] ? 'muted':'unmuted'} [${origin}]"],[name: "volume", value: newVals[3], type: origin, descriptionText:"${friendly} volume was set to ${newVals[3]} [${origin}]"],[name: "mediaType", value: newVals[4], type: origin, descriptionText:"${friendly} mediaType was set to ${newVals[4]} [${origin}]"],[name: "duration", value: newVals[5], type: origin, descriptionText:"${friendly} duration was set to ${newVals[5]} [${origin}]"],[name: "position", value: newVals[6], type: origin, descriptionText:"${friendly} position was set to ${newVals[6]} [${origin}]"],[name: "trackData", value: newVals[7], type: origin, descriptionText:"${friendly} track was set to ${newVals[7]} [${origin}]"],[name: "trackDescription", value: newVals[8], type: origin, descriptionText:"${friendly} trackDescription was set to ${newVals[8]} [${origin}]"],[name: "mediaInputSource", value: newVals[9], type: origin, descriptionText:"${friendly} mediaInputSource was set to ${newVals[9]} [${origin}]"],[name: "supportedInputs", value: newVals[10], type: origin, descriptionText:"${friendly} supportedInputs was set to ${newVals[10]} [${origin}]"]], namespace: "community"],
+            select: [type: "HADB Generic Component Select",             event: [[name: "currentOption", value: newVals[0], type: origin, descriptionText:"${friendly} was set to ${newVals[0]} [${origin}]"],[name: "options", value: newVals[1], descriptionText: "${friendly} options were set to ${newVals[1]}"]], namespace: "community"],
+            input_select: [type: "HADB Generic Component Select",       event: [[name: "currentOption", value: newVals[0], type: origin, descriptionText:"${friendly} was set to ${newVals[0]} [${origin}]"],[name: "options", value: newVals[1], descriptionText: "${friendly} options were set to ${newVals[1]}"]], namespace: "community"],
         ]
     return mapping[domain]
 }
@@ -611,42 +619,33 @@ def componentOff(ch) {
         componentOffTStat(ch)
         return
     }
-    executeCommand(ch, "turn_off", [:])
+    executeCommand(ch, "turn_off")
 }
 
 def componentSetLevel(ch, level, transition=1) {
     if (logEnable) log.info("received setLevel request from ${ch.label}")
     if (level > 100) level = 100
     if (level < 0) level = 0
-    if (ch.currentValue("speed")) { // if a Fan device, special handling
-        switch (level.toInteger()) {
-            case 0:
-                componentSetSpeed(ch, "off")
-            break
-            case 1..30:
-                componentSetSpeed(ch, "low")
-            break
-            case 31..50:
-                componentSetSpeed(ch, "medium-low")
-            break
-            case 51..70:
-                componentSetSpeed(ch, "medium")
-            break
-            case 71..90:
-                componentSetSpeed(ch, "medium-high")
-            break
-            case 91..100:
-                componentSetSpeed(ch, "high")
-            break
-            default:
-                if (logEnable) log.info("No case defined for Fan setLevel(${level})")
-        }
-    } 
-    else {        
+    // if a Fan device, special handling:
+    if (ch.currentValue("speed"))
+        { 
+        switch (level.toInteger())
+            {
+            case 0: componentSetSpeed(ch, "off"); break
+            case 1..30: componentSetSpeed(ch, "low"); break
+            case 31..50: componentSetSpeed(ch, "medium-low"); break
+            case 51..70: componentSetSpeed(ch, "medium"); break
+            case 71..90: componentSetSpeed(ch, "medium-high"); break
+            case 91..100: componentSetSpeed(ch, "high"); break
+            default: if (logEnable) log.info("No case defined for Fan setLevel(${level})")
+            }
+        } 
+    else
+        {        
         data = [brightness_pct: "${level}", transition: "${transition}"]
         executeCommand(ch, "turn_on", data)
+        }
     }
-}
 
 def componentSetColor(ch, color, transition=1) {
     if (logEnable) log.info("received setColor request from ${ch.label}")
@@ -698,77 +697,45 @@ def componentSetPreviousEffect(ch) {
 
 def componentSetSpeed(ch, speed) {
     if (logEnable) log.info("received setSpeed request from ${ch.label}, with speed = ${speed}")
-    int percentage = 0
-    switch (speed) {
-        case "on":
-            data = [:]
-            executeCommand(ch, "turn_on", data)
-            break
-        case "off":
-            data = [:]
-            executeCommand(ch, "turn_off", data)
-            break
-        case "low":
-            data = [percentage: "20"]
-            executeCommand(ch, "turn_on", data)
-            break
-        case "medium-low":
-            data = [percentage: "40"]
-            executeCommand(ch, "turn_on", data)
-            break
+    if (speed == "off") executeCommand(ch, "turn_off"); return
+    switch (speed)
+        {
+        case "on": data = [:]; break
+        case "low": data = [percentage: "20"]; break
+        case "medium-low": data = [percentage: "40"]; break
         case "auto":
-        case "medium":
-            data = [percentage: "60"]
-            executeCommand(ch, "turn_on", data)
-            break
-        case "medium-high":
-            data = [percentage: "80"]
-            executeCommand(ch, "turn_on", data)
-            break
-        case "high":
-            data = [percentage: "100"]
-            executeCommand(ch, "turn_on", data)
-            break
-        default:
-            if (logEnable) log.info("No case defined for Fan setSpeed(${speed})")
-    }
+        case "medium": data = [percentage: "60"]; break
+        case "medium-high": data = [percentage: "80"]; break
+        case "high": data = [percentage: "100"]; break
+        default: data = [:]
+        }
+    executeCommand(ch, "turn_on", data)
 }
 
 def componentCycleSpeed(ch) {
     def newSpeed = ""
-    switch (ch.currentValue("speed")) {
-        case "off":
-            speed = "low"
-            break
-        case "low":
-            speed = "medium-low"
-            break
-        case "medium-low":
-            speed = "medium"
-            break
-        case "medium":
-            speed = "medium-high"
-            break
-        case "medium-high":
-            speed = "high"
-            break
-        case "high":
-            speed = "off"
-            break
-    }
+    switch (ch.currentValue("speed"))
+        {
+        case "off": speed = "low";  break
+        case "low": speed = "medium-low"; break
+        case "medium-low": speed = "medium"; break
+        case "medium": speed = "medium-high"; break
+        case "medium-high": speed = "high"; break
+        case "high": speed = "off"; break
+        }
     componentSetSpeed(ch, speed)
 }
 
 void componentClose(ch) {
     if (logEnable) log.info("received close request from ${ch.label}")
     service = ch.hasCapability("Valve") ? "close_valve":"close_cover"
-    executeCommand(ch, service, [:])
+    executeCommand(ch, service)
 }
 
 void componentOpen(ch) {
     if (logEnable) log.info("received open request from ${ch.label}")
     service = ch.hasCapability("Valve") ? "open_valve":"open_cover"
-    executeCommand(ch, service, [:])
+    executeCommand(ch, service)
 }
 
 void componentSetPosition(ch, pos) {
@@ -778,12 +745,12 @@ void componentSetPosition(ch, pos) {
 
 void componentCloseTilt(ch) {
     if (logEnable) log.info("received close tilt request from ${ch.label}")
-    executeCommand(ch, "close_cover_tilt", [:])
+    executeCommand(ch, "close_cover_tilt")
 }
 
 void componentOpenTilt(ch) {
     if (logEnable) log.info("received open tilt request from ${ch.label}")
-    executeCommand(ch, "open_cover_tilt", [:])
+    executeCommand(ch, "open_cover_tilt")
 }
 
 void componentSetTiltLevel(ch, tilt) {
@@ -794,40 +761,40 @@ void componentSetTiltLevel(ch, tilt) {
 void componentStartPositionChange(ch, dir) {
     if(["open", "close"].contains(dir)) {
         if (logEnable) log.info("received ${dir} request from ${ch.label}")
-        executeCommand(ch, dir + "_cover", [:])
+        executeCommand(ch, dir + "_cover")
     }
 }
 
 void componentStopPositionChange(ch) {
     if (logEnable) log.info("received stop request from ${ch.label}")
-    executeCommand(ch, "stop_cover", [:])
+    executeCommand(ch, "stop_cover")
 }
 
 void componentStartTiltChange(ch, dir) {
     if(["open", "close"].contains(dir)) {
         if (logEnable) log.info("received ${dir} tilt request from ${ch.label}")
-        executeCommand(ch, dir + "_cover_tilt", [:])
+        executeCommand(ch, dir + "_cover_tilt")
     }
 }
 
 void componentStopTiltChange(ch) {
     if (logEnable) log.info("received stop tilt request from ${ch.label}")
-    executeCommand(ch, "stop_cover_tilt", [:])
+    executeCommand(ch, "stop_cover_tilt")
 }
 
 void componentLock(ch) {
     if (logEnable) log.info("received lock request from ${ch.label}")
-    executeCommand(ch, "lock", [:])
+    executeCommand(ch, "lock")
 }
 
 void componentUnlock(ch) {
     if (logEnable) log.info("received unlock request from ${ch.label}")
-    executeCommand(ch, "unlock", [:])
+    executeCommand(ch, "unlock")
 }
 
 def componentPush(ch, nb) {
     if (logEnable) log.info("received push button ${nb} request from ${ch.label}")
-    executeCommand(ch, "press", [:])
+    executeCommand(ch, "press")
 }
 
 def componentSetNumber(ch, newValue) {
@@ -860,52 +827,64 @@ def componentSetThermostatMode(ch, thermostatmode) {
 
 def componentSetCoolingSetpoint(ch, temperature) {
     if (logEnable) log.info("received setCoolingSetpoint request from ${ch.label}")
-    if (ch.currentValue("thermostatMode") == "heat_cool") {
-        data = [target_temp_high: temperature, target_temp_low: ch.currentValue("heatingSetpoint")]
-    }
-    else {
-	data = [temperature: temperature]
-    }
+    if (ch.currentValue("thermostatMode") == "heat_cool") data = [target_temp_high: temperature, target_temp_low: ch.currentValue("heatingSetpoint")] else data = [temperature: temperature]
     executeCommand(ch, "set_temperature", data)
 }
 
 def componentSetHeatingSetpoint(ch, temperature) {
     if (logEnable) log.info("received setHeatingSetpoint request from ${ch.label}")
-    if (ch.currentValue("thermostatMode") == "heat_cool") {
-        data = [target_temp_high: ch.currentValue("coolingSetpoint"), target_temp_low: temperature]
-    }
-    else {
-	data = [temperature: temperature] 
-    }
+    if (ch.currentValue("thermostatMode") == "heat_cool") data = [target_temp_high: ch.currentValue("coolingSetpoint"), target_temp_low: temperature] else data = [temperature: temperature] 
     executeCommand(ch, "set_temperature", data)
 }
 
 def componentSetThermostatFanMode(ch, fanmode) {
     if (logEnable) log.info("received ${fanmode} request from ${ch.label}")
     executeCommand(ch, "set_fan_mode", [fan_mode: fanmode])
-
 }
 
-def componentSetPreset(ch, presetNumber) {
-    if (logEnable) log.info("received set preset request from ${ch.label}")
-    def presetsList = ch.currentValue("supportedPresets")?.tokenize(',=[]')
-    def max = presetsList.size() / 2
-    max = max.toInteger()
-    presetNumber = presetNumber.toInteger()
-    presetNumber = (presetNumber < 1) ? 1 : ((presetNumber > max) ? max : presetNumber)   
-    data = [preset_mode: presetsList[(presetNumber * 2) - 1].trim().replaceAll("}","")]
+def componentSetPreset(ch, preset) { 
+    if (logEnable) log.info("received set preset number request from ${ch.label}")
+    if (preset.toString().isNumber())
+        {
+        def presetsList = ch.currentValue("supportedPresets")?.tokenize(',=[]')
+        def max = presetsList.size() / 2
+        max = max.toInteger()
+        preset = preset.toInteger()
+        preset = (preset < 1) ? 1 : ((preset > max) ? max : preset)   
+        data = [preset_mode: presetsList[(preset * 2) - 1].trim().replaceAll("}","")]
+        }
+    else data = [preset_mode: preset]
     executeCommand(ch, "set_preset_mode", data)
 }
-
-def componentSetHumidifierMode(ch, modeNumber) {
-    if (logEnable) log.info("received set mode request from ${ch.label}")
-    def modesList = ch.currentValue("supportedModes")?.tokenize(',=[]')
-    def max = modesList.size() / 2
-    max = max.toInteger()
-    modeNumber = modeNumber.toInteger()
-    modeNumber = (modeNumber < 1) ? 1 : ((modeNumber > max) ? max : modeNumber)   
-    data = [mode: modesList[(modeNumber * 2) - 1].trim().replaceAll("}","")]
+	
+def componentSetHumidifierMode(ch, mode) {
+    if (logEnable) log.info("received set mode number request from ${ch.label}")
+    if (mode.toString().isNumber())
+        {
+        def modesList = ch.currentValue("supportedModes")?.tokenize(',=[]')
+        def max = modesList.size() / 2
+        max = max.toInteger()
+        mode = mode.toInteger()
+        mode = (mode < 1) ? 1 : ((mode > max) ? max : mode)   
+        data = [mode: modesList[(mode * 2) - 1].trim().replaceAll("}","")]
+        }
+    else data = [mode: mode]
     executeCommand(ch, "set_mode", data)
+}
+
+def componentSelectOption(ch, option) {
+    if (logEnable) log.info("received select option number request from ${ch.label}")
+    if (option.toString().isNumber())
+        {
+        def optionsList = ch.currentValue("options")?.tokenize(',=[]')
+        def max = optionsList.size() / 2
+        max = max.toInteger()
+        option = option.toInteger()
+        option = (option < 1) ? 1 : ((option > max) ? max : option)   
+        data = [option: optionsList[(option * 2) - 1].trim().replaceAll("}","")]
+        }
+    else data = [option: option]
+    executeCommand(ch, "select_option", data)
 }
 
 def componentSetHumidity(ch, target) {
@@ -960,17 +939,17 @@ void componentCleanSpot(ch) {
 
 void componentLocate(ch) {
     if (logEnable) log.info("received locate request from ${ch.label}")
-    executeCommand(ch, "locate", [:])
+    executeCommand(ch, "locate")
 }
 
 void componentPause(ch) {
     if (logEnable) log.info("received pause request from ${ch.label}")
-    executeCommand(ch, "pause", [:])
+    executeCommand(ch, "pause")
 }
 
 void componentReturnToBase(ch) {
     if (logEnable) log.info("received return to base request from ${ch.label}")
-    executeCommand(ch, "return_to_base", [:])
+    executeCommand(ch, "return_to_base")
 }
 
 void componentSetFanSpeed(ch, speed) {
@@ -980,12 +959,12 @@ void componentSetFanSpeed(ch, speed) {
 
 void componentStart(ch) {
     if (logEnable) log.info("received start request from ${ch.label}")
-    executeCommand(ch, "start", [:])
+    executeCommand(ch, "start")
 }
 
 void componentStop(ch) {
     if (logEnable) log.info("received stop request from ${ch.label}")
-    executeCommand(ch, "stop", [:])
+    executeCommand(ch, "stop")
 }
 
 void componentMute(ch) {
@@ -1000,12 +979,12 @@ void componentUnmute(ch) {
 
 void  componentVolumeUp(ch) {
     if (logEnable) log.info("received volume up request from ${ch.label}")
-    executeCommand(ch, "volume_up", [:])
+    executeCommand(ch, "volume_up")
 }
 
 void componentVolumeDown(ch) {
     if (logEnable) log.info("received volume down request from ${ch.label}")
-    executeCommand(ch, "volume_down", [:])
+    executeCommand(ch, "volume_down")
 }
 
 void componentSetVolume(ch, volume) {
@@ -1014,27 +993,34 @@ void componentSetVolume(ch, volume) {
     executeCommand(ch, "volume_set", [volume_level: volume])
 }
 
-void componentSupportedInputs(ch, sourceList) {
-}
-
-void componentMediaInputSource(ch, source) {
-    if (logEnable) log.info("received input source from ${ch.label}")
-    executeCommand(ch, "select_source", [source: source])
+void componentSetInputSource(ch, source) {
+    if (logEnable) log.info("received set input source from ${ch.label}")
+    if (source.toString().isNumber())
+        {
+        def sourcesList = ch.currentValue("supportedInputs")?.tokenize(',=[]')
+        def max = sourcesList.size() / 2
+        max = max.toInteger()
+        source = source.toInteger()
+        source = (source < 1) ? 1 : ((source > max) ? max : source)   
+        data = [source: sourcesList[(source * 2) - 1].trim().replaceAll("}","")]
+        }
+    else data = [source: source]
+    executeCommand(ch, "select_source", data)
 }
 
 void componentPauseMedia(ch) {
     if (logEnable) log.info("received pause from ${ch.label}")
-    executeCommand(ch, "media_pause", [:])
+    executeCommand(ch, "media_pause")
 }
 
 void componentPlay(ch) {
     if (logEnable) log.info("received play from ${ch.label}")
-    executeCommand(ch, "media_play", [:])
+    executeCommand(ch, "media_play")
 }
 
 void componentStopMedia(ch) {
     if (logEnable) log.info("received stop from ${ch.label}")
-    executeCommand(ch, "media_stop", [:])
+    executeCommand(ch, "media_stop")
 }
 
 void componentPlayText(ch, text) {
@@ -1047,12 +1033,12 @@ void componentPlayTrack(ch, mediaType, trackUri) {
 
 void componentPreviousTrack(ch) {
     if (logEnable) log.info("received previous from ${ch.label}")
-    executeCommand(ch, "media_previous_track", [:])
+    executeCommand(ch, "media_previous_track")
 }
 
 void componentNextTrack(ch) {
     if (logEnable) log.info("received next from ${ch.label}")
-    executeCommand(ch, "media_next_track", [:])
+    executeCommand(ch, "media_next_track")
 }
 
 void componentShuffle(ch, value) {
@@ -1071,7 +1057,7 @@ void componentRestoreTrack(ch, trackUri) {
 void componentResumeTrack(ch, trackUri) {
 }
 
-void componentSetTrack(ch, trackUri) {
+void componentSetTrack(ch, trackUri){
 }
 
 def closeConnection() {
@@ -1080,11 +1066,7 @@ def closeConnection() {
     interfaces.webSocket.close()
 }
 
-def callService(entity, service) {
-    callService(entity, service, "")
-}
-
-def callService(entity, service, data) {
+def callService(entity, service, data = "") {
     def cvData = [:]
     cvData = data.tokenize(",").collectEntries{it.tokenize(":").with{[(it[0]):it[1..(it.size()-1)].join(":")]}}
     domain = entity?.tokenize(".")[0]
@@ -1095,7 +1077,7 @@ def callService(entity, service, data) {
     interfaces.webSocket.sendMessage(messUpdStr)    
 }
 
-def executeCommand(ch, service, data) {    
+def executeCommand(ch, service, data = [:]) {    
     entity = ch?.getDeviceNetworkId().split("-")[1]
     domain = entity?.tokenize(".")[0]
     messUpd = [id: state.id, type: "call_service", domain: domain, service: service, service_data : [entity_id: entity] + data]

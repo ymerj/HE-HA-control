@@ -19,6 +19,7 @@ limitations under the License.
 Change history:
 
 2.11 - Yves Mercier - Initial version
+2.12 - Yves Mercier - Add input source
 
 */
 
@@ -47,6 +48,8 @@ metadata
     attribute "mediaType", "string"
     attribute "duration", "number"
     attribute "position", "number"
+   // attribute "appName", "string"
+   // attribute "appID", "string"
 }
 
 void updated() {
@@ -107,13 +110,8 @@ void setLevel(level) {
     parent?.componentSetVolume(this.device, level)
 }
 
-void supportedInputs(sourceList) {
-    //parent?.componentSupportedInputs(this.device, sourceList)
-    log.warn "supportedInputs is not implemented"
-}
-
-void mediaInputSource(source) {
-    parent?.componentMediaInputSource(this.device, source)
+void setInputSource(source) {
+    parent?.componentSetInputSource(this.device, source)
 }
 
 void pause() {
@@ -134,8 +132,8 @@ void playText(text) {
 }
 
 void playTrack(trackUri) {
-    //parent?.componentPlayTrack(this.device, trackUri)
-    log.error "media type mandatory for play track"
+    parent?.componentPlayTrack(this.device, "music", trackUri)
+    log.warn "media type set to music for default playTrack command"
 }
 
 void playTrack(trackUri, mediaType) {

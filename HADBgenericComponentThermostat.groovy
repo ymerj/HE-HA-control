@@ -18,10 +18,12 @@ limitations under the License.
 
 Change history:
 
-0.1 - ritchierich - initial version
-2.4 - Yves Mercier - Modified healthCheck handling
-2.7 - Yves Mercier - Add support for presets
-2.8 - mluck - corrected typo
+0.1  - ritchierich - initial version
+2.4  - Yves Mercier - Modified healthCheck handling
+2.7  - Yves Mercier - Add support for presets
+2.8  - mluck - corrected typo
+2.12 - Yves Mercier -  Add presets by name
+
 */
 
 metadata
@@ -42,8 +44,8 @@ metadata
         input name: "txtEnable", type: "bool", title: "Enable descriptionText logging", defaultValue: true
     }
 
-    command "setPreset", [[name: "presetNumber", type: "NUMBER", description: "Preset number"]]
-    
+    command "setPreset", [[name: "preset", type: "STRING", description: "Preset"]]
+
     attribute "healthStatus", "enum", ["offline", "online"]
     attribute "supportedThermostatFanModes", "JSON_OBJECT"
     attribute "supportedThermostatModes", "JSON_OBJECT"
@@ -127,17 +129,10 @@ void fanOn() {
     parent?.componentFanOn(this.device)
 }
 
-def setPreset(presetNumber)
-    {
-    if (this.device.currentValue("supportedPresets") == "none")
-        {
-        log.warn "no supported presets defined"
-        }
-    else
-        {
-        parent?.componentSetPreset(this.device, presetNumber)
-        }
-    }
+def setPreset(preset){
+    if (this.device.currentValue("supportedPresets") == "none") log.warn "no supported presets defined"
+    else parent?.componentSetPreset(this.device, preset)
+}
 
 def logsOff(){
     log.warn("debug logging disabled...")

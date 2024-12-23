@@ -18,57 +18,67 @@ limitations under the License.
 
 Change history:
 
-2.3  - Yves Mercier - Initial version
-2.12 - Yves Mercier - Add number of buttons, fix event name
+2.12 - Yves Mercier - initial version
 
 */
 
 metadata
-{
-    definition(name: "Generic Component Pushable Button", namespace: "community", author: "community", importUrl: "https://raw.githubusercontent.com/ymerj/HE-HA-control/main/genericComponentPushableButton.groovy")
     {
-        capability "PushableButton"
+    definition(name: "HADB Generic Component Select", namespace: "community", author: "community", importUrl: "https://raw.githubusercontent.com/ymerj/HE-HA-control/main/HADBgenericComponentSelect.groovy")
+        {
+        capability "Actuator"
         capability "Refresh"
         capability "Health Check"
-    }
-    preferences {
-        input name: "txtEnable", type: "bool", title: "Enable descriptionText logging", defaultValue: true
-    }
-    attribute "healthStatus", "enum", ["offline", "online"]
-}
 
-void updated() {
+        command "selectOption", [[ name: "option", type: "STRING", description: "Select option" ]]
+        }
+    preferences
+        {
+        input name: "txtEnable", type: "bool", title: "Enable descriptionText logging", defaultValue: true
+        }
+    attribute "healthStatus", "enum", ["offline", "online"]
+    attribute "options", "string"
+    attribute "currentOption", "string"
+    }
+
+void updated()
+    {
     log.info "Updated..."
     log.warn "description logging is: ${txtEnable == true}"
-    sendEvent(name: "numberOfButtons", value: 1)
-}
+    }
 
-void installed() {
+void installed()
+    {
     log.info "Installed..."
     device.updateSetting("txtEnable",[type:"bool",value:true])
-    updated()
     refresh()
-}
+    }
 
 void parse(String description) { log.warn "parse(String description) not implemented" }
 
-void parse(List<Map> description) {
-    description.each {
-        if (it.name in ["pushed", "healthStatus"]) {
+void parse(List<Map> description)
+    {
+    description.each
+        {
+        if (it.name in ["currentOption", "options", "healthStatus"])
+            {
             if (txtEnable) log.info it.descriptionText
             sendEvent(it)
+            }
         }
     }
-}
 
-void push(nb) {
-    parent?.componentPush(this.device, nb)
-}
+void selectOption(option)
+    {
+    parent?.componentSelectOption(this.device, option)
+    }
 
-void refresh() {
+void refresh()
+    {
     parent?.componentRefresh(this.device)
-}
+    }
 
-void ping() {
+void ping()
+    {
     refresh()
-}
+    }

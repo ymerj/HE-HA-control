@@ -19,6 +19,7 @@ limitations under the License.
 Change history:
 
 2.10 - Yves Mercier - initial version
+2.12 - Yves Mercier - corrected setText parameter name
 
 */
 
@@ -65,7 +66,7 @@ void parse(List<Map> description)
         }
     }
 
-void setText(newValue)
+void setText(variable)
     {
     parent?.componentSetVariable(this.device, variable)
     }

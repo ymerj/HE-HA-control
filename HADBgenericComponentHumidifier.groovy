@@ -11,7 +11,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 -------------------------------------------
 Change history:
-2.6 - Yves Mercier - initial version
+2.6  - Yves Mercier - initial version
+2.12 - Yves Mercier - add mode by name
 
 */
 
@@ -31,7 +32,7 @@ metadata
         input name: "txtEnable", type: "bool", title: "Enable descriptionText logging", defaultValue: true
         }
 
-    command "setMode", [[name: "modeNumber", type: "NUMBER", description: "Mode number"]]
+    command "setMode", [[name: "mode", type: "STRING", description: "Mode"]]
     command "setHumidity", [[name: "target", type: "NUMBER", description: "Target humidity"]]
 
     attribute "healthStatus", "enum", ["offline", "online"]
@@ -72,8 +73,9 @@ void off() {
     parent?.componentOff(this.device)
 }
 
-def setMode(modeNumber) {
-    parent?.componentSetHumidifierMode(this.device, modeNumber)
+def setMode(mode){
+    if (this.device.currentValue("supportedModes") == "none") log.warn "no supported modes defined"
+    else parent?.componentSetHumidifierMode(this.device, mode)
 }
 
 def setHumidity(target) {

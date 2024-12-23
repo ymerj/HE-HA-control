@@ -48,6 +48,8 @@ metadata
     attribute "mediaType", "string"
     attribute "duration", "number"
     attribute "position", "number"
+   // attribute "appName", "string"
+   // attribute "appID", "string"
 }
 
 void updated() {

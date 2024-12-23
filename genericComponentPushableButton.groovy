@@ -18,7 +18,8 @@ limitations under the License.
 
 Change history:
 
-2.3 - Yves Mercier - Initial version
+2.3  - Yves Mercier - Initial version
+2.12 - Yves Mercier - Add number of buttons, fix event name
 
 */
 
@@ -39,11 +40,13 @@ metadata
 void updated() {
     log.info "Updated..."
     log.warn "description logging is: ${txtEnable == true}"
+    sendEvent(name: "numberOfButtons", value: 1)
 }
 
 void installed() {
     log.info "Installed..."
     device.updateSetting("txtEnable",[type:"bool",value:true])
+    updated()
     refresh()
 }
 
@@ -51,7 +54,7 @@ void parse(String description) { log.warn "parse(String description) not impleme
 
 void parse(List<Map> description) {
     description.each {
-        if (it.name in ["push", "healthStatus"]) {
+        if (it.name in ["pushed", "healthStatus"]) {
             if (txtEnable) log.info it.descriptionText
             sendEvent(it)
         }

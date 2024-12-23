@@ -93,7 +93,7 @@
 * 2.9    2024-10-29 Yves Mercier       Add windowsShade attribute to blinds, add attributes to unknown sensor, add support for espresense.
 * 2.10   2024-11-24 Yves Mercier       Add support for text and vacuum entities. Add extra blind commands.
 * 2.11   2024-11-30 Yves Mercier       Add limited support for media_player entity.
-* 2.12   2024-12-15 Yves Mercier       Add support for select entity. Clean code. Add item selection by name.
+* 2.12   2024-12-15 Yves Mercier       Add support for select entity. Clean code. Add item selection by name. Fix button event.
 */
 
 import groovy.json.JsonSlurper
@@ -547,8 +547,8 @@ def translateDevices(domain, newVals, friendly, origin)
 {
     def mapping =
         [
-            button: [type: "Generic Component Pushable Button",         event: [[name: "push", value: newVals[0], type: origin, descriptionText:"${friendly} button ${newVals[0]} was pushed [${origin}]"]], namespace: "community"],
-            input_button: [type: "Generic Component Pushable Button",   event: [[name: "push", value: newVals[0], type: origin, descriptionText:"${friendly} button ${newVals[0]} was pushed [${origin}]"]], namespace: "community"],
+            button: [type: "Generic Component Pushable Button",         event: [[name: "pushed", value: newVals[0], type: origin, descriptionText:"${friendly} button ${newVals[0]} was pushed [${origin}]", isStateChange: true]], namespace: "community"],
+            input_button: [type: "Generic Component Pushable Button",   event: [[name: "pushed", value: newVals[0], type: origin, descriptionText:"${friendly} button ${newVals[0]} was pushed [${origin}]", isStateChange: true]], namespace: "community"],
             fan: [type: "Generic Component Fan Control",                event: [[name: "switch", value: newVals[0], type: origin, descriptionText:"${friendly} was turned ${newVals[0]} [${origin}]"],[name: "speed", value: newVals[1], type: origin, descriptionText:"${friendly} speed was set to ${newVals[1]} [${origin}]"],[name: "level", value: newVals[2], type: origin, descriptionText:"${friendly} level was set to ${newVals[2]} [${origin}]"]]],
             switch: [type: "Generic Component Switch",                  event: [[name: "switch", value: newVals[0], type: origin, descriptionText:"${friendly} was turned ${newVals[0]} [${origin}]"]]],
             device_tracker: [type: "Generic Component Presence Sensor", event: [[name: "presence", value: newVals[0] == "home" ? "present":"not present", descriptionText:"${friendly} is updated"]], namespace: "community"],

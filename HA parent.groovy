@@ -94,6 +94,7 @@
 * 2.10   2024-11-24 Yves Mercier       Add support for text and vacuum entities. Add extra blind commands.
 * 2.11   2024-11-30 Yves Mercier       Add limited support for media_player entity.
 * 2.12   2024-12-15 Yves Mercier       Add support for select entity. Clean code. Add item selection by name. Fix button event.
+* 2.13   2024-12-25 Yves Mercier       Fix fan setSpeed.
 */
 
 import groovy.json.JsonSlurper
@@ -697,7 +698,7 @@ def componentSetPreviousEffect(ch) {
 
 def componentSetSpeed(ch, speed) {
     if (logEnable) log.info("received setSpeed request from ${ch.label}, with speed = ${speed}")
-    if (speed == "off") executeCommand(ch, "turn_off"); return
+    if (speed == "off") { executeCommand(ch, "turn_off"); return }
     switch (speed)
         {
         case "on": data = [:]; break

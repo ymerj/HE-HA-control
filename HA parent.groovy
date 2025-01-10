@@ -95,6 +95,7 @@
 * 2.11   2024-11-30 Yves Mercier       Add limited support for media_player entity.
 * 2.12   2024-12-15 Yves Mercier       Add support for select entity. Clean code. Add item selection by name. Fix button event.
 * 2.13   2024-12-25 Yves Mercier       Fix fan setSpeed.
+* 2.14   2025-01-10 Yves Mercier       Add humidity support to climate entity.
 */
 
 import groovy.json.JsonSlurper
@@ -376,7 +377,10 @@ def parse(String description) {
             case "climate":
                 def thermostat_mode = newState?.state
                 def current_temperature = newState?.attributes?.current_temperature
-                def current_humidity = newState?.attributes?.current_humidity
+                def maxHumidity = newState?.attributes?.max_humidity
+                def minHumidity = newState?.attributes?.min_humidity
+                def currentHumidity = newState?.attributes?.current_humidity
+                def targetHumidity = newState?.attributes?.target_humidity
                 def hvac_action = newState?.attributes?.hvac_action
                 def fan_mode = newState?.attributes?.fan_mode
                 def target_temperature = newState?.attributes?.temperature
@@ -391,9 +395,9 @@ def parse(String description) {
                 def fan_modes = newState?.attributes?.fan_modes
                 if (!fan_modes) fan_modes = ["on"]
                 def supportedFmodes = JsonOutput.toJson(fan_modes)
-                newVals = [thermostat_mode, current_temperature, hvac_action, fan_mode, target_temperature, target_temp_high, target_temp_low, supportedTmodes, supportedFmodes, supportedPmodes, currentPreset, current_humidity]
+                newVals = [thermostat_mode, current_temperature, hvac_action, fan_mode, target_temperature, target_temp_high, target_temp_low, supportedTmodes, supportedFmodes, supportedPmodes, currentPreset, maxHumidity, minHumidity, current_humidity, targetHumidity]
                 mapping = translateDevices(domain, newVals, friendly, origin)
-                if (!current_humidity) mapping.event.remove(11) // some thermostats don't provide humidity reading
+                if (!current_humidity) mapping.event.remove(11..14) // some thermostats don't provide humidity control
                 if (mapping) updateChildDevice(mapping, entity, friendly)
                 break
             

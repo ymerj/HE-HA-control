@@ -18,11 +18,12 @@ limitations under the License.
 
 Change history:
 
-0.1  - ritchierich - initial version
+0.1  - ritchierich  - initial version
 2.4  - Yves Mercier - Modified healthCheck handling
 2.7  - Yves Mercier - Add support for presets
-2.8  - mluck - corrected typo
-2.12 - Yves Mercier -  Add presets by name
+2.8  - mluck        - corrected typo
+2.12 - Yves Mercier - Add presets by name
+2.14 - Yves Mercier - Add support for humidity setting
 
 */
 
@@ -45,12 +46,16 @@ metadata
     }
 
     command "setPreset", [[name: "preset", type: "STRING", description: "Preset"]]
+    command "setHumidity", [[name: "targetHumidity", type: "NUMBER", description: "Target humidity"]]
 
     attribute "healthStatus", "enum", ["offline", "online"]
     attribute "supportedThermostatFanModes", "JSON_OBJECT"
     attribute "supportedThermostatModes", "JSON_OBJECT"
     attribute "supportedPresets", "string"
     attribute "currentPreset", "string"
+    attribute "maxHumidity", "number"
+    attribute "minHumidity", "number"
+    attribute "targetHumidity", "number"
 }
 
 void installed() {
@@ -70,10 +75,12 @@ void uninstalled() {
 
 void parse(String description) { log.warn "parse(String description) not implemented" }
 
-void parse(List<Map> description) {
+void parse(List description) {
     description.each {
-        if (txtEnable) log.info it.descriptionText
-        sendEvent(it)
+        if (it.name in ["thermostatMode", "temperature", "thermostatOperatingState", "thermostatFanMode", "thermostatSetpoint", "coolingSetpoint", "heatingSetpoint", "supportedThermostatModes", "supportedThermostatFanModes", "supportedPresets", "currentPreset", "healthStatus", "maxHumidity", "minHumidity", "humidity", "targetHumidity"]) {
+            if (txtEnable) log.info it.descriptionText
+            sendEvent(it)
+        }
     }
 }
 
@@ -99,6 +106,10 @@ void setThermostatMode(String thermostatMode) {
 
 void setThermostatFanMode(String fanMode) {
     parent?.componentSetThermostatFanMode(this.device, fanMode)
+}
+
+def setHumidity(targetHumidity) {
+    parent?.componentSetHumidify(this.device, targetHumidity)
 }
 
 void auto() {

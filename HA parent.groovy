@@ -333,11 +333,7 @@ def parse(String description) {
                         device_class = "dimmer"
                     }
                 mapping = translateLight(device_class, newVals, friendly, origin)
-                if (newVals[0] == "off") { // remove updates not provided with the HA 'off' event json data
-                   for(int i in (mapping.event.size - 1)..1) {
-                       mapping.event.remove(i)
-                       }  
-                    }
+                if (newVals[0] == "off") { for(int i in (mapping.event.size - 1)..1) mapping.event.remove(i) } // remove updates not provided with the HA 'off' event json data
                 if (mapping) updateChildDevice(mapping, entity, friendly)
                 break
             
@@ -397,7 +393,7 @@ def parse(String description) {
                 def supportedFmodes = JsonOutput.toJson(fan_modes)
                 newVals = [thermostat_mode, current_temperature, hvac_action, fan_mode, target_temperature, target_temp_high, target_temp_low, supportedTmodes, supportedFmodes, supportedPmodes, currentPreset, maxHumidity, minHumidity, current_humidity, targetHumidity]
                 mapping = translateDevices(domain, newVals, friendly, origin)
-                if (!current_humidity) mapping.event.remove(11..14) // some thermostats don't provide humidity control
+                if (!current_humidity) { for(int i in 14..11) mapping.event.remove(i) } // some thermostats don't provide humidity control
                 if (mapping) updateChildDevice(mapping, entity, friendly)
                 break
             

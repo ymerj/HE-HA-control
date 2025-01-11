@@ -393,7 +393,7 @@ def parse(String description) {
                 def supportedFmodes = JsonOutput.toJson(fan_modes)
                 newVals = [thermostat_mode, current_temperature, hvac_action, fan_mode, target_temperature, target_temp_high, target_temp_low, supportedTmodes, supportedFmodes, supportedPmodes, currentPreset, maxHumidity, minHumidity, currentHumidity, targetHumidity]
                 mapping = translateDevices(domain, newVals, friendly, origin)
-                if (!currentHumidity) { for(int i in 14..11) mapping.event.remove(i) } // some thermostats don't provide humidity control
+                if (!currentHumidity) mapping.event = mapping.event[0..10] // some thermostats don't provide humidity control
                 if (mapping) updateChildDevice(mapping, entity, friendly)
                 break
             

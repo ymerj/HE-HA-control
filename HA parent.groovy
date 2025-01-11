@@ -333,7 +333,7 @@ def parse(String description) {
                         device_class = "dimmer"
                     }
                 mapping = translateLight(device_class, newVals, friendly, origin)
-                if (newVals[0] == "off") { for(int i in (mapping.event.size - 1)..1) mapping.event.remove(i) } // remove updates not provided with the HA 'off' event json data
+                if (newVals[0] == "off") mapping.event = [mapping.event[0]] // remove updates not provided with the HA 'off' event json data
                 if (mapping) updateChildDevice(mapping, entity, friendly)
                 break
             

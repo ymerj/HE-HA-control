@@ -34,14 +34,14 @@ metadata
         }
 
     command "setMode", [[name: "mode", type: "STRING", description: "Mode"]]
-    command "setHumidity", [[name: "target", type: "NUMBER", description: "Humidity setpoint"]]
+    command "setHumidity", [[name: "target", type: "NUMBER", description: "Target Humidity"]]
 
     attribute "healthStatus", "enum", ["offline", "online"]
     attribute "supportedModes", "string"
     attribute "humidifierMode", "string"
     attribute "maxHumidity", "number"
     attribute "minHumidity", "number"
-    attribute "TargetHumidity", "number"
+    attribute "targetHumidity", "number"
     }
 
 void updated() {
@@ -59,7 +59,7 @@ void parse(String description) { log.warn "parse(String description) not impleme
 
 void parse(List description) {
     description.each {
-        if (it.name in ["switch", "humidifierMode", "supportedModes", "healthStatus", "maxHumidity", "minHumidity", "humidity", "TargetHumidity"]) {
+        if (it.name in ["switch", "humidifierMode", "supportedModes", "healthStatus", "maxHumidity", "minHumidity", "humidity", "targetHumidity"]) {
             if (txtEnable) log.info it.descriptionText
             sendEvent(it)
         }

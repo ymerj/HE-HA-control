@@ -13,6 +13,7 @@ limitations under the License.
 Change history:
 2.6  - Yves Mercier - initial version
 2.12 - Yves Mercier - add mode by name
+2.14 - Yves Mercier - fix typo
 
 */
 
@@ -79,7 +80,7 @@ def setMode(mode){
 }
 
 def setHumidity(target) {
-    parent?.componentSetHumidify(this.device, target)
+    parent?.componentSetHumidity(this.device, target)
 }
 
 void refresh() {

@@ -46,7 +46,7 @@ metadata
     }
 
     command "setPreset", [[name: "preset", type: "STRING", description: "Preset"]]
-    command "setHumidity", [[name: "targetHumidity", type: "NUMBER", description: "Target humidity"]]
+    command "setHumidity", [[name: "humiditySetpoint", type: "NUMBER", description: "Humidity setpoint"]]
 
     attribute "healthStatus", "enum", ["offline", "online"]
     attribute "supportedThermostatFanModes", "JSON_OBJECT"
@@ -55,7 +55,7 @@ metadata
     attribute "currentPreset", "string"
     attribute "maxHumidity", "number"
     attribute "minHumidity", "number"
-    attribute "targetHumidity", "number"
+    attribute "humiditySetpoint", "number"
 }
 
 void installed() {
@@ -77,7 +77,7 @@ void parse(String description) { log.warn "parse(String description) not impleme
 
 void parse(List description) {
     description.each {
-        if (it.name in ["thermostatMode", "temperature", "thermostatOperatingState", "thermostatFanMode", "thermostatSetpoint", "coolingSetpoint", "heatingSetpoint", "supportedThermostatModes", "supportedThermostatFanModes", "supportedPresets", "currentPreset", "healthStatus", "maxHumidity", "minHumidity", "humidity", "targetHumidity"]) {
+        if (it.name in ["thermostatMode", "temperature", "thermostatOperatingState", "thermostatFanMode", "thermostatSetpoint", "coolingSetpoint", "heatingSetpoint", "supportedThermostatModes", "supportedThermostatFanModes", "supportedPresets", "currentPreset", "healthStatus", "maxHumidity", "minHumidity", "humidity", "humiditySetpoint"]) {
             if (txtEnable) log.info it.descriptionText
             sendEvent(it)
         }
@@ -108,8 +108,8 @@ void setThermostatFanMode(String fanMode) {
     parent?.componentSetThermostatFanMode(this.device, fanMode)
 }
 
-def setHumidity(targetHumidity) {
-    parent?.componentSetHumidity(this.device, targetHumidity)
+def setHumidity(humiditySetpoint) {
+    parent?.componentSetHumidity(this.device, humiditySetpoint)
 }
 
 void auto() {

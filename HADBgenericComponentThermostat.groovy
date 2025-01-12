@@ -109,7 +109,7 @@ void setThermostatFanMode(String fanMode) {
 }
 
 def setHumidity(targetHumidity) {
-    parent?.componentSetHumidify(this.device, targetHumidity)
+    parent?.componentSetHumidity(this.device, targetHumidity)
 }
 
 void auto() {

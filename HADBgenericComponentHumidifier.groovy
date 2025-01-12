@@ -34,7 +34,7 @@ metadata
         }
 
     command "setMode", [[name: "mode", type: "STRING", description: "Mode"]]
-    command "setHumidity", [[name: "target", type: "NUMBER", description: "Target humidity"]]
+    command "setHumidity", [[name: "target", type: "NUMBER", description: "Humidity setpoint"]]
 
     attribute "healthStatus", "enum", ["offline", "online"]
     attribute "supportedModes", "string"

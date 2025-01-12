@@ -376,7 +376,7 @@ def parse(String description) {
                 def maxHumidity = newState?.attributes?.max_humidity
                 def minHumidity = newState?.attributes?.min_humidity
                 def currentHumidity = newState?.attributes?.current_humidity
-                def targetHumidity = newState?.attributes?.target_humidity
+                def targetHumidity = newState?.attributes?.humidity
                 def hvac_action = newState?.attributes?.hvac_action
                 def fan_mode = newState?.attributes?.fan_mode
                 def target_temperature = newState?.attributes?.temperature

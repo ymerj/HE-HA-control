@@ -57,7 +57,7 @@ void installed() {
 
 void parse(String description) { log.warn "parse(String description) not implemented" }
 
-void parse(List description) {
+void parse(List<Map> description) {
     description.each {
         if (it.name in ["switch", "humidifierMode", "supportedModes", "healthStatus", "maxHumidity", "minHumidity", "humidity", "targetHumidity"]) {
             if (txtEnable) log.info it.descriptionText

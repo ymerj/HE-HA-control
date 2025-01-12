@@ -75,7 +75,7 @@ void uninstalled() {
 
 void parse(String description) { log.warn "parse(String description) not implemented" }
 
-void parse(List description) {
+void parse(List<Map> description) {
     description.each {
         if (it.name in ["thermostatMode", "temperature", "thermostatOperatingState", "thermostatFanMode", "thermostatSetpoint", "coolingSetpoint", "heatingSetpoint", "supportedThermostatModes", "supportedThermostatFanModes", "supportedPresets", "currentPreset", "healthStatus", "maxHumidity", "minHumidity", "humidity", "humiditySetpoint"]) {
             if (txtEnable) log.info it.descriptionText

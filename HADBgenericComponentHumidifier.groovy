@@ -41,7 +41,7 @@ metadata
     attribute "humidifierMode", "string"
     attribute "maxHumidity", "number"
     attribute "minHumidity", "number"
-    attribute "humiditySetpoint", "number"
+    attribute "TargetHumidity", "number"
     }
 
 void updated() {
@@ -59,7 +59,7 @@ void parse(String description) { log.warn "parse(String description) not impleme
 
 void parse(List description) {
     description.each {
-        if (it.name in ["switch", "humidifierMode", "supportedModes", "healthStatus", "maxHumidity", "minHumidity", "humidity", "humiditySetpoint"]) {
+        if (it.name in ["switch", "humidifierMode", "supportedModes", "healthStatus", "maxHumidity", "minHumidity", "humidity", "TargetHumidity"]) {
             if (txtEnable) log.info it.descriptionText
             sendEvent(it)
         }

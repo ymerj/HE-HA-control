@@ -13,7 +13,7 @@ limitations under the License.
 Change history:
 2.6  - Yves Mercier - initial version
 2.12 - Yves Mercier - add mode by name
-2.14 - Yves Mercier - fix typo
+2.14 - Yves Mercier - fix typo, add range check
 
 */
 
@@ -80,7 +80,8 @@ def setMode(mode){
 }
 
 def setHumidity(target) {
-    parent?.componentSetHumidity(this.device, target)
+    if ((target > this.device.currentValue("maxHumidity") || target < this.device.currentValue("minHumidity")) log.warn "humidity target out of range"
+    else parent?.componentSetHumidity(this.device, target)
 }
 
 void refresh() {

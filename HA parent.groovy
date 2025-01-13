@@ -891,7 +891,7 @@ def componentSelectOption(ch, option) {
 
 def componentSetHumidity(ch, target) {
     if (logEnable) log.info("received set humidity request from ${ch.label}")
-    executeCommand(ch, "set_humidity", [target_humidity: target])
+    executeCommand(ch, "set_humidity", [humidity: target])
 }
 
 def componentAuto(ch) {

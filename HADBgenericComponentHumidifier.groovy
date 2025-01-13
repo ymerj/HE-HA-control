@@ -80,7 +80,7 @@ def setMode(mode){
 }
 
 def setHumidity(target) {
-    if ((target > this.device.currentValue("maxHumidity") || target < this.device.currentValue("minHumidity")) log.warn "humidity target out of range"
+    if ((target > this.device.currentValue("maxHumidity")) || (target < this.device.currentValue("minHumidity"))) log.warn "humidity target out of range"
     else parent?.componentSetHumidity(this.device, target)
 }
 

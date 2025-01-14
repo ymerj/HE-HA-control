@@ -109,7 +109,7 @@ void setThermostatFanMode(String fanMode) {
 }
 
 def setHumidity(humiditySetpoint) {
-    if ((humiditySetpoint > this.device.currentValue("maxHumidity") || humiditySetpoint < this.device.currentValue("minHumidity")) log.warn "humidity setpoint out of range"
+    if ((humiditySetpoint > this.device.currentValue("maxHumidity")) || (humiditySetpoint < this.device.currentValue("minHumidity"))) log.warn "humidity setpoint out of range"
     else parent?.componentSetHumidity(this.device, humiditySetpoint)
 }
 

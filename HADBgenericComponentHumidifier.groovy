@@ -13,6 +13,7 @@ limitations under the License.
 Change history:
 2.6  - Yves Mercier - initial version
 2.12 - Yves Mercier - add mode by name
+2.14 - Yves Mercier - fix typo, add range check
 
 */
 
@@ -56,7 +57,7 @@ void installed() {
 
 void parse(String description) { log.warn "parse(String description) not implemented" }
 
-void parse(List description) {
+void parse(List<Map> description) {
     description.each {
         if (it.name in ["switch", "humidifierMode", "supportedModes", "healthStatus", "maxHumidity", "minHumidity", "humidity", "targetHumidity"]) {
             if (txtEnable) log.info it.descriptionText
@@ -79,7 +80,8 @@ def setMode(mode){
 }
 
 def setHumidity(target) {
-    parent?.componentSetHumidify(this.device, target)
+    if ((target > this.device.currentValue("maxHumidity")) || (target < this.device.currentValue("minHumidity"))) log.warn "humidity target out of range"
+    else parent?.componentSetHumidity(this.device, target)
 }
 
 void refresh() {

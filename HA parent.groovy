@@ -96,7 +96,7 @@
 * 2.12   2024-12-15 Yves Mercier       Add support for select entity. Clean code. Add item selection by name. Fix button event.
 * 2.13   2024-12-25 Yves Mercier       Fix fan setSpeed.
 * 2.14   2025-01-10 Yves Mercier       Add humidity support to climate entity.
-* 2.15   2025-01-19 Yves Mercier       Separate indexed source list from supported inputs
+* 2.15   2025-01-19 Yves Mercier       Separate indexed source list from supported inputs, remove index from lightEffects
 */
 
 import groovy.json.JsonSlurper
@@ -306,8 +306,9 @@ def parse(String description) {
                 if (sat) sat = Math.round(sat.toInteger())
                 def ct = newState?.attributes?.color_temp
                 if (ct) ct = Math.round(1000000/ct)
-                def effectsList = []
-                effectsList = newState?.attributes?.effect_list?.indexed(1)
+                //def effectsList = []
+                //effectsList = newState?.attributes?.effect_list?.indexed(1)
+                effectsList = JsonOutput.toJson(newState?.attributes?.effect_list)
                 def effectName = newState?.attributes?.effect
                 def lightType = []
                 lightType = newState?.attributes?.supported_color_modes
@@ -680,12 +681,14 @@ def componentSetSaturation(ch, saturation, transition=1) {
 
 def componentSetEffect(ch, effectNumber) {
     if (logEnable) log.info("received setEffect request from ${ch.label}")
-    def effectsList = ch.currentValue("lightEffects")?.tokenize(',=[]')
+    /*def effectsList = ch.currentValue("lightEffects")?.tokenize(',=[]')
     def max = effectsList.size() / 2
     max = max.toInteger()
     effectNumber = effectNumber.toInteger()
     effectNumber = (effectNumber < 1) ? 1 : ((effectNumber > max) ? max : effectNumber)   
-    data = [effect: effectsList[(effectNumber * 2) - 1].trim().replaceAll("}","")]
+    data = [effect: effectsList[(effectNumber * 2) - 1].trim().replaceAll("}","")]*/
+    effects = new groovy.json.JsonSlurper().parseText(ch.currentValue("lightEffects"))
+    data = [effect: effects[effectNumber.toInteger()]]
     executeCommand(ch, "turn_on", data)
 }
 
@@ -979,7 +982,7 @@ void componentUnmute(ch) {
     executeCommand(ch, "volume_mute", [is_volume_muted: "false"])
 }
 
-void  componentVolumeUp(ch) {
+void componentVolumeUp(ch) {
     if (logEnable) log.info("received volume up request from ${ch.label}")
     executeCommand(ch, "volume_up")
 }

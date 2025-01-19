@@ -20,6 +20,7 @@ Change history:
 
 2.11 - Yves Mercier - Initial version
 2.12 - Yves Mercier - Add input source
+2.15 - Yves Mercier - Separate indexed list from supported inputs
 
 */
 
@@ -48,6 +49,7 @@ metadata
     attribute "mediaType", "string"
     attribute "duration", "number"
     attribute "position", "number"
+    attribute "sourceList", "string"
    // attribute "appName", "string"
    // attribute "appID", "string"
 }
@@ -67,7 +69,7 @@ void parse(String description) { log.warn "parse(String description) not impleme
 
 void parse(List<Map> description) {
     description.each {
-        if (it.name in ["status", "healthStatus", "switch", "volume", "mute", "mediaInputSource", "supportedInputs", "trackData", "mediaType", "duration", "position", "trackDescription"]) {
+        if (it.name in ["status", "healthStatus", "switch", "volume", "mute", "mediaInputSource", "supportedInputs", "sourceList", "trackData", "mediaType", "duration", "position", "trackDescription"]) {
             if (txtEnable) log.info it.descriptionText
             sendEvent(it)
         }

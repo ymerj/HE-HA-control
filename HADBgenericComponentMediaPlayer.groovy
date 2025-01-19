@@ -20,7 +20,7 @@ Change history:
 
 2.11 - Yves Mercier - Initial version
 2.12 - Yves Mercier - Add input source
-2.15 - Yves Mercier - Separate indexed list from supported inputs
+2.15 - Yves Mercier - Separate indexed source list from supported inputs
 
 */
 

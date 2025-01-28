@@ -760,7 +760,7 @@ void componentOpenTilt(ch) {
 
 void componentSetTiltLevel(ch, tilt) {
     if (logEnable) log.info("received set tilt request from ${ch.label}")
-    executeCommand(ch, "set_cover_tilt_position", [position: tilt])
+    executeCommand(ch, "set_cover_tilt_position", [tilt_position: tilt])
 }
 
 void componentStartPositionChange(ch, dir) {

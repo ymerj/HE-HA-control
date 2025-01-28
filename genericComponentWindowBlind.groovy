@@ -23,7 +23,8 @@ Change history:
 0.1.59 - Yves Mercier - Change healthStatus handling
 2.2    - Yves Mercier - Modified from shade to use with blind type entities
 2.9    - Yves Mercier - Add windowShade attribute
-2.10   - Yves mercier - Add extra blind commands
+2.10   - Yves Mercier - Add extra blind commands
+2.15   - Yves Mercier - Add WindowShade capability
 
 */
 
@@ -32,6 +33,7 @@ metadata
     definition(name: "Generic Component Window Blind", namespace: "community", author: "community", importUrl: "https://raw.githubusercontent.com/ymerj/HE-HA-control/main/genericComponentWindowBlind.groovy")
     {
         capability "WindowBlind"
+        capability "WindowShade"
         capability "Refresh"
         capability "Health Check"
 

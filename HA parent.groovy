@@ -96,7 +96,7 @@
 * 2.12   2024-12-15 Yves Mercier       Add support for select entity. Clean code. Add item selection by name. Fix button event.
 * 2.13   2024-12-25 Yves Mercier       Fix fan setSpeed.
 * 2.14   2025-01-10 Yves Mercier       Add humidity support to climate entity.
-* 2.15   2025-01-19 Yves Mercier       Separate indexed source list from supported inputs, remove index from lightEffects
+* 2.15   2025-02-27 Yves Mercier       Separate indexed source list from supported inputs, remove index from lightEffects, refactored event entity to reflect breaking changes
 */
 
 import groovy.json.JsonSlurper
@@ -273,6 +273,14 @@ def parse(String description) {
             
             case "event":
                 def eventType = newState?.attributes?.event_type
+                def eventList = []
+                eventList = newState?.attributes?.eventTypes?.indexed(1)
+		def button = eventList.indexOf(eventType)
+                newVals += [button, eventType, eventList]
+                mapping = translateDevices(domain, newVals, friendly, origin)
+                if (mapping) updateChildDevice(mapping, entity, friendly)
+                break
+/*                
                 switch (eventType)
                     {
                     case {it.contains("double")}: eventType = "doubleTapped"; break
@@ -284,7 +292,7 @@ def parse(String description) {
                 mapping = translateDevices(domain, newVals, friendly, origin)
                 if (mapping) updateChildDevice(mapping, entity, friendly)
                 break
-                
+ */               
             case "input_text":
             case "text":
             case "lock":
@@ -560,7 +568,7 @@ def translateDevices(domain, newVals, friendly, origin)
             input_boolean: [type: "Generic Component Switch",           event: [[name: "switch", value: newVals[0], type: origin, descriptionText:"${friendly} was turned ${newVals[0]} [${origin}]"]]],
             humidifier: [type: "HADB Generic Component Humidifier",     event: [[name: "switch", value: newVals[0], type: origin, descriptionText:"${friendly} was turned ${newVals[0]} [${origin}]"],[name: "humidifierMode", value: newVals[1] ?: "none", descriptionText: "${friendly}'s humidifier mode is set to ${newVals[1] ?: 'none'}"],[name: "supportedModes", value: newVals[2] ?: "none", descriptionText: "${friendly} supportedModes were set to ${newVals[2] ?: 'none'}"],[name: "maxHumidity", value: newVals[3] ?: 100, unit: "%", descriptionText:"${friendly} max humidity is ${newVals[3] ?: 100}%"],[name: "minHumidity", value: newVals[4] ?: 0, unit: "%", descriptionText:"${friendly} min humidity is ${newVals[4] ?: 0}%"],[name: "humidity", value: newVals[5], unit: "%", descriptionText:"${friendly} current humidity is ${newVals[5]}%"],[name: "targetHumidity", value: newVals[6], unit: "%", descriptionText:"${friendly} target humidity is set to ${newVals[6]}%"]], namespace: "community"],
             valve: [type: "HADB Generic Component Valve",               event: [[name: "valve", value: newVals[0] == "closed" ? "closed":"open", type: origin, descriptionText:"${friendly} was turned ${newVals[0]} [${origin}]"]], namespace: "community"],
-            event: [type: "HADB Generic Component Event",               event: [[name: "timestamp", value: newVals[0], descriptionText:"${friendly} event received at ${newVals[0]}"],[name: newVals[1], value: 1, descriptionText: "${friendly} was ${newVals[1]}", isStateChange: true]], namespace: "community"],
+            event: [type: "HADB Generic Component Event",               event: [[name: "timestamp", value: newVals[0], descriptionText:"${friendly} event received at ${newVals[0]}"],[name: "pushed", value: newVals[1], descriptionText: "${friendly} button ${newVals[1]} was pushed", isStateChange: true],[name: "eventType", value: newVals[2], descriptionText:"${friendly} event type was ${newVals[2]}"],[name: "eventList", value: newVals[3], descriptionText:"${friendly} eventlList is ${newVals[3]}"]], namespace: "community"],
             input_text: [type: "HADB Generic Component Text",           event: [[name: "variable", value: newVals[0], type: origin, descriptionText:"${friendly} was set to ${newVals[0]} [${origin}]"]], namespace: "community"],
             text: [type: "HADB Generic Component Text",                 event: [[name: "variable", value: newVals[0], type: origin, descriptionText:"${friendly} was set to ${newVals[0]} [${origin}]"]], namespace: "community"],
             input_number: [type: "Generic Component Number",            event: [[name: "number", value: newVals[0], unit: newVals[1] ?: "", type: origin, descriptionText:"${friendly} was set to ${newVals[0]} ${newVals[1] ?: ''} [${origin}]"],[name: "minimum", value: newVals[2], descriptionText:"${friendly} minimum value is ${newVals[2]}"],[name: "maximum", value: newVals[3], descriptionText:"${friendly} maximum value is ${newVals[3]}"],[name: "step", value: newVals[4], descriptionText:"${friendly} step is ${newVals[4]}"]], namespace: "community"],

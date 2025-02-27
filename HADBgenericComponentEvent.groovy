@@ -21,9 +21,9 @@ metadata
     {
         capability "Refresh"
         capability "PushableButton"
-        capability "DoubleTapableButton"
-        capability "HoldableButton"
-        capability "ReleasableButton"
+        // capability "DoubleTapableButton"
+        // capability "HoldableButton"
+        // capability "ReleasableButton"
         capability "Health Check"
     }
     preferences 

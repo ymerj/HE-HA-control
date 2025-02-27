@@ -282,19 +282,7 @@ def parse(String description) {
                 mapping = translateDevices(domain, newVals, friendly, origin)
                 if (mapping) updateChildDevice(mapping, entity, friendly)
                 break
-/*                
-                switch (eventType)
-                    {
-                    case {it.contains("double")}: eventType = "doubleTapped"; break
-                    case {it.contains("hold")}: eventType = "held"; break
-                    case {it.contains("release")}: eventType = "released"; break
-                    default: eventType = "pushed"
-                    }
-                newVals += eventType
-                mapping = translateDevices(domain, newVals, friendly, origin)
-                if (mapping) updateChildDevice(mapping, entity, friendly)
-                break
- */               
+            
             case "input_text":
             case "text":
             case "lock":
@@ -316,8 +304,6 @@ def parse(String description) {
                 if (sat) sat = Math.round(sat.toInteger())
                 def ct = newState?.attributes?.color_temp
                 if (ct) ct = Math.round(1000000/ct)
-                //def effectsList = []
-                //effectsList = newState?.attributes?.effect_list?.indexed(1)
                 effectsList = JsonOutput.toJson(newState?.attributes?.effect_list)
                 def effectName = newState?.attributes?.effect
                 def lightType = []
@@ -691,12 +677,6 @@ def componentSetSaturation(ch, saturation, transition=1) {
 
 def componentSetEffect(ch, effectNumber) {
     if (logEnable) log.info("received setEffect request from ${ch.label}")
-    /*def effectsList = ch.currentValue("lightEffects")?.tokenize(',=[]')
-    def max = effectsList.size() / 2
-    max = max.toInteger()
-    effectNumber = effectNumber.toInteger()
-    effectNumber = (effectNumber < 1) ? 1 : ((effectNumber > max) ? max : effectNumber)   
-    data = [effect: effectsList[(effectNumber * 2) - 1].trim().replaceAll("}","")]*/
     effects = new groovy.json.JsonSlurper().parseText(ch.currentValue("lightEffects"))
     data = [effect: effects[effectNumber.toInteger()]]
     executeCommand(ch, "turn_on", data)

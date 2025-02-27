@@ -12,6 +12,7 @@ limitations under the License.
 -------------------------------------------
 Change history:
 2.7    - Yves Mercier - initial version
+2.15   - Yves Mercier - refactored to reflect breaking changes
 */
 
 metadata
@@ -30,13 +31,14 @@ metadata
         input name: "txtEnable", type: "bool", title: "Enable descriptionText logging", defaultValue: true
     }
     attribute "timestamp", "string"
+    attribute "eventType", "string"
+    attribute "eventList", "enum"
     attribute "healthStatus", "enum", ["offline", "online"]
 }
 
 void updated() {
     log.info "Updated..."
     log.warn "description logging is ${txtEnable == true}, button event is ${pushRequired == true}"
-    sendEvent(name: "numberOfButtons", value: 1, displayed: false)
 }
 
 void installed() {

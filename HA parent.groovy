@@ -96,6 +96,7 @@
 * 2.12   2024-12-15 Yves Mercier       Add support for select entity. Clean code. Add item selection by name. Fix button event.
 * 2.13   2024-12-25 Yves Mercier       Fix fan setSpeed.
 * 2.14   2025-01-10 Yves Mercier       Add humidity support to climate entity.
+* 2.15   2025-02-27 Yves Mercier       Separate indexed source list from supported inputs, remove index from lightEffects, refactored event entity to reflect breaking changes
 */
 
 import groovy.json.JsonSlurper
@@ -272,18 +273,16 @@ def parse(String description) {
             
             case "event":
                 def eventType = newState?.attributes?.event_type
-                switch (eventType)
-                    {
-                    case {it.contains("double")}: eventType = "doubleTapped"; break
-                    case {it.contains("hold")}: eventType = "held"; break
-                    case {it.contains("release")}: eventType = "released"; break
-                    default: eventType = "pushed"
-                    }
-                newVals += eventType
+                def eventList = []
+                eventList = newState?.attributes?.event_types
+                def button = eventList.indexOf(eventType) + 1
+                def nb = eventList.size()
+                eventList = newState?.attributes?.event_types?.indexed(1)
+                newVals += [button, eventType, eventList, nb]
                 mapping = translateDevices(domain, newVals, friendly, origin)
                 if (mapping) updateChildDevice(mapping, entity, friendly)
                 break
-                
+            
             case "input_text":
             case "text":
             case "lock":
@@ -305,8 +304,7 @@ def parse(String description) {
                 if (sat) sat = Math.round(sat.toInteger())
                 def ct = newState?.attributes?.color_temp
                 if (ct) ct = Math.round(1000000/ct)
-                def effectsList = []
-                effectsList = newState?.attributes?.effect_list?.indexed(1)
+                effectsList = JsonOutput.toJson(newState?.attributes?.effect_list)
                 def effectName = newState?.attributes?.effect
                 def lightType = []
                 lightType = newState?.attributes?.supported_color_modes
@@ -463,11 +461,11 @@ def parse(String description) {
                     case "channel": trackDescription = "Channel: " + channel; break
                     }
                 def mediaInputSource = newState?.attributes?.source
-                def supportedInputs = newState?.attributes?.source_list?.indexed(1)
-                newVals += [status, mute, volume, mediaType, duration, position, trackData, trackDescription, mediaInputSource, supportedInputs]
+                def sourceList = newState?.attributes?.source_list?.indexed(1)
+                def supportedInputs = JsonOutput.toJson(newState?.attributes?.source_list)
+                newVals += [status, mute, volume, mediaType, duration, position, trackData, trackDescription, mediaInputSource, supportedInputs, sourceList]
                 mapping = translateDevices(domain, newVals, friendly, origin)
-                if (!supportedInputs) mapping.event.remove(10)
-                if (!mediaInputSource) mapping.event.remove(9)
+                if (!sourceList) mapping.event = mapping.event[0..8]
                 if (mapping) updateChildDevice(mapping, entity, friendly)
                 break
             
@@ -558,13 +556,13 @@ def translateDevices(domain, newVals, friendly, origin)
             input_boolean: [type: "Generic Component Switch",           event: [[name: "switch", value: newVals[0], type: origin, descriptionText:"${friendly} was turned ${newVals[0]} [${origin}]"]]],
             humidifier: [type: "HADB Generic Component Humidifier",     event: [[name: "switch", value: newVals[0], type: origin, descriptionText:"${friendly} was turned ${newVals[0]} [${origin}]"],[name: "humidifierMode", value: newVals[1] ?: "none", descriptionText: "${friendly}'s humidifier mode is set to ${newVals[1] ?: 'none'}"],[name: "supportedModes", value: newVals[2] ?: "none", descriptionText: "${friendly} supportedModes were set to ${newVals[2] ?: 'none'}"],[name: "maxHumidity", value: newVals[3] ?: 100, unit: "%", descriptionText:"${friendly} max humidity is ${newVals[3] ?: 100}%"],[name: "minHumidity", value: newVals[4] ?: 0, unit: "%", descriptionText:"${friendly} min humidity is ${newVals[4] ?: 0}%"],[name: "humidity", value: newVals[5], unit: "%", descriptionText:"${friendly} current humidity is ${newVals[5]}%"],[name: "targetHumidity", value: newVals[6], unit: "%", descriptionText:"${friendly} target humidity is set to ${newVals[6]}%"]], namespace: "community"],
             valve: [type: "HADB Generic Component Valve",               event: [[name: "valve", value: newVals[0] == "closed" ? "closed":"open", type: origin, descriptionText:"${friendly} was turned ${newVals[0]} [${origin}]"]], namespace: "community"],
-            event: [type: "HADB Generic Component Event",               event: [[name: "timestamp", value: newVals[0], descriptionText:"${friendly} event received at ${newVals[0]}"],[name: newVals[1], value: 1, descriptionText: "${friendly} was ${newVals[1]}", isStateChange: true]], namespace: "community"],
+            event: [type: "HADB Generic Component Event",               event: [[name: "timestamp", value: newVals[0], descriptionText:"${friendly} event received at ${newVals[0]}"],[name: "pushed", value: newVals[1], descriptionText: "${friendly} button ${newVals[1]} was pushed", isStateChange: true],[name: "eventType", value: newVals[2], descriptionText:"${friendly} event type was ${newVals[2]}"],[name: "eventList", value: newVals[3], descriptionText:"${friendly} eventlList is ${newVals[3]}"],[name: "numberOfButtons", value: newVals[4], descriptionText:"${friendly} number of buttons is ${newVals[4]}"]], namespace: "community"],
             input_text: [type: "HADB Generic Component Text",           event: [[name: "variable", value: newVals[0], type: origin, descriptionText:"${friendly} was set to ${newVals[0]} [${origin}]"]], namespace: "community"],
             text: [type: "HADB Generic Component Text",                 event: [[name: "variable", value: newVals[0], type: origin, descriptionText:"${friendly} was set to ${newVals[0]} [${origin}]"]], namespace: "community"],
             input_number: [type: "Generic Component Number",            event: [[name: "number", value: newVals[0], unit: newVals[1] ?: "", type: origin, descriptionText:"${friendly} was set to ${newVals[0]} ${newVals[1] ?: ''} [${origin}]"],[name: "minimum", value: newVals[2], descriptionText:"${friendly} minimum value is ${newVals[2]}"],[name: "maximum", value: newVals[3], descriptionText:"${friendly} maximum value is ${newVals[3]}"],[name: "step", value: newVals[4], descriptionText:"${friendly} step is ${newVals[4]}"]], namespace: "community"],
             number: [type: "Generic Component Number",                  event: [[name: "number", value: newVals[0], unit: newVals[1] ?: "", type: origin, descriptionText:"${friendly} was set to ${newVals[0]} ${newVals[1] ?: ''} [${origin}]"],[name: "minimum", value: newVals[2], descriptionText:"${friendly} minimum value is ${newVals[2]}"],[name: "maximum", value: newVals[3], descriptionText:"${friendly} maximum value is ${newVals[3]}"],[name: "step", value: newVals[4], descriptionText:"${friendly} step is ${newVals[4]}"]], namespace: "community"],
             vacuum: [type: "HADB Generic Component Vacuum",             event: [[name: "vacuum", value: newVals[0], type: origin, descriptionText:"${friendly} is ${newVals[0]} [${origin}]"],[name: "speed", value: newVals[1], type: origin, descriptionText:"${friendly} speed was set to ${newVals[1]} [${origin}]"],[name: "fanSeedList", value: newVals[2], type: origin, descriptionText:"${friendly} speed list is ${newVals[2]} [${origin}]"]], namespace: "community"],
-            media_player: [type: "HADB Generic Component Media Player", event: [[name: "switch", value: newVals[0] == "off" ? "off":"on", type: origin, descriptionText:"${friendly} was turned ${newVals[0] == 'off' ? 'off':'on'} [${origin}]"],[name: "status", value: newVals[1], type: origin, descriptionText:"${friendly} status was set to ${newVals[1]} [${origin}]"],[name: "mute", value: newVals[2] ? "muted":"unmuted", type: origin, descriptionText:"${friendly} volume was ${newVals[2] ? 'muted':'unmuted'} [${origin}]"],[name: "volume", value: newVals[3], type: origin, descriptionText:"${friendly} volume was set to ${newVals[3]} [${origin}]"],[name: "mediaType", value: newVals[4], type: origin, descriptionText:"${friendly} mediaType was set to ${newVals[4]} [${origin}]"],[name: "duration", value: newVals[5], type: origin, descriptionText:"${friendly} duration was set to ${newVals[5]} [${origin}]"],[name: "position", value: newVals[6], type: origin, descriptionText:"${friendly} position was set to ${newVals[6]} [${origin}]"],[name: "trackData", value: newVals[7], type: origin, descriptionText:"${friendly} track was set to ${newVals[7]} [${origin}]"],[name: "trackDescription", value: newVals[8], type: origin, descriptionText:"${friendly} trackDescription was set to ${newVals[8]} [${origin}]"],[name: "mediaInputSource", value: newVals[9], type: origin, descriptionText:"${friendly} mediaInputSource was set to ${newVals[9]} [${origin}]"],[name: "supportedInputs", value: newVals[10], type: origin, descriptionText:"${friendly} supportedInputs was set to ${newVals[10]} [${origin}]"]], namespace: "community"],
+            media_player: [type: "HADB Generic Component Media Player", event: [[name: "switch", value: newVals[0] == "off" ? "off":"on", type: origin, descriptionText:"${friendly} was turned ${newVals[0] == 'off' ? 'off':'on'} [${origin}]"],[name: "status", value: newVals[1], type: origin, descriptionText:"${friendly} status was set to ${newVals[1]} [${origin}]"],[name: "mute", value: newVals[2] ? "muted":"unmuted", type: origin, descriptionText:"${friendly} volume was ${newVals[2] ? 'muted':'unmuted'} [${origin}]"],[name: "volume", value: newVals[3], type: origin, descriptionText:"${friendly} volume was set to ${newVals[3]} [${origin}]"],[name: "mediaType", value: newVals[4], type: origin, descriptionText:"${friendly} mediaType was set to ${newVals[4]} [${origin}]"],[name: "duration", value: newVals[5], type: origin, descriptionText:"${friendly} duration was set to ${newVals[5]} [${origin}]"],[name: "position", value: newVals[6], type: origin, descriptionText:"${friendly} position was set to ${newVals[6]} [${origin}]"],[name: "trackData", value: newVals[7], type: origin, descriptionText:"${friendly} track was set to ${newVals[7]} [${origin}]"],[name: "trackDescription", value: newVals[8], type: origin, descriptionText:"${friendly} trackDescription was set to ${newVals[8]} [${origin}]"],[name: "mediaInputSource", value: newVals[9], type: origin, descriptionText:"${friendly} mediaInputSource was set to ${newVals[9]} [${origin}]"],[name: "supportedInputs", value: newVals[10], type: origin, descriptionText:"${friendly} supportedInputs was set to ${newVals[10]} [${origin}]"],[name: "sourceList", value: newVals[11], type: origin, descriptionText:"${friendly} source list was set to ${newVals[11]} [${origin}]"]], namespace: "community"],
             select: [type: "HADB Generic Component Select",             event: [[name: "currentOption", value: newVals[0], type: origin, descriptionText:"${friendly} was set to ${newVals[0]} [${origin}]"],[name: "options", value: newVals[1], descriptionText: "${friendly} options were set to ${newVals[1]}"]], namespace: "community"],
             input_select: [type: "HADB Generic Component Select",       event: [[name: "currentOption", value: newVals[0], type: origin, descriptionText:"${friendly} was set to ${newVals[0]} [${origin}]"],[name: "options", value: newVals[1], descriptionText: "${friendly} options were set to ${newVals[1]}"]], namespace: "community"],
         ]
@@ -679,12 +677,8 @@ def componentSetSaturation(ch, saturation, transition=1) {
 
 def componentSetEffect(ch, effectNumber) {
     if (logEnable) log.info("received setEffect request from ${ch.label}")
-    def effectsList = ch.currentValue("lightEffects")?.tokenize(',=[]')
-    def max = effectsList.size() / 2
-    max = max.toInteger()
-    effectNumber = effectNumber.toInteger()
-    effectNumber = (effectNumber < 1) ? 1 : ((effectNumber > max) ? max : effectNumber)   
-    data = [effect: effectsList[(effectNumber * 2) - 1].trim().replaceAll("}","")]
+    effects = new groovy.json.JsonSlurper().parseText(ch.currentValue("lightEffects"))
+    data = [effect: effects[effectNumber.toInteger()]]
     executeCommand(ch, "turn_on", data)
 }
 
@@ -756,7 +750,7 @@ void componentOpenTilt(ch) {
 
 void componentSetTiltLevel(ch, tilt) {
     if (logEnable) log.info("received set tilt request from ${ch.label}")
-    executeCommand(ch, "set_cover_tilt_position", [position: tilt])
+    executeCommand(ch, "set_cover_tilt_position", [tilt_position: tilt])
 }
 
 void componentStartPositionChange(ch, dir) {
@@ -978,7 +972,7 @@ void componentUnmute(ch) {
     executeCommand(ch, "volume_mute", [is_volume_muted: "false"])
 }
 
-void  componentVolumeUp(ch) {
+void componentVolumeUp(ch) {
     if (logEnable) log.info("received volume up request from ${ch.label}")
     executeCommand(ch, "volume_up")
 }
@@ -998,7 +992,7 @@ void componentSetInputSource(ch, source) {
     if (logEnable) log.info("received set input source from ${ch.label}")
     if (source.toString().isNumber())
         {
-        def sourcesList = ch.currentValue("supportedInputs")?.tokenize(',=[]')
+        def sourcesList = ch.currentValue("sourceList")?.tokenize(',={}')
         def max = sourcesList.size() / 2
         max = max.toInteger()
         source = source.toInteger()

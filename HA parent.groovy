@@ -97,6 +97,7 @@
 * 2.13   2024-12-25 Yves Mercier       Fix fan setSpeed.
 * 2.14   2025-01-10 Yves Mercier       Add humidity support to climate entity.
 * 2.15   2025-02-27 Yves Mercier       Separate indexed source list from supported inputs, remove index from lightEffects, refactored event entity to reflect breaking changes
+* 2.16   2025-03-05 Yves Mercier       Compensate for restrictions imposed by ezdashboard in mediaPlayer and locks
 */
 
 import groovy.json.JsonSlurper

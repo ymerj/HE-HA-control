@@ -465,7 +465,7 @@ def parse(String description) {
                 def supportedInputs = JsonOutput.toJson(newState?.attributes?.source_list)
                 newVals += [status, mute, volume, mediaType, duration, position, trackData, trackDescription, mediaInputSource, supportedInputs, sourceList]
                 mapping = translateDevices(domain, newVals, friendly, origin)
-                if (!sourceList) mapping.event = mapping.event[0..8]
+                if (!sourceList) mapping.event = mapping.event[0..9]
                 if (mapping) updateChildDevice(mapping, entity, friendly)
                 break
             

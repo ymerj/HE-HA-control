@@ -97,6 +97,7 @@
 * 2.13   2024-12-25 Yves Mercier       Fix fan setSpeed.
 * 2.14   2025-01-10 Yves Mercier       Add humidity support to climate entity.
 * 2.15   2025-02-27 Yves Mercier       Separate indexed source list from supported inputs, remove index from lightEffects, refactored event entity to reflect breaking changes
+* 2.16   2025-03-10 basilisk487        Filter out setCoolingSetpoint/setHeatingSetpoint calls that are the opposite of current thermostat mode.
 */
 
 import groovy.json.JsonSlurper
@@ -821,12 +822,20 @@ def componentSetThermostatMode(ch, thermostatmode) {
 }
 
 def componentSetCoolingSetpoint(ch, temperature) {
+    if (ch.currentValue("thermostatMode") == "heat") {
+	if (logEnable) log.info("ignoring setCoolingSetpoint request from ${ch.label} (mode is 'heat')")
+        return
+    }   
     if (logEnable) log.info("received setCoolingSetpoint request from ${ch.label}")
     if (ch.currentValue("thermostatMode") == "heat_cool") data = [target_temp_high: temperature, target_temp_low: ch.currentValue("heatingSetpoint")] else data = [temperature: temperature]
     executeCommand(ch, "set_temperature", data)
 }
 
 def componentSetHeatingSetpoint(ch, temperature) {
+    if (ch.currentValue("thermostatMode") == "cool") {
+	if (logEnable) log.info("ignoring setHeatingSetpoint request from ${ch.label} (mode is 'cool')")
+        return
+    }   
     if (logEnable) log.info("received setHeatingSetpoint request from ${ch.label}")
     if (ch.currentValue("thermostatMode") == "heat_cool") data = [target_temp_high: ch.currentValue("coolingSetpoint"), target_temp_low: temperature] else data = [temperature: temperature] 
     executeCommand(ch, "set_temperature", data)

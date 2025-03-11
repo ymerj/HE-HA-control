@@ -823,7 +823,7 @@ def componentSetThermostatMode(ch, thermostatmode) {
 
 def componentSetCoolingSetpoint(ch, temperature) {
     if (ch.currentValue("thermostatMode") == "heat") {
-	if (logEnable) log.info("ignoring setCoolingSetpoint request from ${ch.label} (mode is 'heat')")
+	log.warn("ignoring setCoolingSetpoint request from ${ch.label} (mode is 'heat')")
         return
     }   
     if (logEnable) log.info("received setCoolingSetpoint request from ${ch.label}")
@@ -833,7 +833,7 @@ def componentSetCoolingSetpoint(ch, temperature) {
 
 def componentSetHeatingSetpoint(ch, temperature) {
     if (ch.currentValue("thermostatMode") == "cool") {
-	if (logEnable) log.info("ignoring setHeatingSetpoint request from ${ch.label} (mode is 'cool')")
+	log.warn("ignoring setHeatingSetpoint request from ${ch.label} (mode is 'cool')")
         return
     }   
     if (logEnable) log.info("received setHeatingSetpoint request from ${ch.label}")

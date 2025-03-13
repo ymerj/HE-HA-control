@@ -97,7 +97,7 @@
 * 2.13   2024-12-25 Yves Mercier       Fix fan setSpeed.
 * 2.14   2025-01-10 Yves Mercier       Add humidity support to climate entity.
 * 2.15   2025-02-27 Yves Mercier       Separate indexed source list from supported inputs, remove index from lightEffects, refactored event entity to reflect breaking changes
-* 2.16   2025-03-05 Yves Mercier       Compensate for restrictions imposed by ezdashboard in mediaPlayer and locks
+* 2.16   2025-03-05 Yves Mercier       Compensate for restrictions imposed by ezdashboard in mediaPlayer and locks, change handling of "off" thermostat mode
 */
 
 import groovy.json.JsonSlurper
@@ -614,10 +614,6 @@ def componentOn(ch) {
 
 def componentOff(ch) {
     if (logEnable) log.info("received off request from ${ch.label}")
-    if(ch.getSupportedAttributes().contains("thermostatMode")) { // since componentOff() is not unique across Hubitat device types, catch this special case
-        componentOffTStat(ch)
-        return
-    }
     executeCommand(ch, "turn_off")
 }
 
@@ -913,10 +909,6 @@ def componentFanOn(ch) {
 
 def componentHeat(ch) {
     componentSetThermostatMode(ch, "heat")
-}
-
-def componentOffTStat(ch) {
-    componentSetThermostatMode(ch, "off")
 }
 
 def componentStartLevelChange(ch) {

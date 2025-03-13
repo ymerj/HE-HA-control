@@ -30,7 +30,7 @@ Change history:
 
 metadata
 {
-    definition(name: 'HADB Generic Component Thermostat', namespace: 'community', author: 'community')
+    definition(name: 'HADB Generic Component Thermostat', namespace: 'community', author: 'community', importUrl: "https://raw.githubusercontent.com/ymerj/HE-HA-control/main/HADBgenericComponentThermostat.groovy")
     {
         capability 'Actuator'
         capability 'Sensor'

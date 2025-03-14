@@ -98,7 +98,7 @@
 * 2.14   2025-01-10 Yves Mercier       Add humidity support to climate entity.
 * 2.15   2025-02-27 Yves Mercier       Separate indexed source list from supported inputs, remove index from lightEffects, refactored event entity to reflect breaking changes
 * 2.16   2025-03-13 ritchierich        Add support for gas detector.
-*                   Yves Mercier       Compensate for restrictions imposed by ezdashboard in mediaPlayer and locks, change handling of "off" thermostat mode
+*                   Yves Mercier       Compensate for restrictions imposed by ezdashboard in mediaPlayer and locks, simplify handling of "off" thermostat mode
 */
 
 import groovy.json.JsonSlurper

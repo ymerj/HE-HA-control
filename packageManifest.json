@@ -1,7 +1,7 @@
 {
   "packageName": "HE-HA-control",
   "author": "ymerj",
-  "version": "2.15",
+  "version": "2.16",
   "minimumHEVersion": "2.1.9",
   "dateReleased": "2021-03-19",
   "drivers": [
@@ -185,6 +185,20 @@
       "name": "HADB Generic Component Select",
       "namespace": "community",
       "location": "https://raw.githubusercontent.com/ymerj/HE-HA-control/main/HADBgenericComponentSelect.groovy",
+      "required": true
+    },
+    {
+      "id": "d31cc626-0afe-4ad5-a512-f5782358bf9b",
+      "name": "HADB Generic Component Gas Detector",
+      "namespace": "community",
+      "location": "https://raw.githubusercontent.com/ymerj/HE-HA-control/main/HADBgenericComponentGasDetector.groovy",
+      "required": true
+    },
+    {
+      "id": "d31cc626-0afe-4ad5-a512-f5782358bf9c",
+      "name": "HADB Generic Component Lock",
+      "namespace": "community",
+      "location": "https://raw.githubusercontent.com/ymerj/HE-HA-control/main/HADBgenericComponentLock.groovy",
       "required": true
     }
   ],

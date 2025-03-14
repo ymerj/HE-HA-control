@@ -24,12 +24,13 @@ Change history:
 2.8  - mluck        - corrected typo
 2.12 - Yves Mercier - Add presets by name
 2.14 - Yves Mercier - Add support for humidity setting
+2.16 - basilisk487  - Filter out setCoolingSetpoint/setHeatingSetpoint calls that are the opposite of current thermostat mode.
 
 */
 
 metadata
 {
-    definition(name: 'HADB Generic Component Thermostat', namespace: 'community', author: 'community')
+    definition(name: 'HADB Generic Component Thermostat', namespace: 'community', author: 'community', importUrl: "https://raw.githubusercontent.com/ymerj/HE-HA-control/main/HADBgenericComponentThermostat.groovy")
     {
         capability 'Actuator'
         capability 'Sensor'
@@ -85,7 +86,7 @@ void parse(List<Map> description) {
 }
 
 void off() {
-    parent?.componentOff(this.device)
+    setThermostatMode("off")
 }
 
 void refresh() {
@@ -93,10 +94,18 @@ void refresh() {
 }
 
 void setCoolingSetpoint(BigDecimal temperature) {
+    if (this.device.currentValue("thermostatMode") == "heat") {
+	log.warn("ignoring setCoolingSetpoint request from ${this.device.label} (mode is 'heat')")
+        return
+    }
     parent?.componentSetCoolingSetpoint(this.device, temperature)
 }
 
 void setHeatingSetpoint(BigDecimal temperature) {
+    if (this.device.currentValue("thermostatMode") == "cool") {
+	log.warn("ignoring setHeatingSetpoint request from ${this.device.label} (mode is 'cool')")
+        return
+    }   
     parent?.componentSetHeatingSetpoint(this.device, temperature)
 }
 

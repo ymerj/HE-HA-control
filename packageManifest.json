@@ -205,13 +205,19 @@
   "apps": [
     {
       "id": "375fa0c3-14e2-4a72-81f5-8a1a826a2d57",
-      "name": "Home Assistant Device Bridge configuration",
+      "name": "Home Assistant Device Bridge",
       "namespace": "tomw",
       "location": "https://raw.githubusercontent.com/ymerj/HE-HA-control/main/haDeviceBridgeConfiguration.groovy",
-      "required": true
-    }  
+      "required": true,
+      "alternateNames": [
+        {
+          "name": "Home Assistant Device Bridge configuration",
+          "namespace": "tomw"
+        }
+      ]
+    }
   ],
-	
+
   "licenseFile": "https://raw.githubusercontent.com/ymerj/HE-HA-control/main/LICENSE",
   "releaseNotes": "",
   "documentationLink": "https://community.hubitat.com/t/beta-home-assistant-device-bridge/67109",

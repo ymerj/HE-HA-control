@@ -213,6 +213,8 @@ def parse(String description) {
 	    if (response.type != "event") return
 	    def newState = response?.event?.variables?.trigger?.to_state
 	    if (newState?.state?.toLowerCase() == "unknown") return
+        def offline = false
+        if (newState?.state?.toLowerCase() == "unavailable") offline = true
         def origin = "physical"
         if (newState?.context?.user_id) origin = "digital"
         def newVals = []
@@ -502,8 +504,6 @@ def translateBinarySensors(device_class, newVals, friendly, origin)
             gas: [type: "HADB Generic Component Gas Detector",          event: [[name: "naturalGas", value: newVals[0] == "on" ? "detected":"clear", descriptionText:"${friendly} is ${newVals[0] == 'on' ? 'detected':'clear'}"]], namespace: "community"],
         ]
     if (!mapping[device_class]) device_class = "unknown"
-    if (newVals[0] == "unavailable") mapping.event = [[name: "healthStatus", value: "offline", descriptionText:"${friendly} is offline"]]
-    else mapping.event += [name: "healthStatus", value: "online", descriptionText:"${friendly} is online"]
     return mapping[device_class]
 }
 
@@ -532,8 +532,6 @@ def translateSensors(device_class, newVals, friendly, origin)
             pm25: [type: "Generic Component pm25 Sensor",                     event: [[name: "pm25", value: newVals[0], unit: newVals[1] ?: "µg/m³", descriptionText:"${friendly} pm2.5 is ${newVals[0]} ${newVals[1] ?: 'µg/m³'}"]], namespace: "community"],
         ]
     if (!mapping[device_class]) device_class = "unknown"
-    if (newVals[0] == "unavailable") mapping.event = [[name: "healthStatus", value: "offline", descriptionText:"${friendly} is offline"]]
-    else mapping.event += [name: "healthStatus", value: "online", descriptionText:"${friendly} is online"]
     return mapping[device_class]
 }
 
@@ -546,8 +544,6 @@ def translateCovers(device_class, newVals, friendly, origin)
             door: [type: "Generic Component Door Control",              event: [[name: "door", value: newVals[0] ?: "unknown", type: origin, descriptionText:"${friendly} was turned ${newVals[0]} [${origin}]"]], namespace: "community"],
             blind: [type: "Generic Component Window Blind",             event: [[name: "windowBlind", value: newVals[0] ?: "unknown", type: origin, descriptionText:"${friendly} was turned ${newVals[0]} [${origin}]"],[name: "windowShade", value: newVals[0] ?: "unknown", type: origin, descriptionText:"${friendly} was turned ${newVals[0]} [${origin}]"],[name: "position", value: newVals[1] ?: "unknown", type: origin, descriptionText:"${friendly} position was set to ${newVals[1] ?: "unknown"} [${origin}]"],[name: "tilt", value: newVals[2] ?: "unknown", type: origin, descriptionText:"${friendly} tilt was set to ${newVals[2] ?: "unknown"} [${origin}]"]], namespace: "community"],
         ]
-    if (newVals[0] == "unavailable") mapping.event = [[name: "healthStatus", value: "offline", descriptionText:"${friendly} is offline"]]
-    else mapping.event += [name: "healthStatus", value: "online", descriptionText:"${friendly} is online"]
     return mapping[device_class]
 }
 
@@ -575,8 +571,6 @@ def translateDevices(domain, newVals, friendly, origin)
             select: [type: "HADB Generic Component Select",             event: [[name: "currentOption", value: newVals[0], type: origin, descriptionText:"${friendly} was set to ${newVals[0]} [${origin}]"],[name: "options", value: newVals[1], descriptionText: "${friendly} options were set to ${newVals[1]}"]], namespace: "community"],
             input_select: [type: "HADB Generic Component Select",       event: [[name: "currentOption", value: newVals[0], type: origin, descriptionText:"${friendly} was set to ${newVals[0]} [${origin}]"],[name: "options", value: newVals[1], descriptionText: "${friendly} options were set to ${newVals[1]}"]], namespace: "community"],
         ]
-    if (newVals[0] == "unavailable") mapping.event = [[name: "healthStatus", value: "offline", descriptionText:"${friendly} is offline"]]
-    else mapping.event += [name: "healthStatus", value: "online", descriptionText:"${friendly} is online"]
     return mapping[domain]
 }
 
@@ -590,8 +584,6 @@ def translateLight(device_class, newVals, friendly, origin)
             ct: [type: "Generic Component CT",                          event: [[name: "switch", value: newVals[0], type: origin, descriptionText:"${friendly} was turned ${newVals[0]} [${origin}]"],[name: "level", value: newVals[1], type: origin, descriptionText:"${friendly} level was set to ${newVals[1]}"],[name: "colorName", value: newVals[2], descriptionText:"${friendly} color name was set to ${newVals[2]}"],[name: "colorTemperature", value: newVals[3], descriptionText:"${friendly} color temperature was set to ${newVals[3]}°K"]]],
             dimmer: [type: "Generic Component Dimmer",                  event: [[name: "switch", value: newVals[0], type: origin, descriptionText:"${friendly} was turned ${newVals[0]} [${origin}]"],[name: "level", value: newVals[1], type: origin, descriptionText:"${friendly} level was set to ${newVals[1]} [${origin}]"]]],
         ]
-    if (newVals[0] == "unavailable") mapping.event = [[name: "healthStatus", value: "offline", descriptionText:"${friendly} is offline"]]
-    else mapping.event += [name: "healthStatus", value: "online", descriptionText:"${friendly} is online"]
     return mapping[device_class]
 }
    
@@ -602,8 +594,8 @@ def updateChildDevice(mapping, entity, friendly) {
         return
     }
     else {
-   //     if (mapping.event[0].value == "unavailable") mapping.event = [[name: "healthStatus", value: "offline", descriptionText:"${friendly} is offline"]]
-   //     else mapping.event += [name: "healthStatus", value: "online", descriptionText:"${friendly} is online"]
+        if (offline) mapping.event = [[name: "healthStatus", value: "offline", descriptionText:"${friendly} is offline"]]
+        else mapping.event += [name: "healthStatus", value: "online", descriptionText:"${friendly} is online"]
         ch.parse(mapping.event)
     }
 }

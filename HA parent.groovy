@@ -210,11 +210,12 @@ def parse(String description) {
     def response = null;
     try {
         response = new groovy.json.JsonSlurper().parseText(description)
-	if (response.type != "event") return
-	def newState = response?.event?.variables?.trigger?.to_state
-	if (newState?.state?.toLowerCase() == "unknown") return
+        if (response.type != "event") return
+        def newState = response?.event?.variables?.trigger?.to_state
+        if (newState?.state?.toLowerCase() == "unknown") return
         def offline = false
         if (newState?.state?.toLowerCase() == "unavailable") offline = true
+        log.info "state is ${newState?.state?.toLowerCase()}, offline is ${offline}"
         def origin = "physical"
         if (newState?.context?.user_id) origin = "digital"
         def newVals = []
@@ -257,7 +258,6 @@ def parse(String description) {
                 mapping = translateDevices(domain, newVals, friendly, origin)
                 if (!percentage) mapping.event.remove(2)
                 if (!speed) mapping.event.remove(1)
-                if (mapping) updateChildDevice(mapping, entity, friendly)
                 break
             
             case "cover":
@@ -273,7 +273,6 @@ def parse(String description) {
                    default: device_class = "door"
                    }
                 mapping = translateCovers(device_class, newVals, friendly, origin)
-                if (mapping) updateChildDevice(mapping, entity, friendly)
                 break
             
             case "event":
@@ -285,7 +284,6 @@ def parse(String description) {
                 eventList = newState?.attributes?.event_types?.indexed(1)
                 newVals += [button, eventType, eventList, nb]
                 mapping = translateDevices(domain, newVals, friendly, origin)
-                if (mapping) updateChildDevice(mapping, entity, friendly)
                 break
             
             case "input_text":
@@ -296,7 +294,6 @@ def parse(String description) {
             case "switch":
             case "input_boolean":
                 mapping = translateDevices(domain, newVals, friendly, origin)
-                if (mapping) updateChildDevice(mapping, entity, friendly)
                 break
             
             case "light":
@@ -337,12 +334,10 @@ def parse(String description) {
                     }
                 mapping = translateLight(device_class, newVals, friendly, origin)
                 if (newVals[0] == "off") mapping.event = [mapping.event[0]] // remove updates not provided with the HA 'off' event json data
-                if (mapping) updateChildDevice(mapping, entity, friendly)
                 break
             
             case "binary_sensor":
                 mapping = translateBinarySensors(device_class, newVals, friendly, origin)
-                if (mapping) updateChildDevice(mapping, entity, friendly)
                 break
             
             case "input_number":
@@ -353,7 +348,6 @@ def parse(String description) {
                 def unit = newState?.attributes?.unit_of_measurement
                 newVals += [unit, minimum, maximum, step]
                 mapping = translateDevices(domain, newVals, friendly, origin)
-                if (mapping) updateChildDevice(mapping, entity, friendly)
                 break
             
             case "sensor":
@@ -370,7 +364,6 @@ def parse(String description) {
                 }
                 newVals += attributes
                 mapping = translateSensors(device_class, newVals, friendly, origin)
-                if (mapping) updateChildDevice(mapping, entity, friendly)
                 break
             
             case "climate":
@@ -386,7 +379,7 @@ def parse(String description) {
                 def target_temp_high = newState?.attributes?.target_temp_high
                 def target_temp_low = newState?.attributes?.target_temp_low
                 def supportedPmodes = []
-                supportedPmodes = newState?.attributes?.preset_modes?.indexed(1)
+                supportedPmodes = newState?.attributes?.preset_modes?.indexed(1)        
                 def currentPreset = newState?.attributes?.preset_mode
                 def hvac_modes = newState?.attributes?.hvac_modes
                 if (!hvac_modes) hvac_modes = ["heat"]	    
@@ -397,14 +390,12 @@ def parse(String description) {
                 newVals = [thermostat_mode, current_temperature, hvac_action, fan_mode, target_temperature, target_temp_high, target_temp_low, supportedTmodes, supportedFmodes, supportedPmodes, currentPreset, maxHumidity, minHumidity, currentHumidity, targetHumidity]
                 mapping = translateDevices(domain, newVals, friendly, origin)
                 if (!currentHumidity) mapping.event = mapping.event[0..10] // some thermostats don't provide humidity control
-                if (mapping) updateChildDevice(mapping, entity, friendly)
                 break
             
             case "button":
             case "input_button":
                 newVals = [1]
                 mapping = translateDevices(domain, newVals, friendly, origin)
-                if (mapping) updateChildDevice(mapping, entity, friendly)
                 break
             
             case "humidifier":
@@ -419,7 +410,6 @@ def parse(String description) {
                 mapping = translateDevices(domain, newVals, friendly, origin)
                 if (!targetHumidity) mapping.event.remove(6)
                 if (!currentHumidity) mapping.event.remove(5)
-                if (mapping) updateChildDevice(mapping, entity, friendly)
                 break
             
             case "vacuum":
@@ -428,7 +418,6 @@ def parse(String description) {
                 fanSpeedList = newState?.attributes?.fan_speed_list
                 newVals += [speed, fanSpeedList]
                 mapping = translateDevices(domain, newVals, friendly, origin)
-                if (mapping) updateChildDevice(mapping, entity, friendly)
                 break
             
             case "select":
@@ -437,7 +426,6 @@ def parse(String description) {
                 options = newState?.attributes?.options?.indexed(1)
                 newVals += options
                 mapping = translateDevices(domain, newVals, friendly, origin)
-                if (mapping) updateChildDevice(mapping, entity, friendly)
                 break
                 
             case "media_player":
@@ -470,12 +458,12 @@ def parse(String description) {
                 newVals += [status, mute, volume, mediaType, duration, position, trackData, trackDescription, mediaInputSource, supportedInputs, sourceList]
                 mapping = translateDevices(domain, newVals, friendly, origin)
                 if (!sourceList) mapping.event = mapping.event[0..9]
-                if (mapping) updateChildDevice(mapping, entity, friendly)
                 break
             
             default:
                 if (logEnable) log.info("No mapping exists for domain: ${domain}, device_class: ${device_class}.  Please contact devs to have this added.")
             }
+        if (mapping) updateChildDevice(mapping, entity, friendly, offline)
         return
     }  
     catch(e) {
@@ -587,7 +575,7 @@ def translateLight(device_class, newVals, friendly, origin)
     return mapping[device_class]
 }
    
-def updateChildDevice(mapping, entity, friendly) {
+def updateChildDevice(mapping, entity, friendly, offline) {
     def ch = createChild(mapping.type, entity, friendly, mapping.namespace)
     if (!ch) {
         log.warn("Child type: ${mapping.type} not created for entity: ${entity}")

@@ -19,7 +19,7 @@ Change history:
 
 metadata
     {
-    definition(name: "HADB Generic Component Siren", namespace: "community", author: "Yves Mercier", importUrl: "")
+    definition(name: "HADB Generic Component Siren", namespace: "community", author: "Yves Mercier", importUrl: "https://raw.githubusercontent.com/ymerj/HE-HA-control/main/HADBgenericComponentSiren.groovy")
         {
         capability "Chime"
         capability "Refresh"

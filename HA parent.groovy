@@ -809,7 +809,8 @@ def componentPlaySound(ch, tone, duration, volume) {
     def max = tonesList.size() / 2
     max = max.toInteger()
     tone = tone.toInteger()
-    tone = (tone < 1) ? 1 : ((tone > max) ? max : tone)   
+    tone = (tone < 1) ? 1 : ((tone > max) ? max : tone)
+    volume = volume / 100
     data = [tone: tonesList[(tone * 2) - 1].trim().replaceAll("}",""), duration: duration, volume_level: volume]
     executeCommand(ch, "turn_on", data)
 }

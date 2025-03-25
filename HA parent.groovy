@@ -430,7 +430,7 @@ def parse(String description) {
 
             case "siren":
                 def tonesList = []
-                def tonesList = newState?.attributes?.available_tones?.indexed(1)
+                tonesList = newState?.attributes?.available_tones?.indexed(1)
                 def soundEffects = JsonOutput.toJson(newState?.attributes?.available_tones)
                 newVals += [tonesList, soundEffects]
                 mapping = translateDevices(domain, newVals, friendly, origin)

@@ -35,7 +35,7 @@ metadata
         input name: "txtEnable", type: "bool", title: "Enable descriptionText logging", defaultValue: true
         }
     attribute "healthStatus", "enum", ["offline", "online"]
-    attribute "toneList", "string"
+    attribute "tonesList", "string"
     attribute "toneNumber", "number"
     attribute "volume", "number"
     attribute "duration", "number"

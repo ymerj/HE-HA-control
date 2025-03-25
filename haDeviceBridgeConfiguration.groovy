@@ -37,7 +37,8 @@
 * 2.10       2024-11-12 Yves Mercier       Add support for text and vacuums
 * 2.11       2024-11-30 Yves Mercier       Add limited support for media_player entity
 * 2.12       2024-12-15 Yves Mercier       Add support for select entity
-* 2.15       2024-01-17 Yves Mercier       Fix "Toggle all On/Off" included as an entity
+* 2.15       2025-01-17 Yves Mercier       Fix "Toggle all On/Off" included as an entity
+* 2.18       2025-03-24 Yves Mercier       Add support for sirens
 */
 
 definition(

@@ -426,7 +426,15 @@ def parse(String description) {
                 newVals += options
                 mapping = translateDevices(domain, newVals, friendly, origin)
                 break
-                
+
+            case "siren":
+                def tonesList = []
+                def tonesList = newState?.attributes?.available_tones?.indexed(1)
+                def soundEffects = JsonOutput.toJson(newState?.attributes?.available_tones)
+                newVals += [tonesList, soundEffects]
+                mapping = translateDevices(domain, newVals, friendly, origin)
+                break
+
             case "media_player":
                 def status = newVals[0] in ["playing", "paused"] ? newVals[0] : "stopped"
                 def volume = newState?.attributes?.volume_level
@@ -556,7 +564,9 @@ def translateDevices(domain, newVals, friendly, origin)
             vacuum: [type: "HADB Generic Component Vacuum",             event: [[name: "vacuum", value: newVals[0], type: origin, descriptionText:"${friendly} is ${newVals[0]} [${origin}]"],[name: "speed", value: newVals[1], type: origin, descriptionText:"${friendly} speed was set to ${newVals[1]} [${origin}]"],[name: "fanSeedList", value: newVals[2], type: origin, descriptionText:"${friendly} speed list is ${newVals[2]} [${origin}]"]], namespace: "community"],
             media_player: [type: "HADB Generic Component Media Player", event: [[name: "switch", value: newVals[0] == "off" ? "off":"on", type: origin, descriptionText:"${friendly} was turned ${newVals[0] == 'off' ? 'off':'on'} [${origin}]"],[name: "status", value: newVals[1], type: origin, descriptionText:"${friendly} status was set to ${newVals[1]} [${origin}]"],[name: "rawStatus", value: newVals[0], type: origin, descriptionText:"${friendly} rawStatus became ${newVals[0]} [${origin}]"],[name: "mute", value: newVals[2] ? "muted":"unmuted", type: origin, descriptionText:"${friendly} volume was ${newVals[2] ? 'muted':'unmuted'} [${origin}]"],[name: "volume", value: newVals[3], type: origin, descriptionText:"${friendly} volume was set to ${newVals[3]} [${origin}]"],[name: "mediaType", value: newVals[4], type: origin, descriptionText:"${friendly} mediaType was set to ${newVals[4]} [${origin}]"],[name: "duration", value: newVals[5], type: origin, descriptionText:"${friendly} duration was set to ${newVals[5]} [${origin}]"],[name: "position", value: newVals[6], type: origin, descriptionText:"${friendly} position was set to ${newVals[6]} [${origin}]"],[name: "trackData", value: newVals[7], type: origin, descriptionText:"${friendly} track was set to ${newVals[7]} [${origin}]"],[name: "trackDescription", value: newVals[8], type: origin, descriptionText:"${friendly} trackDescription was set to ${newVals[8]} [${origin}]"],[name: "mediaInputSource", value: newVals[9], type: origin, descriptionText:"${friendly} mediaInputSource was set to ${newVals[9]} [${origin}]"],[name: "supportedInputs", value: newVals[10], type: origin, descriptionText:"${friendly} supportedInputs was set to ${newVals[10]} [${origin}]"],[name: "sourceList", value: newVals[11], type: origin, descriptionText:"${friendly} source list was set to ${newVals[11]} [${origin}]"]], namespace: "community"],
             select: [type: "HADB Generic Component Select",             event: [[name: "currentOption", value: newVals[0], type: origin, descriptionText:"${friendly} was set to ${newVals[0]} [${origin}]"],[name: "options", value: newVals[1], descriptionText: "${friendly} options were set to ${newVals[1]}"]], namespace: "community"],
-            input_select: [type: "HADB Generic Component Select",       event: [[name: "currentOption", value: newVals[0], type: origin, descriptionText:"${friendly} was set to ${newVals[0]} [${origin}]"],[name: "options", value: newVals[1], descriptionText: "${friendly} options were set to ${newVals[1]}"]], namespace: "community"],
+            input_select: [type: "HADB Generic Component Select",       event: [[name: "currentOption", value: newVals[0], type: origin, descriptionText:"${friendly} was set to ${newVals[0]} [${origin}]"],[name: "options", value: newVals[1], descriptionText: "${friendly} toneList were set to ${newVals[1]}"]], namespace: "community"],
+            siren: [type: "HADB Generic Component Siren",               event: [[name: "status", value: newVals[0] == "on" ? "playing":"stopped", type: origin, descriptionText:"${friendly} is ${newVals[0]} [${origin}]"],[name: "toneList", value: newVals[1], descriptionText: "${friendly} toneList was set to ${newVals[1]}"],[name: "soundEffects", value: newVals[2], descriptionText: "${friendly} soundEffects were set to ${newVals[2]}"]], namespace: "community"],
+
         ]
     return mapping[domain]
 }
@@ -792,7 +802,18 @@ def componentSetVariable(ch, newValue) {
     if (logEnable) log.info("received set variable to ${newValue} request from ${ch.label}")
     executeCommand(ch, "set_value", [value: newValue])
 }
-        
+
+def componentPlaySound(ch, tone, duration, volume) {
+    if (logEnable) log.info("received play sound request from ${ch.label}")
+    def tonesList = ch.currentValue("toneslist")?.tokenize(',=[]')
+    def max = tonesList.size() / 2
+    max = max.toInteger()
+    tone = tone.toInteger()
+    tone = (tone < 1) ? 1 : ((tone > max) ? max : tone)   
+    data = [tone: tonesList[(tone * 2) - 1].trim().replaceAll("}",""), duration: duration, volume: volume]
+    executeCommand(ch, "turn_on", data)
+}
+
 def componentRefresh(ch) {
     if (logEnable) log.info("received refresh request from ${ch.label}")
     // special handling since domain is fixed 

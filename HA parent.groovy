@@ -1,4 +1,4 @@
-rt/*
+/*
 * Home Assistant to Hubitat Integration
 *
 * Description:

@@ -256,8 +256,6 @@ def parse(String description) {
                 newVals += speed
                 newVals += percentage
                 mapping = translateDevices(domain, newVals, friendly, origin)
-                if (!percentage) mapping.event.remove(2)
-                if (!speed) mapping.event.remove(1)
                 break
             
             case "cover":
@@ -333,7 +331,6 @@ def parse(String description) {
                         device_class = "dimmer"
                     }
                 mapping = translateLight(device_class, newVals, friendly, origin)
-                if (newVals[0] == "off") mapping.event = [mapping.event[0]] // remove updates not provided with the HA 'off' event json data
                 break
             
             case "binary_sensor":
@@ -389,7 +386,6 @@ def parse(String description) {
                 def supportedFmodes = JsonOutput.toJson(fan_modes)
                 newVals = [thermostat_mode, current_temperature, hvac_action, fan_mode, target_temperature, target_temp_high, target_temp_low, supportedTmodes, supportedFmodes, supportedPmodes, currentPreset, maxHumidity, minHumidity, currentHumidity, targetHumidity]
                 mapping = translateDevices(domain, newVals, friendly, origin)
-                if (!currentHumidity) mapping.event = mapping.event[0..10] // some thermostats don't provide humidity control
                 break
             
             case "button":
@@ -408,8 +404,6 @@ def parse(String description) {
                 def targetHumidity = newState?.attributes?.humidity
                 newVals += [humidifierMode, supportedModes, maxHumidity, minHumidity, currentHumidity, targetHumidity]
                 mapping = translateDevices(domain, newVals, friendly, origin)
-                if (!targetHumidity) mapping.event.remove(6)
-                if (!currentHumidity) mapping.event.remove(5)
                 break
             
             case "vacuum":
@@ -465,13 +459,16 @@ def parse(String description) {
                 def supportedInputs = JsonOutput.toJson(newState?.attributes?.source_list)
                 newVals += [status, mute, volume, mediaType, duration, position, trackData, trackDescription, mediaInputSource, supportedInputs, sourceList]
                 mapping = translateDevices(domain, newVals, friendly, origin)
-                if (!sourceList) mapping.event = mapping.event[0..9]
                 break
             
             default:
                 if (logEnable) log.info("No mapping exists for domain: ${domain}, device_class: ${device_class}.  Please contact devs to have this added.")
             }
-        if (mapping) updateChildDevice(mapping, entity, friendly, offline)
+        if (mapping)
+            {
+            mapping.event.removeAll{ it.value == null }
+            updateChildDevice(mapping, entity, friendly, offline)
+            }
         return
     }  
     catch(e) {

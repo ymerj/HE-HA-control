@@ -100,7 +100,7 @@
 * 2.16   2025-03-13 ritchierich        Add support for gas detector.
 *                   Yves Mercier       Compensate for restrictions imposed by ezdashboard in mediaPlayer and locks, simplify handling of "off" thermostat mode
 * 2.17   2025-03-24 Yves Mercier       Fix some devices not updating their health status
-* 2.18   2025-03-25 Yves Mercier       Insert beta code support for sirens
+* 2.18   2025-07-18 Yves Mercier       Add support for sirens
 */
 
 import groovy.json.JsonSlurper

@@ -214,11 +214,9 @@ def parse(String description) {
         if (response.type != "event") return
         def newState = response?.event?.variables?.trigger?.to_state
         if (newState?.state?.toLowerCase() == "unknown") return
-        def offline = false
-        if (newState?.state?.toLowerCase() == "unavailable") offline = true
-        def origin = "physical"
-        if (newState?.context?.user_id) origin = "digital"
-        def newVals = []
+        def offline = (newState?.state?.toLowerCase() == "unavailable") ? true : false
+        def origin = newState?.context?.user_id ? "digital" : "physical"
+	def newVals = []
         def entity = response?.event?.variables?.trigger?.entity_id        
         def domain = entity?.tokenize(".")?.getAt(0)
         def device_class = newState?.attributes?.device_class

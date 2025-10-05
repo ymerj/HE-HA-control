@@ -56,17 +56,10 @@ void parse(List description)
     {
     description.each
         {
-        if (it.name in ["soundName", "soundEffects", "healthStatus"])
+        if (it.name in ["switch", "status", "soundEffects", "healthStatus"])
             {
             if (txtEnable) log.info it.descriptionText
             sendEvent(it)
-            }
-        if (it.name in ["status"])
-            {
-            if (txtEnable) log.info it.descriptionText
-            sendEvent(it)
-            if (it.value == "playing") sendEvent(name: "switch", value: "on", descriptionText: "${this.device.label} was turn on")
-            if (it.value == "stopped") sendEvent(name: "switch", value: "off", descriptionText: "${this.device.label} was turn off")
             }
         }
     }

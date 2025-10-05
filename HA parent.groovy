@@ -113,7 +113,8 @@ metadata {
 
         command "closeConnection"        
         command "callService", [[name:"entity", type:"STRING", description:"domain.entity"],[name:"service", type:"STRING"],[name:"data", type:"STRING", description:"key:value,key:value... etc"]]
-	    
+        //command "createChild", [[name:"deviceType", type:"STRING"],[name:"entity", type:"STRING"],[name:"friendly", type:"STRING"],[name:"namespace", type:"STRING"]]
+
         attribute "Connection", "string"
     }
 

@@ -421,8 +421,6 @@ def parse(String description) {
                 break
 
             case "siren":
-                def tonesList = []
-                tonesList = newState?.attributes?.available_tones?.indexed(1)
                 def soundEffects = JsonOutput.toJson(newState?.attributes?.available_tones)
                 newVals += [tonesList, soundEffects]
                 mapping = translateDevices(domain, newVals, friendly, origin)
@@ -801,13 +799,8 @@ def componentSetVariable(ch, newValue) {
 
 def componentPlaySound(ch, tone, duration, volume) {
     if (logEnable) log.info("received play sound request from ${ch.label}")
-    def tonesList = ch.currentValue("toneslist")?.tokenize(',=[]')
-    def max = tonesList.size() / 2
-    max = max.toInteger()
-    tone = tone.toInteger()
-    tone = (tone < 1) ? 1 : ((tone > max) ? max : tone)
     volume = volume / 100
-    data = [tone: tonesList[(tone * 2) - 1].trim().replaceAll("}",""), duration: duration, volume_level: volume]
+    data = [tone: tone, duration: duration, volume_level: volume]
     executeCommand(ch, "turn_on", data)
 }
 

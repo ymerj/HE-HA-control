@@ -100,7 +100,7 @@
 * 2.16   2025-03-13 ritchierich        Add support for gas detector.
 *                   Yves Mercier       Compensate for restrictions imposed by ezdashboard in mediaPlayer and locks, simplify handling of "off" thermostat mode
 * 2.17   2025-03-24 Yves Mercier       Fix some devices not updating their health status
-* 2.18   2025-07-18 Yves Mercier       Add support for sirens
+* 2.18   2025-10-05 Yves Mercier       Add tentative support for sirens. Fix thermostat fanMode auto
 */
 
 import groovy.json.JsonSlurper
@@ -906,7 +906,7 @@ def componentEmergencyHeat(ch) {
 }
 
 def componentFanAuto(ch) {
-    componentSetThermostatMode(ch, "auto")
+    componentSetThermostatFanMode(ch, "auto")
 }
 
 def componentFanCirculate(ch) {

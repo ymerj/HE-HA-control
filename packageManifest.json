@@ -200,6 +200,13 @@
       "namespace": "community",
       "location": "https://raw.githubusercontent.com/ymerj/HE-HA-control/main/HADBgenericComponentLock.groovy",
       "required": true
+    },
+    {
+      "id": "d31cc626-0afe-4ad5-a512-f5782358bf9d",
+      "name": "HADB Generic Component Siren",
+      "namespace": "community",
+      "location": "https://raw.githubusercontent.com/ymerj/HE-HA-control/main/HADBgenericComponentSiren.groovy",
+      "required": true
     }
   ],
   "apps": [

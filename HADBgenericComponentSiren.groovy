@@ -22,23 +22,22 @@ metadata
     definition(name: "HADB Generic Component Siren", namespace: "community", author: "Yves Mercier", importUrl: "https://raw.githubusercontent.com/ymerj/HE-HA-control/main/HADBgenericComponentSiren.groovy")
         {
         capability "Chime"
+        capability "Switch"
         capability "Refresh"
         capability "Actuator"
         capability "Health Check"
 
-        command "playSound",  [[ name: "tone*", type: "NUMBER", description: "Tone number" ],[ name: "duration", type: "NUMBER" ], [ name: "volume", type: "NUMBER" ]]
-        command "setVolume",  [[ name: "volume*", type: "NUMBER", description: "Preset default volume" ]]
-        command "setDuration",  [[ name: "duration*", type: "NUMBER", description: "Preset default duration" ]]
+        command "playSound",  [[ name: "tone*", type: "NUMBER", description: "Tone number" ],[ name: "duration*", type: "NUMBER" ], [ name: "volume*", type: "NUMBER" ]]
         }
     preferences
         {
         input name: "txtEnable", type: "bool", title: "Enable descriptionText logging", defaultValue: true
+        input name: "prefVolume", type: "number", title: "Set default volume", defaultValue: 50
+        input name: "prefDuration", type: "number", title: "Set default duration", defaultValue: 1
+        input name: "prefTone", type: "number", title: "Set default tone", defaultValue: 1
         }
     attribute "healthStatus", "enum", ["offline", "online"]
     attribute "tonesList", "string"
-    attribute "toneNumber", "number"
-    attribute "volume", "number"
-    attribute "duration", "number"
     }
 
 void updated()
@@ -60,41 +59,42 @@ void parse(List description)
     {
     description.each
         {
-        if (it.name in ["status", "soundName", "soundEffects", "toneList", "healthStatus"])
+        if (it.name in ["soundName", "soundEffects", "toneList", "healthStatus"])
             {
             if (txtEnable) log.info it.descriptionText
             sendEvent(it)
             }
+        if (it.name in ["status"])
+            {
+            if (txtEnable) log.info it.descriptionText
+            sendEvent(it)
+            if (it.value == "playing") sendEvent(name: "switch", value: "on", descriptionText: "${this.device.label} was turn on")
+            if (it.value == "stopped") sendEvent(name: "switch", value: "off", descriptionText: "${this.device.label} was turn off")
+            }
         }
     }
 
-void playSound(tone)
+void playSound()
     {
-    def volume = this.device.currentValue("volume")
-    def duration = this.device.currentValue("duration")
-    parent?.componentPlaySound(this.device, tone, duration=1, volume=50)
+    parent?.componentPlaySound(this.device, prefTone, prefDuration, prefVolume)
     }
 
-void playSound(tone, duration, volume)
+void playSound(tone, duration=1, volume=50)
     {
-    parent?.componentPlaySound(this.device, tone, duration=1, volume=50)
-    }
-
-void setVolume(volume)
-    {
-    def description = "${this.device.label} volume was set to ${volume}"
-    if (txtEnable) log.info description
-    sendEvent(name: "volume", value: volume, descriptionText: description)
-    }
-
-void setDuration(duration)
-    {
-    def description = "${this.device.label} duration was set to ${duration}"
-    if (txtEnable) log.info description 
-    sendEvent(name: "duration", value: duration, descriptionText: description)
+    parent?.componentPlaySound(this.device, tone, duration, volume)
     }
 
 void stop()
+    {
+    parent?.componentOff(this.device)
+    }
+
+void on()
+    {
+    playSound()
+    }
+
+void off()
     {
     parent?.componentOff(this.device)
     }

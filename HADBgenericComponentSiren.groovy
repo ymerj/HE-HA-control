@@ -56,7 +56,7 @@ void parse(List description)
     {
     description.each
         {
-        if (it.name in ["soundName", "soundEffects", "toneList", "healthStatus"])
+        if (it.name in ["soundName", "soundEffects", "healthStatus"])
             {
             if (txtEnable) log.info it.descriptionText
             sendEvent(it)

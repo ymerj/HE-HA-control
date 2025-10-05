@@ -32,9 +32,6 @@ metadata
     preferences
         {
         input name: "txtEnable", type: "bool", title: "Enable descriptionText logging", defaultValue: true
-        input name: "prefVolume", type: "number", title: "Set default volume", defaultValue: 50
-        input name: "prefDuration", type: "number", title: "Set default duration", defaultValue: 1
-        input name: "prefTone", type: "number", title: "Set default tone", defaultValue: 1
         }
     attribute "healthStatus", "enum", ["offline", "online"]
     attribute "tonesList", "string"
@@ -74,11 +71,6 @@ void parse(List description)
         }
     }
 
-void playSound()
-    {
-    parent?.componentPlaySound(this.device, prefTone, prefDuration, prefVolume)
-    }
-
 void playSound(tone, duration=1, volume=50)
     {
     parent?.componentPlaySound(this.device, tone, duration, volume)
@@ -91,7 +83,7 @@ void stop()
 
 void on()
     {
-    playSound()
+    parent?.componentOn(this.device)
     }
 
 void off()

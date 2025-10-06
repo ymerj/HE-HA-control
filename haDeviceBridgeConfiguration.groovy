@@ -37,7 +37,8 @@
 * 2.10       2024-11-12 Yves Mercier       Add support for text and vacuums
 * 2.11       2024-11-30 Yves Mercier       Add limited support for media_player entity
 * 2.12       2024-12-15 Yves Mercier       Add support for select entity
-* 2.15       2024-01-17 Yves Mercier       Fix "Toggle all On/Off" included as an entity
+* 2.15       2025-01-17 Yves Mercier       Fix "Toggle all On/Off" included as an entity
+* 2.18       2025-01-18 Yves Mercier       Add support for siren entity
 */
 
 definition(
@@ -112,7 +113,7 @@ def discoveryPage(params)
                 resp.data.each
                 {
                     domain = it.entity_id?.tokenize(".")?.getAt(0)
-                    if(["fan", "switch", "light", "binary_sensor", "sensor", "device_tracker", "cover", "lock", "climate", "input_boolean", "number", "input_number", "button", "input_button", "valve", "humidifier", "event", "text", "input_text", "vacuum", "media_player", "input_select", "select"].contains(domain))
+                    if(["fan", "switch", "light", "binary_sensor", "sensor", "device_tracker", "cover", "lock", "climate", "input_boolean", "number", "input_number", "button", "input_button", "valve", "humidifier", "event", "text", "input_text", "vacuum", "media_player", "input_select", "select", "siren"].contains(domain))
                     {
                         state.entityList.put(it.entity_id, "${it.attributes?.friendly_name} (${it.entity_id})")
                     }

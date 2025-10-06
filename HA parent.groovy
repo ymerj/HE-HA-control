@@ -100,6 +100,7 @@
 * 2.16   2025-03-13 ritchierich        Add support for gas detector.
 *                   Yves Mercier       Compensate for restrictions imposed by ezdashboard in mediaPlayer and locks, simplify handling of "off" thermostat mode
 * 2.17   2025-03-24 Yves Mercier       Fix some devices not updating their health status
+* 2.18   2025-10-05 Yves Mercier       Add tentative support for sirens. Fix thermostat fanMode auto
 */
 
 import groovy.json.JsonSlurper
@@ -112,7 +113,8 @@ metadata {
 
         command "closeConnection"        
         command "callService", [[name:"entity", type:"STRING", description:"domain.entity"],[name:"service", type:"STRING"],[name:"data", type:"STRING", description:"key:value,key:value... etc"]]
-	    
+        //command "createChild", [[name:"deviceType", type:"STRING"],[name:"entity", type:"STRING"],[name:"friendly", type:"STRING"],[name:"namespace", type:"STRING"]]
+
         attribute "Connection", "string"
     }
 
@@ -213,11 +215,9 @@ def parse(String description) {
         if (response.type != "event") return
         def newState = response?.event?.variables?.trigger?.to_state
         if (newState?.state?.toLowerCase() == "unknown") return
-        def offline = false
-        if (newState?.state?.toLowerCase() == "unavailable") offline = true
-        def origin = "physical"
-        if (newState?.context?.user_id) origin = "digital"
-        def newVals = []
+        def offline = (newState?.state?.toLowerCase() == "unavailable") ? true : false
+        def origin = newState?.context?.user_id ? "digital" : "physical"
+	def newVals = []
         def entity = response?.event?.variables?.trigger?.entity_id        
         def domain = entity?.tokenize(".")?.getAt(0)
         def device_class = newState?.attributes?.device_class
@@ -255,8 +255,6 @@ def parse(String description) {
                 newVals += speed
                 newVals += percentage
                 mapping = translateDevices(domain, newVals, friendly, origin)
-                if (!percentage) mapping.event.remove(2)
-                if (!speed) mapping.event.remove(1)
                 break
             
             case "cover":
@@ -332,7 +330,6 @@ def parse(String description) {
                         device_class = "dimmer"
                     }
                 mapping = translateLight(device_class, newVals, friendly, origin)
-                if (newVals[0] == "off") mapping.event = [mapping.event[0]] // remove updates not provided with the HA 'off' event json data
                 break
             
             case "binary_sensor":
@@ -388,7 +385,6 @@ def parse(String description) {
                 def supportedFmodes = JsonOutput.toJson(fan_modes)
                 newVals = [thermostat_mode, current_temperature, hvac_action, fan_mode, target_temperature, target_temp_high, target_temp_low, supportedTmodes, supportedFmodes, supportedPmodes, currentPreset, maxHumidity, minHumidity, currentHumidity, targetHumidity]
                 mapping = translateDevices(domain, newVals, friendly, origin)
-                if (!currentHumidity) mapping.event = mapping.event[0..10] // some thermostats don't provide humidity control
                 break
             
             case "button":
@@ -407,8 +403,6 @@ def parse(String description) {
                 def targetHumidity = newState?.attributes?.humidity
                 newVals += [humidifierMode, supportedModes, maxHumidity, minHumidity, currentHumidity, targetHumidity]
                 mapping = translateDevices(domain, newVals, friendly, origin)
-                if (!targetHumidity) mapping.event.remove(6)
-                if (!currentHumidity) mapping.event.remove(5)
                 break
             
             case "vacuum":
@@ -426,7 +420,13 @@ def parse(String description) {
                 newVals += options
                 mapping = translateDevices(domain, newVals, friendly, origin)
                 break
-                
+
+            case "siren":
+                def soundEffects = JsonOutput.toJson(newState?.attributes?.available_tones)
+                newVals += [soundEffects]
+                mapping = translateDevices(domain, newVals, friendly, origin)
+                break
+
             case "media_player":
                 def status = newVals[0] in ["playing", "paused"] ? newVals[0] : "stopped"
                 def volume = newState?.attributes?.volume_level
@@ -456,13 +456,16 @@ def parse(String description) {
                 def supportedInputs = JsonOutput.toJson(newState?.attributes?.source_list)
                 newVals += [status, mute, volume, mediaType, duration, position, trackData, trackDescription, mediaInputSource, supportedInputs, sourceList]
                 mapping = translateDevices(domain, newVals, friendly, origin)
-                if (!sourceList) mapping.event = mapping.event[0..9]
                 break
             
             default:
                 if (logEnable) log.info("No mapping exists for domain: ${domain}, device_class: ${device_class}.  Please contact devs to have this added.")
             }
-        if (mapping) updateChildDevice(mapping, entity, friendly, offline)
+        if (mapping)
+            {
+            mapping.event.removeAll{ it.value == null }
+            updateChildDevice(mapping, entity, friendly, offline)
+            }
         return
     }  
     catch(e) {
@@ -556,7 +559,9 @@ def translateDevices(domain, newVals, friendly, origin)
             vacuum: [type: "HADB Generic Component Vacuum",             event: [[name: "vacuum", value: newVals[0], type: origin, descriptionText:"${friendly} is ${newVals[0]} [${origin}]"],[name: "speed", value: newVals[1], type: origin, descriptionText:"${friendly} speed was set to ${newVals[1]} [${origin}]"],[name: "fanSeedList", value: newVals[2], type: origin, descriptionText:"${friendly} speed list is ${newVals[2]} [${origin}]"]], namespace: "community"],
             media_player: [type: "HADB Generic Component Media Player", event: [[name: "switch", value: newVals[0] == "off" ? "off":"on", type: origin, descriptionText:"${friendly} was turned ${newVals[0] == 'off' ? 'off':'on'} [${origin}]"],[name: "status", value: newVals[1], type: origin, descriptionText:"${friendly} status was set to ${newVals[1]} [${origin}]"],[name: "rawStatus", value: newVals[0], type: origin, descriptionText:"${friendly} rawStatus became ${newVals[0]} [${origin}]"],[name: "mute", value: newVals[2] ? "muted":"unmuted", type: origin, descriptionText:"${friendly} volume was ${newVals[2] ? 'muted':'unmuted'} [${origin}]"],[name: "volume", value: newVals[3], type: origin, descriptionText:"${friendly} volume was set to ${newVals[3]} [${origin}]"],[name: "mediaType", value: newVals[4], type: origin, descriptionText:"${friendly} mediaType was set to ${newVals[4]} [${origin}]"],[name: "duration", value: newVals[5], type: origin, descriptionText:"${friendly} duration was set to ${newVals[5]} [${origin}]"],[name: "position", value: newVals[6], type: origin, descriptionText:"${friendly} position was set to ${newVals[6]} [${origin}]"],[name: "trackData", value: newVals[7], type: origin, descriptionText:"${friendly} track was set to ${newVals[7]} [${origin}]"],[name: "trackDescription", value: newVals[8], type: origin, descriptionText:"${friendly} trackDescription was set to ${newVals[8]} [${origin}]"],[name: "mediaInputSource", value: newVals[9], type: origin, descriptionText:"${friendly} mediaInputSource was set to ${newVals[9]} [${origin}]"],[name: "supportedInputs", value: newVals[10], type: origin, descriptionText:"${friendly} supportedInputs was set to ${newVals[10]} [${origin}]"],[name: "sourceList", value: newVals[11], type: origin, descriptionText:"${friendly} source list was set to ${newVals[11]} [${origin}]"]], namespace: "community"],
             select: [type: "HADB Generic Component Select",             event: [[name: "currentOption", value: newVals[0], type: origin, descriptionText:"${friendly} was set to ${newVals[0]} [${origin}]"],[name: "options", value: newVals[1], descriptionText: "${friendly} options were set to ${newVals[1]}"]], namespace: "community"],
-            input_select: [type: "HADB Generic Component Select",       event: [[name: "currentOption", value: newVals[0], type: origin, descriptionText:"${friendly} was set to ${newVals[0]} [${origin}]"],[name: "options", value: newVals[1], descriptionText: "${friendly} options were set to ${newVals[1]}"]], namespace: "community"],
+            input_select: [type: "HADB Generic Component Select",       event: [[name: "currentOption", value: newVals[0], type: origin, descriptionText:"${friendly} was set to ${newVals[0]} [${origin}]"],[name: "options", value: newVals[1], descriptionText: "${friendly} toneList were set to ${newVals[1]}"]], namespace: "community"],
+            siren: [type: "HADB Generic Component Siren",               event: [[name: "switch", value: newVals[0], type: origin, descriptionText:"${friendly} is ${newVals[0]} [${origin}]"],[name: "status", value: newVals[0] == "on" ? "playing":"stopped", type: origin, descriptionText:"${friendly} is ${newVals[0] == 'on' ? 'playing':'stopped'}"],[name: "soundEffects", value: newVals[1], descriptionText: "${friendly} soundEffects were set to ${newVals[1]}"]], namespace: "community"],
+
         ]
     return mapping[domain]
 }
@@ -792,7 +797,14 @@ def componentSetVariable(ch, newValue) {
     if (logEnable) log.info("received set variable to ${newValue} request from ${ch.label}")
     executeCommand(ch, "set_value", [value: newValue])
 }
-        
+
+def componentPlaySound(ch, tone, duration, volume) {
+    if (logEnable) log.info("received play sound request from ${ch.label}")
+    volume = volume / 100
+    data = [tone: tone, duration: duration, volume_level: volume]
+    executeCommand(ch, "turn_on", data)
+}
+
 def componentRefresh(ch) {
     if (logEnable) log.info("received refresh request from ${ch.label}")
     // special handling since domain is fixed 
@@ -888,7 +900,7 @@ def componentEmergencyHeat(ch) {
 }
 
 def componentFanAuto(ch) {
-    componentSetThermostatMode(ch, "auto")
+    componentSetThermostatFanMode(ch, "auto")
 }
 
 def componentFanCirculate(ch) {

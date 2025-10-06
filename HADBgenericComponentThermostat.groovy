@@ -48,6 +48,7 @@ metadata
 
     command "setPreset", [[name: "preset", type: "STRING", description: "Preset"]]
     command "setHumidity", [[name: "humiditySetpoint", type: "NUMBER", description: "Humidity setpoint"]]
+    command "setThermostatMode", [[ name: "thermostatMode*", type: "ENUM", constraints: [ "off", "heat", "cool", "heat_cool", "auto", "dry", "fan_only" ], description: "Thermostat mode to set" ]]
 
     attribute "healthStatus", "enum", ["offline", "online"]
     attribute "supportedThermostatFanModes", "JSON_OBJECT"

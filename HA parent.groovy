@@ -101,6 +101,7 @@
 *                   Yves Mercier       Compensate for restrictions imposed by ezdashboard in mediaPlayer and locks, simplify handling of "off" thermostat mode
 * 2.17   2025-03-24 Yves Mercier       Fix some devices not updating their health status
 * 2.18   2025-10-05 Yves Mercier       Add tentative support for sirens. Fix thermostat fanMode auto
+* 2.19   2026-02-28 Yves Mercier	   Modify light entity support to accomodate for breaking change in CT.
 */
 
 import groovy.json.JsonSlurper
@@ -301,14 +302,13 @@ def parse(String description) {
                 if (hue) hue = Math.round(hue.toInteger() * 100 / 360)
                 def sat = newState?.attributes?.hs_color?.getAt(1)
                 if (sat) sat = Math.round(sat.toInteger())
-                def ct = newState?.attributes?.color_temp
-                if (ct) ct = Math.round(1000000/ct)
+                def ct = newState?.attributes?.color_temp_kelvin
                 effectsList = JsonOutput.toJson(newState?.attributes?.effect_list)
                 def effectName = newState?.attributes?.effect
                 def lightType = []
                 lightType = newState?.attributes?.supported_color_modes
                 if ((lightType.intersect(["hs", "rgb"])) && (lightType.contains("color_temp"))) lightType += "rgbw"
-                if (effectsList) lightType += "rgbwe"
+                if (newState?.attributes?.effect_list) lightType = ["rgbwe"]
                 switch (lightType) {
                     case {it.intersect(["rgbwe"])}:
                         device_class = "rgbwe"
@@ -649,7 +649,7 @@ def componentSetColor(ch, color, transition=1) {
 def componentSetColorTemperature(ch, colortemperature, level, transition=1) {
     if (logEnable) log.info("received setColorTemperature request from ${ch.label}")
     if (!level) level = ch.currentValue("level")
-    if (!transition) transition = 1
+    if (!transition) transition = 0
     data = [brightness_pct: "${level}", color_temp_kelvin: "${colortemperature}", transition: "${transition}"]
     executeCommand(ch, "turn_on", data)
 }

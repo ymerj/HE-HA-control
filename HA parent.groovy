@@ -101,7 +101,7 @@
 *                   Yves Mercier       Compensate for restrictions imposed by ezdashboard in mediaPlayer and locks, simplify handling of "off" thermostat mode
 * 2.17   2025-03-24 Yves Mercier       Fix some devices not updating their health status
 * 2.18   2025-10-05 Yves Mercier       Add tentative support for sirens. Fix thermostat fanMode auto
-* 2.19   2026-03-01 Yves Mercier	   Modify light entity support to accomodate for breaking change in CT.
+* 2.19   2026-02-28 Yves Mercier	   Modify light entity support to accomodate for breaking change in CT.
 */
 
 import groovy.json.JsonSlurper

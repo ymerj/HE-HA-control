@@ -81,20 +81,20 @@ void parse(String description) { log.warn "parse(String description) not impleme
 
 void parse(List<Map> description) {
     description.each
-	    {
+        {
         if (it.name in ["temperature", "thermostatOperatingState", "thermostatFanMode", "thermostatSetpoint", "coolingSetpoint", "heatingSetpoint", "supportedThermostatFanModes", "supportedPresets", "currentPreset", "healthStatus", "maxHumidity", "minHumidity", "humidity", "humiditySetpoint"])
-		    {
+            {
             if (txtEnable) log.info it.descriptionText
             sendEvent(it)
-			}
-		if (it.name in ["thermostatMode"])
-			{
-			if (translate && (it.value == "heat_cool")) it.value = "auto"
+            }
+        if (it.name in ["thermostatMode"])
+            {
+            if (translate && (it.value == "heat_cool")) it.value = "auto"
             sendEvent(it)
             }
-		if (it.name in ["supportedThermostatModes"])
+        if (it.name in ["supportedThermostatModes"])
             {
-			if (translate) it.value.replaceAll("heat_cool", "auto")
+            if (translate) it.value.replaceAll("heat_cool", "auto")
             sendEvent(it)
 			}
         }

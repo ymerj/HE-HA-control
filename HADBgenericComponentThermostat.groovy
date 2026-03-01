@@ -96,7 +96,7 @@ void parse(List<Map> description) {
             {
             if (translate) it.value.replaceAll("heat_cool", "auto")
             sendEvent(it)
-			}
+            }
         }
 }
 

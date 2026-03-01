@@ -39,6 +39,7 @@
 * 2.12       2024-12-15 Yves Mercier       Add support for select entity
 * 2.15       2025-01-17 Yves Mercier       Fix "Toggle all On/Off" included as an entity
 * 2.18       2025-01-18 Yves Mercier       Add support for siren entity
+* 2.20       2025-02-28 Enis Hoca          Added discovery debug logging; entity type filter and name search in discoveryPage
 */
 
 definition(
@@ -91,6 +92,16 @@ def linkToMain()
     }
 }
 
+def getSupportedDomains()
+{
+    return [
+        "binary_sensor", "button", "climate", "cover", "device_tracker", "event",
+        "fan", "humidifier", "input_boolean", "input_button", "input_number",
+        "input_select", "input_text", "light", "lock", "media_player", "number",
+        "select", "sensor", "siren", "switch", "text", "vacuum", "valve"
+    ]
+}
+
 def discoveryPage(params)
 {
     dynamicPage(name: "discoveryPage", title: "", install: true, uninstall: true)
@@ -100,49 +111,119 @@ def discoveryPage(params)
             cullGrandchildren()
             clearButtonPushed()
         }
+
+        // Only re-query HA when navigating here fresh
         if(params?.runDiscovery)
         {
             state.entityList = [:]
-            def domain
-            // query HA to get entity_id list
+
+            logDebug("discoveryPage: Starting HA entity discovery from ${getBaseURI()}states")
+
             def resp = httpGetExec(genParamsMain("states"))
-            // logDebug("states response = ${resp?.data}")
-            
+
             if(resp?.data)
             {
+                logDebug("discoveryPage: HA returned ${resp.data.size()} total states")
+
                 resp.data.each
                 {
-                    domain = it.entity_id?.tokenize(".")?.getAt(0)
-                    if(["fan", "switch", "light", "binary_sensor", "sensor", "device_tracker", "cover", "lock", "climate", "input_boolean", "number", "input_number", "button", "input_button", "valve", "humidifier", "event", "text", "input_text", "vacuum", "media_player", "input_select", "select", "siren"].contains(domain))
+                    def domain = it.entity_id?.tokenize(".")?.getAt(0)
+                    if(domain && getSupportedDomains().contains(domain))
                     {
                         state.entityList.put(it.entity_id, "${it.attributes?.friendly_name} (${it.entity_id})")
                     }
                 }
 
                 state.entityList = state.entityList.sort { it.value }
+
+                logDebug("discoveryPage: ${state.entityList.size()} entities matched supported domains and are available for selection")
+            }
+            else
+            {
+                logDebug("discoveryPage: No data received from HA — check IP (${ip}), port (${port}), token, and SSL settings")
             }
         }
+
+        // ── Build filtered view ───────────────────────────────────────────────
+        def fullList     = state.entityList ?: [:]
+        def filteredList = fullList
+
+        if(typeFilter && typeFilter != "__ALL__")
+        {
+            filteredList = filteredList.findAll { k, v -> k.startsWith("${typeFilter}.") }
+        }
+
+        if(nameFilter && nameFilter.trim())
+        {
+            def term = nameFilter.trim().toLowerCase()
+            filteredList = filteredList.findAll { k, v ->
+                (v?.toLowerCase()?.contains(term)) || (k?.toLowerCase()?.contains(term))
+            }
+        }
+
+        // ── KEY FIX: always re-inject already-selected items into options ─────
+        // This prevents Hubitat from dropping selections that are filtered out of view.
+        def selectedOptions = [:]
+        if(includeList)
+        {
+            includeList.each { entityId ->
+                if(fullList.containsKey(entityId))
+                {
+                    selectedOptions.put(entityId, fullList[entityId])
+                }
+            }
+        }
+        // Merge: selected items always present; filtered items show for new picks
+        def displayOptions = (filteredList + selectedOptions).sort { it.value }
+
+        // ── Filter controls ───────────────────────────────────────────────────
+        section("<b>Filter Device List</b>")
+        {
+            input name: "typeFilter",
+                  type: "enum",
+                  title: "Filter by Entity Type",
+                  options: ["__ALL__": "— All Types —"] + getSupportedDomains().collectEntries { [(it): it] },
+                  defaultValue: "__ALL__",
+                  required: false,
+                  submitOnChange: true
+
+            input name: "nameFilter",
+                  type: "text",
+                  title: "Search by Name or Entity ID (partial match)",
+                  required: false,
+                  submitOnChange: true
+
+            def selectedCount = includeList?.size() ?: 0
+            paragraph "<i>Showing <b>${filteredList.size()}</b> of <b>${fullList.size()}</b> entities &nbsp;|&nbsp; <b>${selectedCount}</b> selected total</i>"
+        }
+
+        // ── Selection input — filtered view + selected items always present ───
         section
         {
-            input name: "includeList", type: "enum", title: "Select any devices to <b>include</b> from Home Assistant Device Bridge", options: state.entityList, required: false, multiple: true, offerAll: true
+            input name: "includeList",
+                  type: "enum",
+                  title: "Select devices to <b>include</b> from Home Assistant",
+                  options: displayOptions,
+                  required: false,
+                  multiple: true,
+                  offerAll: true
         }
+
         section("Administration option")
         {
             input(name: "cleanupUnused", type: "button", title: "Remove all child devices that are not currently selected (use carefully!)")
         }
+
         linkToMain()
     }
 }
 
 def cullGrandchildren()
 {
-    // remove all child devices that aren't currently on either filtering list
-    
     def ch = getChild()
-    
     ch?.getChildDevices()?.each()
     {
-        def entity = it.getDeviceNetworkId()?.tokenize("-")?.getAt(1)        
+        def entity = it.getDeviceNetworkId()?.tokenize("-")?.getAt(1)
         if(!includeList?.contains(entity)) { ch.removeChild(entity) }
     }
 }
@@ -162,10 +243,9 @@ def installed()
     {
         ch = addChildDevice("ymerj", "HomeAssistant Hub Parent", now().toString(), [name: "Home Assistant Device Bridge", label: "Home Assistant Device Bridge (${ip})", isComponent: false])
     }
-    
+
     if(ch)
     {
-        // propoagate our settings to the child
         ch.updateSetting("ip", ip)
         ch.updateSetting("port", port)
         ch.updateSetting("token", token)
@@ -203,7 +283,6 @@ def updated()
 
 void appButtonHandler(btn)
 {
-    // flag button pushed and let pages sort it out
     setButtonPushed(btn)
 }
 
@@ -234,12 +313,9 @@ def genParamsMain(suffix, body = null)
             ],
             ignoreSSLIssues: ignoreSSLIssues
         ]
-    
-    if(body)
-    {
-        params['body'] = body
-    }
- 
+
+    if(body) { params['body'] = body }
+
     return params
 }
 
@@ -251,16 +327,15 @@ def getBaseURI()
 
 def httpGetExec(params, throwToCaller = false)
 {
-    logDebug("httpGetExec(${params})")
-    
+    logDebug("httpGetExec() → ${params?.uri}")
+
     try
     {
         def result
         httpGet(params)
         { resp ->
-            if (resp)
+            if(resp)
             {
-                //logDebug("resp.data = ${resp.data}")
                 result = resp
             }
         }
@@ -269,10 +344,6 @@ def httpGetExec(params, throwToCaller = false)
     catch (Exception e)
     {
         logDebug("httpGetExec() failed: ${e.message}")
-        //logDebug("status = ${e.getResponse().getStatus().toInteger()}")
-        if(throwToCaller)
-        {
-            throw(e)
-        }
+        if(throwToCaller) { throw(e) }
     }
 }

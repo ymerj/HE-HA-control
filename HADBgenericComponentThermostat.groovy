@@ -87,10 +87,14 @@ void parse(List<Map> description) {
             if (txtEnable) log.info it.descriptionText
             sendEvent(it)
 			}
-		if (it.name in ["thermostatMode", "supportedThermostatModes"])
+		if (it.name in ["thermostatMode"])
 			{
-			if (translate) Collections.replaceAll(it.supportedThermostatModes, "heat_cool", "auto")
-			if (translate && (it.thermostatMode == "heat_cool")) it.thermostatMode = "auto"
+			if (translate && (it.value == "heat_cool")) it.value = "auto"
+            sendEvent(it)
+            }
+		if (it.name in ["supportedThermostatModes"])
+            {
+			if (translate) it.value.replaceAll("heat_cool", "auto")
             sendEvent(it)
 			}
         }

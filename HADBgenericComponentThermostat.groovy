@@ -25,6 +25,7 @@ Change history:
 2.12 - Yves Mercier - Add presets by name
 2.14 - Yves Mercier - Add support for humidity setting
 2.16 - basilisk487  - Filter out setCoolingSetpoint/setHeatingSetpoint calls that are the opposite of current thermostat mode.
+2.20 - Yves Mercier - Add option to translate HE auto thermostat mode to HA heat_cool
 
 */
 
@@ -44,6 +45,7 @@ metadata
     {
         input name: "logEnable", type: "bool", title: "Enable debug logging", defaultValue: true
         input name: "txtEnable", type: "bool", title: "Enable descriptionText logging", defaultValue: true
+		input name: "translate", type: "bool", title: "Translate HE auto mode to HA heat_cool", defaultValue: false
     }
 
     command "setPreset", [[name: "preset", type: "STRING", description: "Preset"]]
@@ -78,12 +80,24 @@ void uninstalled() {
 void parse(String description) { log.warn "parse(String description) not implemented" }
 
 void parse(List<Map> description) {
-    description.each {
-        if (it.name in ["thermostatMode", "temperature", "thermostatOperatingState", "thermostatFanMode", "thermostatSetpoint", "coolingSetpoint", "heatingSetpoint", "supportedThermostatModes", "supportedThermostatFanModes", "supportedPresets", "currentPreset", "healthStatus", "maxHumidity", "minHumidity", "humidity", "humiditySetpoint"]) {
+    description.each
+        {
+        if (it.name in ["temperature", "thermostatOperatingState", "thermostatFanMode", "thermostatSetpoint", "coolingSetpoint", "heatingSetpoint", "supportedThermostatFanModes", "supportedPresets", "currentPreset", "healthStatus", "maxHumidity", "minHumidity", "humidity", "humiditySetpoint"])
+            {
             if (txtEnable) log.info it.descriptionText
             sendEvent(it)
+            }
+        if (it.name in ["thermostatMode"])
+            {
+            if (translate && (it.value == "heat_cool")) it.value = "auto"
+            sendEvent(it)
+            }
+        if (it.name in ["supportedThermostatModes"])
+            {
+            if (translate) it.value.replaceAll("heat_cool", "auto")
+            sendEvent(it)
+            }
         }
-    }
 }
 
 void off() {
@@ -111,6 +125,7 @@ void setHeatingSetpoint(BigDecimal temperature) {
 }
 
 void setThermostatMode(String thermostatMode) {
+	if (translate && (thermostatMode == "auto")) thermostatMode = "heat_cool"
     parent?.componentSetThermostatMode(this.device, thermostatMode)
 }
 

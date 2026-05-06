@@ -102,6 +102,7 @@
 * 2.17   2025-03-24 Yves Mercier       Fix some devices not updating their health status
 * 2.18   2025-10-05 Yves Mercier       Add tentative support for sirens. Fix thermostat fanMode auto
 * 2.19   2026-02-28 Yves Mercier	   Modify light entity support to accomodate for breaking change in CT.
+* 2.22   2026-05-06 Yves Mercier       Add support for scene entity.
 */
 
 import groovy.json.JsonSlurper
@@ -387,7 +388,8 @@ def parse(String description) {
                 mapping = translateDevices(domain, newVals, friendly, origin)
                 break
             
-            case "button":
+            case "scene":
+		    case "button":
             case "input_button":
                 newVals = [1]
                 mapping = translateDevices(domain, newVals, friendly, origin)
@@ -541,7 +543,8 @@ def translateDevices(domain, newVals, friendly, origin)
 {
     def mapping =
         [
-            button: [type: "Generic Component Pushable Button",         event: [[name: "pushed", value: newVals[0], type: origin, descriptionText:"${friendly} button ${newVals[0]} was pushed [${origin}]", isStateChange: true]], namespace: "community"],
+            scene: [type: "HADB Generic Component Scene",               event: [[name: "pushed", value: newVals[0], type: origin, descriptionText:"${friendly} button ${newVals[0]} was pushed [${origin}]", isStateChange: true]], namespace: "community"],
+			button: [type: "Generic Component Pushable Button",         event: [[name: "pushed", value: newVals[0], type: origin, descriptionText:"${friendly} button ${newVals[0]} was pushed [${origin}]", isStateChange: true]], namespace: "community"],
             input_button: [type: "Generic Component Pushable Button",   event: [[name: "pushed", value: newVals[0], type: origin, descriptionText:"${friendly} button ${newVals[0]} was pushed [${origin}]", isStateChange: true]], namespace: "community"],
             fan: [type: "Generic Component Fan Control",                event: [[name: "switch", value: newVals[0], type: origin, descriptionText:"${friendly} was turned ${newVals[0]} [${origin}]"],[name: "speed", value: newVals[1], type: origin, descriptionText:"${friendly} speed was set to ${newVals[1]} [${origin}]"],[name: "level", value: newVals[2], type: origin, descriptionText:"${friendly} level was set to ${newVals[2]} [${origin}]"]]],
             switch: [type: "Generic Component Switch",                  event: [[name: "switch", value: newVals[0], type: origin, descriptionText:"${friendly} was turned ${newVals[0]} [${origin}]"]]],
@@ -785,11 +788,19 @@ def componentPush(ch, nb) {
     executeCommand(ch, "press")
 }
 
+def componentActivate(ch, nb) {
+    if (logEnable) log.info("received activate request from ${ch.label}")
+    executeCommand(ch, "turn_on")
+}
+
 def componentSetNumber(ch, newValue) {
     if (logEnable) log.info("received set number to ${newValue} request from ${ch.label}")
-    newValue = Math.round(newValue / ch.currentValue("step")) * ch.currentValue("step")
-    if (newValue < ch.currentValue("minimum")) newValue = ch.currentValue("minimum")
-    if (newValue > ch.currentValue("maximum")) newValue = ch.currentValue("maximum")
+    if (ch.currentValue("step"))
+        {
+        newValue = Math.round(newValue / ch.currentValue("step")) * ch.currentValue("step")
+        if (newValue < ch.currentValue("minimum")) newValue = ch.currentValue("minimum")
+        if (newValue > ch.currentValue("maximum")) newValue = ch.currentValue("maximum")
+        }
     executeCommand(ch, "set_value", [value: newValue])
 }
 

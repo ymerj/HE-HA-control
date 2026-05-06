@@ -24,7 +24,7 @@ Change history:
 
 metadata
 {
-    definition(name: "HADB Generic Component Activate Button", namespace: "community", author: "community", importUrl: "https://raw.githubusercontent.com/ymerj/HE-HA-control/main/HADBgenericComponentAcivateButton.groovy")
+    definition(name: "HADB Generic Component Scene", namespace: "community", author: "community", importUrl: "https://raw.githubusercontent.com/ymerj/HE-HA-control/main/HADBgenericComponentScene.groovy")
     {
         capability "PushableButton"
         capability "Refresh"

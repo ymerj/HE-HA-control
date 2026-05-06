@@ -41,6 +41,7 @@
 * 2.18       2025-01-18 Yves Mercier       Add support for siren entity
 * 2.20       2025-02-28 Enis Hoca          Added discovery debug logging; entity type filter and name search in discoveryPage
 * 2.21       2026-04-03 Dan Ogorchock      Added 'menu: "Integrations"' to definition to allow app to appear under the 2.5.x Integrations menu section
+* 2.22       2025-01-18 Yves Mercier       Add support for scene entity
 */
 
 definition(
@@ -100,7 +101,7 @@ def getSupportedDomains()
         "binary_sensor", "button", "climate", "cover", "device_tracker", "event",
         "fan", "humidifier", "input_boolean", "input_button", "input_number",
         "input_select", "input_text", "light", "lock", "media_player", "number",
-        "select", "sensor", "siren", "switch", "text", "vacuum", "valve"
+        "scene", "select", "sensor", "siren", "switch", "text", "vacuum", "valve"
     ]
 }
 

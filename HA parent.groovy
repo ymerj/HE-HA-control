@@ -543,7 +543,7 @@ def translateDevices(domain, newVals, friendly, origin)
 {
     def mapping =
         [
-            scene: [type: "HADB Generic Component Scene Button",        event: [[name: "pushed", value: newVals[0], type: origin, descriptionText:"${friendly} button ${newVals[0]} was pushed [${origin}]", isStateChange: true]], namespace: "community"],
+            scene: [type: "HADB Generic Component Scene",               event: [[name: "pushed", value: newVals[0], type: origin, descriptionText:"${friendly} button ${newVals[0]} was pushed [${origin}]", isStateChange: true]], namespace: "community"],
 			button: [type: "Generic Component Pushable Button",         event: [[name: "pushed", value: newVals[0], type: origin, descriptionText:"${friendly} button ${newVals[0]} was pushed [${origin}]", isStateChange: true]], namespace: "community"],
             input_button: [type: "Generic Component Pushable Button",   event: [[name: "pushed", value: newVals[0], type: origin, descriptionText:"${friendly} button ${newVals[0]} was pushed [${origin}]", isStateChange: true]], namespace: "community"],
             fan: [type: "Generic Component Fan Control",                event: [[name: "switch", value: newVals[0], type: origin, descriptionText:"${friendly} was turned ${newVals[0]} [${origin}]"],[name: "speed", value: newVals[1], type: origin, descriptionText:"${friendly} speed was set to ${newVals[1]} [${origin}]"],[name: "level", value: newVals[2], type: origin, descriptionText:"${friendly} level was set to ${newVals[2]} [${origin}]"]]],

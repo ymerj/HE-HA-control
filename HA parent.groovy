@@ -103,6 +103,7 @@
 * 2.18   2025-10-05 Yves Mercier       Add tentative support for sirens. Fix thermostat fanMode auto
 * 2.19   2026-02-28 Yves Mercier	   Modify light entity support to accomodate for breaking change in CT.
 * 2.22   2026-05-06 Yves Mercier       Add support for scene entity.
+* 2.23   2026-06-11 Yves Mercier	   Add healthStatus attribute
 */
 
 import groovy.json.JsonSlurper
@@ -112,12 +113,14 @@ metadata {
     definition (name: "HomeAssistant Hub Parent", namespace: "ymerj", author: "Yves Mercier", importUrl: "https://raw.githubusercontent.com/ymerj/HE-HA-control/main/HA%20parent.groovy") {
         capability "Initialize"
         capability "Actuator"
+		capability "Health Check"
 
         command "closeConnection"        
         command "callService", [[name:"entity", type:"STRING", description:"domain.entity"],[name:"service", type:"STRING"],[name:"data", type:"STRING", description:"key:value,key:value... etc"]]
         //command "createChild", [[name:"deviceType", type:"STRING"],[name:"entity", type:"STRING"],[name:"friendly", type:"STRING"],[name:"namespace", type:"STRING"]]
 
         attribute "Connection", "string"
+		attribute "healthStatus", "enum", ["offline", "online"]
     }
 
     preferences {
@@ -183,6 +186,7 @@ def webSocketStatus(String status){
     if ((status == "status: closing") && (state.wasExpectedClose)) {
         state.wasExpectedClose = false
         sendEvent(name: "Connection", value: "Closed")
+		sendEvent(name: "healthStatus", value: "offline")
         return
     } 
     else if(status == 'status: open') {
@@ -192,10 +196,12 @@ def webSocketStatus(String status){
         state.reconnectDelay = 1
         state.wasExpectedClose = false
         sendEvent(name: "Connection", value: "Open")
+		sendEvent(name: "healthStatus", value: "online")
     } 
     else {
         log.warn("WebSocket error, reconnecting.")
         sendEvent(name: "Connection", value: "Reconnecting")
+		sendEvent(name: "healthStatus", value: "offline")
         reconnectWebSocket()
     }
 }

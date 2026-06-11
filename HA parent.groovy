@@ -103,6 +103,7 @@
 * 2.18   2025-10-05 Yves Mercier       Add tentative support for sirens. Fix thermostat fanMode auto
 * 2.19   2026-02-28 Yves Mercier	   Modify light entity support to accomodate for breaking change in CT.
 * 2.22   2026-05-06 Yves Mercier       Add support for scene entity.
+* 2.23   2026-06-11 Yves Mercier	   Add healthStatus attribute
 */
 
 import groovy.json.JsonSlurper

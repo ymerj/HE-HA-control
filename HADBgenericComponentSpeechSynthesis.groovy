@@ -24,7 +24,7 @@ Change history:
 
 metadata
     {
-    definition(name: "HADB Generic Component Speech Synthesis", namespace: "community", author: "community", importUrl: "")
+    definition(name: "HADB Generic Component Speech Synthesis", namespace: "community", author: "community", importUrl: "https://raw.githubusercontent.com/ymerj/HE-HA-control/main/HADBgenericComponentSpeechSynthesis.groovy")
         {
         capability "Actuator"
         capability "Speech Synthesis"

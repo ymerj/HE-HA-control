@@ -822,16 +822,6 @@ def componentPlaySound(ch, tone, duration, volume) {
     executeCommand(ch, "turn_on", data)
 }
 
-def componentRefresh(ch) {
-    if (logEnable) log.info("received refresh request from ${ch.label}")
-    // special handling since domain is fixed 
-    entity = ch.name
-    messUpd = JsonOutput.toJson([id: state.id, type: "call_service", domain: "homeassistant", service: "update_entity", service_data: [entity_id: entity]])
-    state.id = state.id + 1
-    if (logEnable) log.debug("messUpd = ${messUpd}")
-    interfaces.webSocket.sendMessage("${messUpd}")
-}
-
 def componentSetThermostatMode(ch, thermostatmode) {
     if (logEnable) log.info("received setThermostatMode request from ${ch.label}")
     executeCommand(ch, "set_hvac_mode", [hvac_mode: thermostatmode])
@@ -1068,6 +1058,26 @@ void componentResumeTrack(ch, trackUri) {
 void componentSetTrack(ch, trackUri){
 }
 
+void componentSpeak(ch, message, speaker) {
+    if (logEnable) log.info("received speak message from ${ch.label}")
+    // special handling because of extra data requirement
+    entity = ch?.getDeviceNetworkId().split("-")[1]
+    messUpd = [id: state.id, type: "call_service", domain: "tts", service: "speak", target: [entity_id: entity], service_data: [media_player_entity_id: speaker, message: message]]
+    state.id = state.id + 1
+    if (logEnable) log.debug("messUpd = ${messUpd}")
+    interfaces.webSocket.sendMessage("${messUpd}")
+}
+
+def componentRefresh(ch) {
+    if (logEnable) log.info("received refresh request from ${ch.label}")
+    // special handling since domain is fixed 
+    entity = ch?.getDeviceNetworkId().split("-")[1]
+    messUpd = JsonOutput.toJson([id: state.id, type: "call_service", domain: "homeassistant", service: "update_entity", service_data: [entity_id: entity]])
+    state.id = state.id + 1
+    if (logEnable) log.debug("messUpd = ${messUpd}")
+    interfaces.webSocket.sendMessage("${messUpd}")
+}
+
 def closeConnection() {
     if (logEnable) log.debug("Closing connection...")   
     state.wasExpectedClose = true
@@ -1075,10 +1085,17 @@ def closeConnection() {
 }
 
 def callService(entity, service, data = "") {
-    def cvData = [:]
-    cvData = data.tokenize(",").collectEntries{it.tokenize(":").with{[(it[0]):it[1..(it.size()-1)].join(":")]}}
-    domain = entity?.tokenize(".")[0]
-    messUpd = [id: state.id, type: "call_service", domain: domain, service: service, service_data : [entity_id: entity] + cvData]
+    if (service[0..2] == "tts")
+        {
+        messUpd = [id: state.id, type: "call_service", domain: "tts", service: "speak", target: [entity_id: service], service_data: [media_player_entity_id: entity, message: data]]
+        }
+    else
+        {
+        def cvData = [:]
+        domain = entity?.tokenize(".")[0]
+        cvData = data.tokenize(",").collectEntries{it.tokenize(":").with{[(it[0]):it[1..(it.size()-1)].join(":")]}}
+        messUpd = [id: state.id, type: "call_service", domain: domain, service: service, service_data: [entity_id: entity] + cvData]
+        }
     state.id = state.id + 1
     messUpdStr = JsonOutput.toJson(messUpd)
     if (logEnable) log.debug("messUpdStr = ${messUpdStr}")

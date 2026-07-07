@@ -104,6 +104,7 @@
 * 2.19   2026-02-28 Yves Mercier	   Modify light entity support to accomodate for breaking change in CT.
 * 2.22   2026-05-06 Yves Mercier       Add support for scene entity.
 * 2.23   2026-06-11 Yves Mercier	   Add healthStatus attribute
+* 2.24   2026-07-07 Yves Mercier	   Add special handling for TTS request on custom service call function
 */
 
 import groovy.json.JsonSlurper
@@ -1058,11 +1059,11 @@ void componentResumeTrack(ch, trackUri) {
 void componentSetTrack(ch, trackUri){
 }
 
-void componentSpeak(ch, message, speaker) {
+void componentSpeak(ch, message, engine) {
     if (logEnable) log.info("received speak message from ${ch.label}")
     // special handling because of extra data requirement
     entity = ch?.getDeviceNetworkId().split("-")[1]
-    messUpd = [id: state.id, type: "call_service", domain: "tts", service: "speak", target: [entity_id: entity], service_data: [media_player_entity_id: speaker, message: message]]
+    messUpd = [id: state.id, type: "call_service", domain: "tts", service: "speak", target: [entity_id: engine], service_data: [media_player_entity_id: "media_player.${entity}", message: message]]
     state.id = state.id + 1
     if (logEnable) log.debug("messUpd = ${messUpd}")
     interfaces.webSocket.sendMessage("${messUpd}")

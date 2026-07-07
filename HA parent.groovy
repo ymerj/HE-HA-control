@@ -1063,7 +1063,7 @@ void componentSpeak(ch, message, engine) {
     if (logEnable) log.info("received speak message from ${ch.label}")
     // special handling because of extra data requirement
     entity = ch?.getDeviceNetworkId().split("-")[1]
-    messUpd = [id: state.id, type: "call_service", domain: "tts", service: "speak", target: [entity_id: engine], service_data: [media_player_entity_id: "media_player.${entity}", message: message]]
+    messUpd =  JsonOutput.toJson([id: state.id, type: "call_service", domain: "tts", service: "speak", target: [entity_id: engine], service_data: [media_player_entity_id: "media_player.${entity}", message: message]])
     state.id = state.id + 1
     if (logEnable) log.debug("messUpd = ${messUpd}")
     interfaces.webSocket.sendMessage("${messUpd}")

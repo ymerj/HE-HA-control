@@ -99,7 +99,7 @@ def getSupportedDomains()
 {
     return [
         "binary_sensor", "button", "climate", "cover", "device_tracker", "event",
-        "fan", "humidifier", "input_boolean", "input_button", "input_number",
+        "fan", "humidifier", "input_boolean", "input_button", "input_datetime", "input_number",
         "input_select", "input_text", "light", "lock", "media_player", "number",
         "scene", "select", "sensor", "siren", "switch", "text", "vacuum", "valve"
     ]

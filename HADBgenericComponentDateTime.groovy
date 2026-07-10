@@ -24,7 +24,7 @@ Change history:
 
 metadata
 {
-    definition(name: "HADBgeneric Component DateTime", namespace: "community", author: "community", importUrl: "https://raw.githubusercontent.com/ymerj/HE-HA-control/main/HADBgenericComponentDateTime.groovy")
+    definition(name: "HADB generic Component DateTime", namespace: "community", author: "community", importUrl: "https://raw.githubusercontent.com/ymerj/HE-HA-control/main/HADBgenericComponentDateTime.groovy")
     {
         capability "Actuator"
         capability "Refresh"

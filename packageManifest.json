@@ -1,7 +1,7 @@
 {
   "packageName": "HE-HA-control",
   "author": "ymerj",
-  "version": "2.24",
+  "version": "2.25",
   "minimumHEVersion": "2.1.9",
   "dateReleased": "2021-03-19",
   "drivers": [
@@ -213,6 +213,13 @@
       "name": "HADB Generic Component Scene",
       "namespace": "community",
       "location": "https://raw.githubusercontent.com/ymerj/HE-HA-control/main/HADBgenericComponentScene.groovy",
+      "required": true
+    },
+    {
+      "id": "d31cc626-0afe-4ad5-a512-f5782358bf9f",
+      "name": "HADB Generic Component DateTime",
+      "namespace": "community",
+      "location": "https://raw.githubusercontent.com/ymerj/HE-HA-control/main/HADBgenericComponentDateTime.groovy",
       "required": true
     }
   ],

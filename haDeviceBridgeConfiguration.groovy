@@ -101,7 +101,7 @@ def getSupportedDomains()
         "binary_sensor", "button", "climate", "cover", "date", "datetime", "device_tracker", "event",
         "fan", "humidifier", "input_boolean", "input_button", "input_datetime", "input_number",
         "input_select", "input_text", "light", "lock", "media_player", "number",
-        "scene", "select", "sensor", "siren", "switch", "text", "time", "tts", "vacuum", "valve"
+        "scene", "select", "sensor", "siren", "switch", "text", "time", "vacuum", "valve"
     ]
 }
 

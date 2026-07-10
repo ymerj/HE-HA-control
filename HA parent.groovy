@@ -105,6 +105,7 @@
 * 2.22   2026-05-06 Yves Mercier       Add support for scene entity.
 * 2.23   2026-06-11 Yves Mercier	   Add healthStatus attribute
 * 2.24   2026-07-07 Yves Mercier	   Add special handling for TTS request on custom service call function
+* 2.25	 2026-07-09 jlv	+ ymerj		   Add support for input_datetime
 */
 
 import groovy.json.JsonSlurper
@@ -466,7 +467,17 @@ def parse(String description) {
                 newVals += [status, mute, volume, mediaType, duration, position, trackData, trackDescription, mediaInputSource, supportedInputs, sourceList]
                 mapping = translateDevices(domain, newVals, friendly, origin)
                 break
-            
+                
+            case "time":
+            case "date":
+            case "datetime":
+            case "input_datetime":
+                def time = newState?.attributes?.has_time
+                def date = newState?.attributes?.has_date                
+                newVals += [date, time]
+                mapping = translateDevices("input_datetime", newVals, friendly, origin)
+                break
+                
             default:
                 if (logEnable) log.info("No mapping exists for domain: ${domain}, device_class: ${device_class}.  Please contact devs to have this added.")
             }
@@ -566,10 +577,11 @@ def translateDevices(domain, newVals, friendly, origin)
             text: [type: "HADB Generic Component Text",                 event: [[name: "variable", value: newVals[0], type: origin, descriptionText:"${friendly} was set to ${newVals[0]} [${origin}]"]], namespace: "community"],
             input_number: [type: "Generic Component Number",            event: [[name: "number", value: newVals[0], unit: newVals[1] ?: "", type: origin, descriptionText:"${friendly} was set to ${newVals[0]} ${newVals[1] ?: ''} [${origin}]"],[name: "minimum", value: newVals[2], descriptionText:"${friendly} minimum value is ${newVals[2]}"],[name: "maximum", value: newVals[3], descriptionText:"${friendly} maximum value is ${newVals[3]}"],[name: "step", value: newVals[4], descriptionText:"${friendly} step is ${newVals[4]}"]], namespace: "community"],
             number: [type: "Generic Component Number",                  event: [[name: "number", value: newVals[0], unit: newVals[1] ?: "", type: origin, descriptionText:"${friendly} was set to ${newVals[0]} ${newVals[1] ?: ''} [${origin}]"],[name: "minimum", value: newVals[2], descriptionText:"${friendly} minimum value is ${newVals[2]}"],[name: "maximum", value: newVals[3], descriptionText:"${friendly} maximum value is ${newVals[3]}"],[name: "step", value: newVals[4], descriptionText:"${friendly} step is ${newVals[4]}"]], namespace: "community"],
+            input_datetime: [type: "HADB generic Component DateTime",   event: [[name: "dateTime", value: newVals[0], type: origin, descriptionText:"${friendly} datetime was set to ${newVals[0]} [${origin}]"],[name: "date", value: newVals[1], descriptionText:"${friendly} contain a date: ${newVals[1]}"],[name: "time", value: newVals[2], descriptionText:"${friendly} value contains a time: ${newVals[2]}"]], namespace: "community"],
             vacuum: [type: "HADB Generic Component Vacuum",             event: [[name: "vacuum", value: newVals[0], type: origin, descriptionText:"${friendly} is ${newVals[0]} [${origin}]"],[name: "speed", value: newVals[1], type: origin, descriptionText:"${friendly} speed was set to ${newVals[1]} [${origin}]"],[name: "fanSeedList", value: newVals[2], type: origin, descriptionText:"${friendly} speed list is ${newVals[2]} [${origin}]"]], namespace: "community"],
             media_player: [type: "HADB Generic Component Media Player", event: [[name: "switch", value: newVals[0] == "off" ? "off":"on", type: origin, descriptionText:"${friendly} was turned ${newVals[0] == 'off' ? 'off':'on'} [${origin}]"],[name: "status", value: newVals[1], type: origin, descriptionText:"${friendly} status was set to ${newVals[1]} [${origin}]"],[name: "rawStatus", value: newVals[0], type: origin, descriptionText:"${friendly} rawStatus became ${newVals[0]} [${origin}]"],[name: "mute", value: newVals[2] ? "muted":"unmuted", type: origin, descriptionText:"${friendly} volume was ${newVals[2] ? 'muted':'unmuted'} [${origin}]"],[name: "volume", value: newVals[3], type: origin, descriptionText:"${friendly} volume was set to ${newVals[3]} [${origin}]"],[name: "mediaType", value: newVals[4], type: origin, descriptionText:"${friendly} mediaType was set to ${newVals[4]} [${origin}]"],[name: "duration", value: newVals[5], type: origin, descriptionText:"${friendly} duration was set to ${newVals[5]} [${origin}]"],[name: "position", value: newVals[6], type: origin, descriptionText:"${friendly} position was set to ${newVals[6]} [${origin}]"],[name: "trackData", value: newVals[7], type: origin, descriptionText:"${friendly} track was set to ${newVals[7]} [${origin}]"],[name: "trackDescription", value: newVals[8], type: origin, descriptionText:"${friendly} trackDescription was set to ${newVals[8]} [${origin}]"],[name: "mediaInputSource", value: newVals[9], type: origin, descriptionText:"${friendly} mediaInputSource was set to ${newVals[9]} [${origin}]"],[name: "supportedInputs", value: newVals[10], type: origin, descriptionText:"${friendly} supportedInputs was set to ${newVals[10]} [${origin}]"],[name: "sourceList", value: newVals[11], type: origin, descriptionText:"${friendly} source list was set to ${newVals[11]} [${origin}]"]], namespace: "community"],
             select: [type: "HADB Generic Component Select",             event: [[name: "currentOption", value: newVals[0], type: origin, descriptionText:"${friendly} was set to ${newVals[0]} [${origin}]"],[name: "options", value: newVals[1], descriptionText: "${friendly} options were set to ${newVals[1]}"]], namespace: "community"],
-            input_select: [type: "HADB Generic Component Select",       event: [[name: "currentOption", value: newVals[0], type: origin, descriptionText:"${friendly} was set to ${newVals[0]} [${origin}]"],[name: "options", value: newVals[1], descriptionText: "${friendly} toneList were set to ${newVals[1]}"]], namespace: "community"],
+            input_select: [type: "HADB Generic Component Select",       event: [[name: "currentOption", value: newVals[0], type: origin, descriptionText:"${friendly} was set to ${newVals[0]} [${origin}]"],[name: "options", value: newVals[1], descriptionText: "${friendly} options were set to ${newVals[1]}"]], namespace: "community"],
             siren: [type: "HADB Generic Component Siren",               event: [[name: "switch", value: newVals[0], type: origin, descriptionText:"${friendly} is ${newVals[0]} [${origin}]"],[name: "status", value: newVals[0] == "on" ? "playing":"stopped", type: origin, descriptionText:"${friendly} is ${newVals[0] == 'on' ? 'playing':'stopped'}"],[name: "soundEffects", value: newVals[1], descriptionText: "${friendly} soundEffects were set to ${newVals[1]}"]], namespace: "community"],
 
         ]
@@ -1057,6 +1069,11 @@ void componentResumeTrack(ch, trackUri) {
 }
 
 void componentSetTrack(ch, trackUri){
+}
+
+def componentSetDateTime(ch, newValue, type) {
+    if (logEnable) log.info("received set dateTime to ${newValue} request from ${ch.label}")
+    executeCommand(ch, "set_datetime", ["${type}": newValue])
 }
 
 void componentSpeak(ch, message, engine) {

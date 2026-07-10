@@ -105,7 +105,7 @@
 * 2.22   2026-05-06 Yves Mercier       Add support for scene entity.
 * 2.23   2026-06-11 Yves Mercier	   Add healthStatus attribute
 * 2.24   2026-07-07 Yves Mercier	   Add special handling for TTS request on custom service call function
-* 2.25	 2026-07-09 loverso			   Add support for input_datetime
+* 2.25	 2026-07-09 jlv	+ ymerj		   Add support for input_datetime
 */
 
 import groovy.json.JsonSlurper

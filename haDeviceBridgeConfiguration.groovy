@@ -270,7 +270,6 @@ def installed()
         ch.updateDataValue("filterList", filterListForChild)
         ch.updated()
     }
-    // state.remove("entityList")
     state.clear()
 }
 

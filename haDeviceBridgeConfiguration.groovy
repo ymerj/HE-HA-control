@@ -119,6 +119,17 @@ def discoveryPage(params)
         // Only re-query HA when navigating here fresh
         if(params?.runDiscovery)
         {
+            def ch = getChild()
+            if(!ch)
+            {
+               includeList = []
+            }
+
+            if(ch)
+            {
+               includeList = ch.getDataValue("filterList")
+            }
+
             state.entityList = [:]
 
             logDebug("discoveryPage: Starting HA entity discovery from ${getBaseURI()}states")
@@ -259,7 +270,8 @@ def installed()
         ch.updateDataValue("filterList", filterListForChild)
         ch.updated()
     }
-    state.remove("entityList")
+    // state.remove("entityList")
+    state.clear()
 }
 
 def getChild()

@@ -122,12 +122,13 @@ def discoveryPage(params)
             def ch = getChild()
             if(!ch)
             {
-               includeList = []
+               //includeList = []
             }
 
             if(ch)
             {
-               includeList = ch.getDataValue("filterList")
+               tempo = ch.getDataValue("filterList").tokenize(',')
+               app.updateSetting('includeList', [type: "enum", value: tempo])
             }
 
             state.entityList = [:]

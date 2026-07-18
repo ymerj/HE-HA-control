@@ -70,7 +70,7 @@ void parse(List<Map> description)
         }
     }
 
-def deviceNotification(message, title)
+def deviceNotification(message, title = "")
     {
     parent?.componentNotification(this.device, message, title)
     }

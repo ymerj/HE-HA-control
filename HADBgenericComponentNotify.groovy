@@ -1,8 +1,4 @@
 /*
-manually created 7/18/2026
-https://community.hubitat.com/t/release-home-assistant-device-bridge-hadb/67109/2076
-*/
-/*
 
 Copyright 2026
 
@@ -69,9 +65,10 @@ void parse(List<Map> description)
         }
     }
 
-def deviceNotification(message) {
+def deviceNotification(message)
+    {
     parent?.componentNotification(this.device, message)
-}
+    }
 
 void refresh()
     {

@@ -20,7 +20,7 @@ Change history:
 
 2.10 - Yves Mercier - initial version
 2.12 - Yves Mercier - corrected setText parameter name
-2.25 - Yves Mercier - corrected setVariable method
+2.26 - Yves Mercier - corrected setVariable method
 
 */
 
@@ -66,8 +66,6 @@ void parse(List<Map> description)
             }
         }
     }
-
-
 
 void setVariable(variable)
     {

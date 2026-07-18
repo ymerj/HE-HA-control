@@ -105,7 +105,8 @@
 * 2.22   2026-05-06 Yves Mercier       Add support for scene entity.
 * 2.23   2026-06-11 Yves Mercier	   Add healthStatus attribute
 * 2.24   2026-07-07 Yves Mercier	   Add special handling for TTS request on custom service call function
-* 2.25	 2026-07-09 jlv	+ ymerj		   Add support for input_datetime
+* 2.25	 2026-07-09 jlv	+ ymerj		   Add support for input_datetime entity
+* 2.26	 2026-07-18 jlv	+ ymerj		   Add support for notify entity
 */
 
 import groovy.json.JsonSlurper
@@ -1095,6 +1096,8 @@ def componentRefresh(ch) {
     if (logEnable) log.debug("messUpd = ${messUpd}")
     interfaces.webSocket.sendMessage("${messUpd}")
 }
+
+def ping() {}
 
 def closeConnection() {
     if (logEnable) log.debug("Closing connection...")   

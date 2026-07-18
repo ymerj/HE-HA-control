@@ -70,7 +70,7 @@ void parse(List<Map> description)
     }
 
 def deviceNotification(message) {
-    parent?.deviceNotification(this.device, message)
+    parent?.componentNotification(this.device, message)
 }
 
 void refresh()

@@ -43,6 +43,7 @@
 * 2.21       2026-04-03 Dan Ogorchock      Added 'menu: "Integrations"' to definition to allow app to appear under the 2.5.x Integrations menu section
 * 2.22       2026-05-06 Yves Mercier       Add support for scene entity
 * 2.25       2026-07-09 jlv + ymerj        Add support for input_datetime
+* 2.26       2026-07-17 Yves Mercier       Clear all states on exit, retreive included list from driver
 */
 
 definition(

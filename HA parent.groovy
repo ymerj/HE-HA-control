@@ -1088,6 +1088,16 @@ void componentSpeak(ch, message, engine) {
     interfaces.webSocket.sendMessage("${messUpd}")
 }
 
+def componentNotification(ch, message) {
+    if (logEnable) log.info("received notification request from ${ch.label}")
+    // special handling because of extra data requirement
+    entity = ch?.getDeviceNetworkId().split("-")[1]
+    messUpd =  JsonOutput.toJson([id: state.id, type: "call_service", domain: "notify", service: "send_message", service_data: [entity_id: entity, message: message]])
+    state.id = state.id + 1
+    if (logEnable) log.debug("messUpd = ${messUpd}")
+    interfaces.webSocket.sendMessage("${messUpd}")
+}
+
 def componentRefresh(ch) {
     if (logEnable) log.info("received refresh request from ${ch.label}")
     // special handling since domain is fixed 

@@ -19,7 +19,7 @@
 * for the specific language governing permissions and limitations under the License.
 *
 * Version Control:
-* 0.1.0  2021-02-05 Yves Mercier       Orinal version
+* 0.1.0  2021-02-05 Yves Mercier       Original version
 * 0.1.1  2021-02-06 Dan Ogorchock      Added basic support for simple "Light" devices from Home Assistant using Hubitat Generic Component Dimmer driver
 * 0.1.2  2021-02-06 tomw               Added handling for some binary_sensor subtypes based on device_class
 * 0.1.3  2021-02-06 Dan Ogorchock      Bug Fixes 
@@ -105,7 +105,8 @@
 * 2.22   2026-05-06 Yves Mercier       Add support for scene entity.
 * 2.23   2026-06-11 Yves Mercier	   Add healthStatus attribute
 * 2.24   2026-07-07 Yves Mercier	   Add special handling for TTS request on custom service call function
-* 2.25	 2026-07-09 jlv	+ ymerj		   Add support for input_datetime
+* 2.25	 2026-07-09 jlv	+ ymerj		   Add support for input_datetime entity
+* 2.26	 2026-07-18 jlv	+ ymerj		   Add support for notify entity
 */
 
 import groovy.json.JsonSlurper
@@ -300,6 +301,7 @@ def parse(String description) {
             case "valve":
             case "switch":
             case "input_boolean":
+            case "notify":
                 mapping = translateDevices(domain, newVals, friendly, origin)
                 break
             
@@ -582,7 +584,8 @@ def translateDevices(domain, newVals, friendly, origin)
             media_player: [type: "HADB Generic Component Media Player", event: [[name: "switch", value: newVals[0] == "off" ? "off":"on", type: origin, descriptionText:"${friendly} was turned ${newVals[0] == 'off' ? 'off':'on'} [${origin}]"],[name: "status", value: newVals[1], type: origin, descriptionText:"${friendly} status was set to ${newVals[1]} [${origin}]"],[name: "rawStatus", value: newVals[0], type: origin, descriptionText:"${friendly} rawStatus became ${newVals[0]} [${origin}]"],[name: "mute", value: newVals[2] ? "muted":"unmuted", type: origin, descriptionText:"${friendly} volume was ${newVals[2] ? 'muted':'unmuted'} [${origin}]"],[name: "volume", value: newVals[3], type: origin, descriptionText:"${friendly} volume was set to ${newVals[3]} [${origin}]"],[name: "mediaType", value: newVals[4], type: origin, descriptionText:"${friendly} mediaType was set to ${newVals[4]} [${origin}]"],[name: "duration", value: newVals[5], type: origin, descriptionText:"${friendly} duration was set to ${newVals[5]} [${origin}]"],[name: "position", value: newVals[6], type: origin, descriptionText:"${friendly} position was set to ${newVals[6]} [${origin}]"],[name: "trackData", value: newVals[7], type: origin, descriptionText:"${friendly} track was set to ${newVals[7]} [${origin}]"],[name: "trackDescription", value: newVals[8], type: origin, descriptionText:"${friendly} trackDescription was set to ${newVals[8]} [${origin}]"],[name: "mediaInputSource", value: newVals[9], type: origin, descriptionText:"${friendly} mediaInputSource was set to ${newVals[9]} [${origin}]"],[name: "supportedInputs", value: newVals[10], type: origin, descriptionText:"${friendly} supportedInputs was set to ${newVals[10]} [${origin}]"],[name: "sourceList", value: newVals[11], type: origin, descriptionText:"${friendly} source list was set to ${newVals[11]} [${origin}]"]], namespace: "community"],
             select: [type: "HADB Generic Component Select",             event: [[name: "currentOption", value: newVals[0], type: origin, descriptionText:"${friendly} was set to ${newVals[0]} [${origin}]"],[name: "options", value: newVals[1], descriptionText: "${friendly} options were set to ${newVals[1]}"]], namespace: "community"],
             input_select: [type: "HADB Generic Component Select",       event: [[name: "currentOption", value: newVals[0], type: origin, descriptionText:"${friendly} was set to ${newVals[0]} [${origin}]"],[name: "options", value: newVals[1], descriptionText: "${friendly} options were set to ${newVals[1]}"]], namespace: "community"],
-            siren: [type: "HADB Generic Component Siren",               event: [[name: "switch", value: newVals[0], type: origin, descriptionText:"${friendly} is ${newVals[0]} [${origin}]"],[name: "status", value: newVals[0] == "on" ? "playing":"stopped", type: origin, descriptionText:"${friendly} is ${newVals[0] == 'on' ? 'playing':'stopped'}"],[name: "soundEffects", value: newVals[1], descriptionText: "${friendly} soundEffects were set to ${newVals[1]}"]], namespace: "community"],
+            notify: [type: "HADB Generic Component Notify",             event: [[name: "timestamp", value: newVals[0], descriptionText:"${friendly} sent a notification at ${newVals[0]}"]], namespace: "community"],
+			siren: [type: "HADB Generic Component Siren",               event: [[name: "switch", value: newVals[0], type: origin, descriptionText:"${friendly} is ${newVals[0]} [${origin}]"],[name: "status", value: newVals[0] == "on" ? "playing":"stopped", type: origin, descriptionText:"${friendly} is ${newVals[0] == 'on' ? 'playing':'stopped'}"],[name: "soundEffects", value: newVals[1], descriptionText: "${friendly} soundEffects were set to ${newVals[1]}"]], namespace: "community"],
 
         ]
     return mapping[domain]
@@ -1076,6 +1079,12 @@ def componentSetDateTime(ch, newValue, type) {
     executeCommand(ch, "set_datetime", ["${type}": newValue])
 }
 
+def componentNotification(ch, message, title = null) {
+    if (logEnable) log.info("received send notification request from ${ch.label}")
+    data = [message: message, title: title]
+    executeCommand(ch, "send_message", data)
+}
+
 void componentSpeak(ch, message, engine) {
     if (logEnable) log.info("received speak message from ${ch.label}")
     // special handling because of extra data requirement
@@ -1095,6 +1104,8 @@ def componentRefresh(ch) {
     if (logEnable) log.debug("messUpd = ${messUpd}")
     interfaces.webSocket.sendMessage("${messUpd}")
 }
+
+def ping() {}
 
 def closeConnection() {
     if (logEnable) log.debug("Closing connection...")   

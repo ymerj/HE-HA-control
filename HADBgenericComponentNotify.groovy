@@ -1,6 +1,6 @@
 /*
 
-Copyright 2024
+Copyright 2026
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -18,26 +18,29 @@ limitations under the License.
 
 Change history:
 
-2.10 - Yves Mercier - initial version
-2.12 - Yves Mercier - corrected setText parameter name
-2.26 - Yves Mercier - corrected setVariable method
+2.26 - Yves Mercier, jlv - initial version
 
 */
 
 metadata
     {
-    definition(name: "HADB Generic Component Text", namespace: "community", author: "community", importUrl: "https://raw.githubusercontent.com/ymerj/HE-HA-control/main/HADBgenericComponentText.groovy")
+    definition(name: "HADB Generic Component Notify", namespace: "community", author: "community", importUrl: "https://raw.githubusercontent.com/ymerj/HE-HA-control/main/HADBgenericComponentNotify.groovy")
         {
         capability "Actuator"
-        capability "Variable"
+        capability "Notification"
         capability "Refresh"
         capability "Health Check"
+
+        attribute "healthStatus", "enum", ["offline", "online"]
+        attribute "timestamp", "string"
+
+        command "deviceNotification", [[name: "message*", type: "STRING"], [name: "title", type: "STRING"]]
         }
+
     preferences
         {
         input name: "txtEnable", type: "bool", title: "Enable descriptionText logging", defaultValue: true
         }
-    attribute "healthStatus", "enum", ["offline", "online"]
     }
 
 void updated()
@@ -59,7 +62,7 @@ void parse(List<Map> description)
     {
     description.each
         {
-        if (it.name in ["variable", "healthStatus"])
+        if (it.name in ["timestamp", "healthStatus"])
             {
             if (txtEnable) log.info it.descriptionText
             sendEvent(it)
@@ -67,9 +70,9 @@ void parse(List<Map> description)
         }
     }
 
-void setVariable(variable)
+def deviceNotification(message, title = "")
     {
-    parent?.componentSetVariable(this.device, variable)
+    parent?.componentNotification(this.device, message, title)
     }
 
 void refresh()

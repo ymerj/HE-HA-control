@@ -43,6 +43,7 @@
 * 2.21       2026-04-03 Dan Ogorchock      Added 'menu: "Integrations"' to definition to allow app to appear under the 2.5.x Integrations menu section
 * 2.22       2026-05-06 Yves Mercier       Add support for scene entity
 * 2.25       2026-07-09 jlv + ymerj        Add support for input_datetime
+* 2.26       2026-07-17 jlv + ymerj        Clear all states on exit, add support for notify entity.
 */
 
 definition(
@@ -101,7 +102,7 @@ def getSupportedDomains()
     return [
         "binary_sensor", "button", "climate", "cover", "date", "datetime", "device_tracker", "event",
         "fan", "humidifier", "input_boolean", "input_button", "input_datetime", "input_number",
-        "input_select", "input_text", "light", "lock", "media_player", "number",
+        "input_select", "input_text", "light", "lock", "media_player", "notify", "number",
         "scene", "select", "sensor", "siren", "switch", "text", "time", "vacuum", "valve"
     ]
 }
@@ -119,6 +120,18 @@ def discoveryPage(params)
         // Only re-query HA when navigating here fresh
         if(params?.runDiscovery)
         {
+/*            def ch = getChild()
+            if(!ch)
+            {
+               //includeList = []
+            }
+
+            if(ch)
+            {
+               tempo = ch.getDataValue("filterList").tokenize(',')
+               app.updateSetting('includeList', [type: "enum", value: tempo])
+            }
+*/
             state.entityList = [:]
 
             logDebug("discoveryPage: Starting HA entity discovery from ${getBaseURI()}states")
@@ -259,7 +272,7 @@ def installed()
         ch.updateDataValue("filterList", filterListForChild)
         ch.updated()
     }
-    state.remove("entityList")
+    state.clear()
 }
 
 def getChild()

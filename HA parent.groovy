@@ -107,6 +107,7 @@
 * 2.24   2026-07-07 Yves Mercier	   Add special handling for TTS request on custom service call function
 * 2.25	 2026-07-09 jlv	+ ymerj		   Add support for input_datetime entity
 * 2.26	 2026-07-18 jlv	+ ymerj		   Add support for notify entity
+* 2.27   2026-08-04 Yves Mercier	   Add support for current sensor
 */
 
 import groovy.json.JsonSlurper
@@ -538,6 +539,7 @@ def translateSensors(device_class, newVals, friendly, origin)
             temperature: [type: "Generic Component Temperature Sensor",       event: [[name: "temperature", value: newVals[0], unit: newVals[1] ?: "°", descriptionText:"${friendly} temperature is ${newVals[0]} ${newVals[1] ?: '°'}"]]],
             voltage: [type: "Generic Component Voltage Sensor",               event: [[name: "voltage", value: newVals[0], unit: newVals[1] ?: "V", descriptionText:"${friendly} voltage is ${newVals[0]} ${newVals[1] ?: 'V'}"]]],
             energy: [type: "Generic Component Energy Meter",                  event: [[name: "energy", value: newVals[0], unit: newVals[1] ?: "kWh", descriptionText:"${friendly} energy is ${newVals[0]} ${newVals[1] ?: 'kWh'}"]]],
+            current: [type: "HADB Generic Component Current Meter",           event: [[name: "amperage", value: newVals[0], unit: newVals[1] ?: "A", descriptionText:"${friendly} energy is ${newVals[0]} ${newVals[1] ?: 'A'}"]]],
             unknown: [type: "Generic Component Unknown Sensor",               event: [[name: "unknown", value: newVals[0], unit: newVals[1] ?: "", descriptionText:"${friendly} value is ${newVals[0]} ${newVals[1] ?: ''}"],[name: "attributes", value: newVals[2]]], namespace: "community"],
             occupancy: [type: "HADB Generic Component Occupancy Sensor",      event: [[name: "room", value: newVals[0], descriptionText:"${friendly} room is ${newVals[0]} "],[name: "distance", value: newVals[1], unit: "m", descriptionText:"${friendly} distance is ${newVals[1]} m"],[name: "attributes", value: newVals[2]]], namespace: "community"],                
             timestamp: [type: "Generic Component TimeStamp Sensor",           event: [[name: "timestamp", value: newVals[0], descriptionText:"${friendly} time is ${newVals[0]}"]], namespace: "community"],

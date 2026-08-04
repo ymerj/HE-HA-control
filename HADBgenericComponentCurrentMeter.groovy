@@ -27,6 +27,7 @@ metadata
     definition(name: "HADB Generic Component Current Meter", namespace: "community", author: "community", importUrl: "https://raw.githubusercontent.com/ymerj/HE-HA-control/main/HADBgenericComponentCurrentMeter.groovy")
     {
         capability "CurrentMeter"
+        capability "Sensor"
         capability "Refresh"
         capability "Health Check"
     }

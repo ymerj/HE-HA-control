@@ -1,7 +1,7 @@
 {
   "packageName": "HE-HA-control",
   "author": "ymerj",
-  "version": "2.26",
+  "version": "2.27",
   "minimumHEVersion": "2.1.9",
   "dateReleased": "2021-03-19",
   "drivers": [
@@ -227,6 +227,13 @@
       "name": "HADB Generic Component Notify",
       "namespace": "community",
       "location": "https://raw.githubusercontent.com/ymerj/HE-HA-control/main/HADBgenericComponentNotify.groovy",
+      "required": true
+    },
+    {
+      "id": "d31cc626-0afe-4ad5-a512-f5782358bfa1",
+      "name": "HADB Generic Component Current Meter",
+      "namespace": "community",
+      "location": "https://raw.githubusercontent.com/ymerj/HE-HA-control/main/HADBgenericComponentCurrentMeter.groovy",
       "required": true
     }
   ],

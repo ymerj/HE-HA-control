@@ -44,6 +44,7 @@
 * 2.22       2026-05-06 Yves Mercier       Add support for scene entity
 * 2.25       2026-07-09 jlv + ymerj        Add support for input_datetime
 * 2.26       2026-07-17 jlv + ymerj        Clear all states on exit, add support for notify entity.
+* 2.28       2026-08-12 Yves Mercier       Add support for alarm_control_panel entity.
 */
 
 definition(

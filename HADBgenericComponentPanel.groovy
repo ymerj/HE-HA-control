@@ -24,7 +24,7 @@ Change history:
 
 metadata
 {
-    definition(name: "HADB generic Component Panel", namespace: "community", author: "community", importUrl: "https://raw.githubusercontent.com/ymerj/HE-HA-control/main/HADBgenericComponentPanel.groovy")
+    definition(name: "HADB Generic Component Panel", namespace: "community", author: "community", importUrl: "https://raw.githubusercontent.com/ymerj/HE-HA-control/main/HADBgenericComponentPanel.groovy")
     {
         capability "SecurityKeypad"
         capability "Actuator"

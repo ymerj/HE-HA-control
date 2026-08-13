@@ -109,6 +109,7 @@
 * 2.26	 2026-07-18 jlv	+ ymerj		   Add support for notify entity
 * 2.27   2026-08-04 Yves Mercier	   Add support for current sensor
 * 2.28   2026-08-12 Yves Mercier	   Add support for alarm control panel entity
+* 2.29   2026-08-13 Yves Mercier       Add support for lawn_mower entity.
 */
 
 import groovy.json.JsonSlurper

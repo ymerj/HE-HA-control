@@ -38,7 +38,7 @@ metadata
         {
         input name: "txtEnable", type: "bool", title: "Enable descriptionText logging", defaultValue: true
         }
-    attribute "lanMower", "string"
+    attribute "lawnMower", "string"
     attribute "healthStatus", "enum", ["offline", "online"]
     }
 

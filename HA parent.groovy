@@ -109,6 +109,7 @@
 * 2.26	 2026-07-18 jlv	+ ymerj		   Add support for notify entity
 * 2.27   2026-08-04 Yves Mercier	   Add support for current sensor
 * 2.28   2026-08-12 Yves Mercier	   Add support for alarm control panel entity
+* 2.29   2026-08-13 Yves Mercier       Add support for lawn_mower entity.
 */
 
 import groovy.json.JsonSlurper
@@ -305,6 +306,7 @@ def parse(String description) {
             case "input_boolean":
             case "notify":
             case "alarm_control_panel":
+			case "lawn_mower"
                 mapping = translateDevices(domain, newVals, friendly, origin)
                 break
             
@@ -590,6 +592,7 @@ def translateDevices(domain, newVals, friendly, origin)
             input_select: [type: "HADB Generic Component Select",       event: [[name: "currentOption", value: newVals[0], type: origin, descriptionText:"${friendly} was set to ${newVals[0]} [${origin}]"],[name: "options", value: newVals[1], descriptionText: "${friendly} options were set to ${newVals[1]}"]], namespace: "community"],
             notify: [type: "HADB Generic Component Notify",             event: [[name: "timestamp", value: newVals[0], descriptionText:"${friendly} sent a notification at ${newVals[0]}"]], namespace: "community"],
             alarm_control_panel: [type: "HADB Generic Component Panel", event: [[name: "securityKeypad", value: newVals[0].replaceAll("_"," "), descriptionText:"${friendly} is ${newVals[0]}"]], namespace: "community"],
+            lawn_mower: [type: "HADB Generic Component Lawn Mower",     event: [[name: "lawnMower", value: newVals[0], descriptionText:"${friendly} is ${newVals[0]}"]], namespace: "community"],
 			siren: [type: "HADB Generic Component Siren",               event: [[name: "switch", value: newVals[0], type: origin, descriptionText:"${friendly} is ${newVals[0]} [${origin}]"],[name: "status", value: newVals[0] == "on" ? "playing":"stopped", type: origin, descriptionText:"${friendly} is ${newVals[0] == 'on' ? 'playing':'stopped'}"],[name: "soundEffects", value: newVals[1], descriptionText: "${friendly} soundEffects were set to ${newVals[1]}"]], namespace: "community"],
 
         ]
@@ -1103,6 +1106,16 @@ void componentArmHome(ch) {
 void componentDisarm(ch) {
     if (logEnable) log.info("received disarm from ${ch.label}")
     executeCommand(ch, "alarm_disarm")
+}
+
+void componentDock(ch) {
+    if (logEnable) log.info("received dock request from ${ch.label}")
+    executeCommand(ch, "dock")
+}
+
+void componentStartMowing(ch) {
+    if (logEnable) log.info("received start mowing request from ${ch.label}")
+    executeCommand(ch, "start_mowing")
 }
 
 void componentSpeak(ch, message, engine) {

@@ -306,7 +306,7 @@ def parse(String description) {
             case "input_boolean":
             case "notify":
             case "alarm_control_panel":
-			case "lawn_mower"
+			case "lawn_mower":
                 mapping = translateDevices(domain, newVals, friendly, origin)
                 break
             

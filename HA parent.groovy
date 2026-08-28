@@ -167,14 +167,14 @@ def initialize() {
     state.id = 2
     def connectionType = "ws"
     if (secure) connectionType = "wss"
-    auth = '{"type":"auth","access_token":"' + "${token}" + '"}'
+    def auth = JsonOutput.toJson([type: "auth", access_token: token])
     def subscriptionsList = device.getDataValue("filterList")
     if(subscriptionsList == null) return
-    evenements = '{"id":1,"type":"subscribe_trigger","trigger":{"platform":"state","entity_id":"' + subscriptionsList + '"}}'
+    def evenements = JsonOutput.toJson([id: 1, type: "subscribe_trigger", trigger: [platform: "state", entity_id: subscriptionsList]])
     try {
         interfaces.webSocket.connect("${connectionType}://${ip}:${port}/api/websocket", ignoreSSLIssues: true)
-        interfaces.webSocket.sendMessage("${auth}")
-        interfaces.webSocket.sendMessage("${evenements}")
+        interfaces.webSocket.sendMessage(auth)
+        interfaces.webSocket.sendMessage(evenements)
     } 
     catch(e) {
         log.error("initialize error: ${e.message}")

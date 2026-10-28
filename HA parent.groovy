@@ -111,7 +111,7 @@
 * 2.28   2026-08-12 Yves Mercier	   Add support for alarm control panel entity
 * 2.29   2026-08-13 Yves Mercier       Add support for lawn_mower entity.
 * 2.30   2026-08-20 Amithalp		   Fix button wrong value type causing replaceAll method error in control_panel
-* 2.31   2026-10-26 Yves mercier	   Add TTS to media player entity
+* 2.31   2026-10-26 Yves mercier	   Add TTS to media player entity, minor adjustments to light entity
 */
 
 import groovy.json.JsonSlurper

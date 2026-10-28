@@ -21,7 +21,7 @@ Change history:
 2.11 - Yves Mercier - Initial version
 2.12 - Yves Mercier - Add input source
 2.15 - Yves Mercier - Separate indexed source list from supported inputs
-2.16 - Yves Mercier - compensate for restrictions imposed by ezdashboard
+2.31 - Yves Mercier - Add TTS
 
 */
 
@@ -36,13 +36,16 @@ metadata
         capability "MediaInputSource"
         capability "Refresh"
         capability "Health Check"
+        capability "Speech Synthesis"
 
         command "playTrack", [[ name: "trackUri*", type: "STRING", description: "Media Content" ], [ name: "mediaType*", type: "ENUM", constraints: [ "music", "tvshow", "movie", "video", "episode", "channel", "playlist", "image", "url", "game", "app" ], description: "Media Type" ]]
         command "shuffle", [[ name: "shuffleValue*", type: "ENUM", defaultValue: "false", constraints: [ "true", "false" ], description: "Shuffle ?" ]]
         command "repeat", [[ name: "repeatValue*", type: "ENUM", defaultValue: "false", constraints: [ "true", "false" ], description: "Repeat ?" ]]
+        command "playTextAndRestore", [[ name: "ttp", type: "STRING", description: "text to play"], [name: "vol", type: "NUMBER", description: "volume"]]
     }
     preferences {
         input name: "txtEnable", type: "bool", title: "Enable descriptionText logging", defaultValue: true
+        input name: "engine", type:"string", title: "HA TTS engine", required: true, defaultValue: "tts.google_translate_en_com"
     }
     attribute "healthStatus", "enum", ["offline", "online"]
     attribute "shuffle", "enum", ["true", "false"]
@@ -135,9 +138,14 @@ void playText(text) {
     log.warn "playText is not implemented"
 }
 
+void playTextAndRestore (ttp, vol) {
+    // parent?.componentPlayTextAndRestore(this.device, ttp, vol)
+    log.warn "playTextAndRestore is not implemented"
+}
+
 void playTrack(trackUri) {
     parent?.componentPlayTrack(this.device, "music", trackUri)
-    log.warn "media type set to music for default playTrack command"
+    if (txtEnable) log.info "media type set to music for default playTrack command"
 }
 
 void playTrack(trackUri, mediaType) {
@@ -174,6 +182,12 @@ void shuffle(shuffleValue) {
 void repeat(repeatValue) {
     parent?.componentRepeat(this.device, repeatValue)
 }
+
+void speak(message, volume = null, voice = null)
+    {
+    if (volume) setVolume(volume)
+    parent?.componentSpeak(this.device, message, engine)
+    }
 
 void ping() {
     refresh()

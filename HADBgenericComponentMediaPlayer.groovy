@@ -21,6 +21,7 @@ Change history:
 2.11 - Yves Mercier - Initial version
 2.12 - Yves Mercier - Add input source
 2.15 - Yves Mercier - Separate indexed source list from supported inputs
+2.16 - Yves Mercier - compensate for restrictions imposed by ezdashboard
 2.31 - Yves Mercier - Add TTS
 
 */

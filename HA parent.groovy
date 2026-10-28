@@ -111,6 +111,7 @@
 * 2.28   2026-08-12 Yves Mercier	   Add support for alarm control panel entity
 * 2.29   2026-08-13 Yves Mercier       Add support for lawn_mower entity.
 * 2.30   2026-08-20 Amithalp		   Fix button wrong value type causing replaceAll method error in control_panel
+* 2.31   2026-10-26 Yves mercier	   Add TTS to media player entity, minor adjustments to light entity
 */
 
 import groovy.json.JsonSlurper
@@ -165,16 +166,16 @@ def initialize() {
     closeConnection()
 
     state.id = 2
-    def connectionType = "ws"
-    if (secure) connectionType = "wss"
-    auth = '{"type":"auth","access_token":"' + "${token}" + '"}'
+    def connectionType = "http"
+    if (secure) connectionType = "https"
+    def auth = JsonOutput.toJson([type: "auth", access_token: token])
     def subscriptionsList = device.getDataValue("filterList")
     if(subscriptionsList == null) return
-    evenements = '{"id":1,"type":"subscribe_trigger","trigger":{"platform":"state","entity_id":"' + subscriptionsList + '"}}'
+    def evenements = JsonOutput.toJson([id: 1, type: "subscribe_trigger", trigger: [platform: "state", entity_id: subscriptionsList]])
     try {
         interfaces.webSocket.connect("${connectionType}://${ip}:${port}/api/websocket", ignoreSSLIssues: true)
-        interfaces.webSocket.sendMessage("${auth}")
-        interfaces.webSocket.sendMessage("${evenements}")
+        interfaces.webSocket.sendMessage(auth)
+        interfaces.webSocket.sendMessage(evenements)
     } 
     catch(e) {
         log.error("initialize error: ${e.message}")
@@ -329,15 +330,15 @@ def parse(String description) {
                 switch (lightType) {
                     case {it.intersect(["rgbwe"])}:
                         device_class = "rgbwe"
-                        newVals += ["RGB", hue, sat, ct, effectsList, effectName]
+                        newVals += ["white", hue, sat, ct, effectsList, effectName]
                         break
                     case {it.intersect(["rgbww", "rgbw"])}:
                         device_class = "rgbw"
-                        newVals += ["RGB", hue, sat, ct]
+                        newVals += ["white", hue, sat, ct]
                         break
                     case {it.intersect(["hs", "rgb"])}:
                         device_class = "rgb"
-                        newVals += ["RGB", hue, sat]
+                        newVals += ["white", hue, sat]
                         break
                     case {it.intersect(["color_temp"])}:
                         device_class = "ct"
@@ -604,9 +605,9 @@ def translateLight(device_class, newVals, friendly, origin)
 {
     def mapping =
         [
-            rgbwe: [type: "Generic Component RGBW Light Effects",       event: [[name: "switch", value: newVals[0], type: origin, descriptionText:"${friendly} was turned ${newVals[0]} [${origin}]"],[name: "level", value: newVals[1], type: origin, descriptionText:"${friendly} level was set to ${newVals[1]}"],[name: "colorMode", value: newVals[2], descriptionText:"${friendly} color mode was set to ${newVals[2]}"],[name: "hue", value: newVals[3], descriptionText:"${friendly} hue was set to ${newVals[3]}"],[name: "saturation", value: newVals[4], descriptionText:"${friendly} saturation was set to ${newVals[4]}"],[name: "colorTemperature", value: newVals[5] ?: 'emulated', descriptionText:"${friendly} color temperature was set to ${newVals[5] ?: 'emulated'}°K"],[name: "lightEffects", value: newVals[6]],[name: "effectName", value: newVals[7] ?: "none", descriptionText:"${friendly} effect was set to ${newVals[7] ?: 'none'}"]]],
-            rgbw: [type: "Generic Component RGBW",                      event: [[name: "switch", value: newVals[0], type: origin, descriptionText:"${friendly} was turned ${newVals[0]} [${origin}]"],[name: "level", value: newVals[1], type: origin, descriptionText:"${friendly} level was set to ${newVals[1]}"],[name: "colorMode", value: newVals[2], descriptionText:"${friendly} color mode was set to ${newVals[2]}"],[name: "hue", value: newVals[3], descriptionText:"${friendly} hue was set to ${newVals[3]}"],[name: "saturation", value: newVals[4], descriptionText:"${friendly} saturation was set to ${newVals[4]}"],[name: "colorTemperature", value: newVals[5], descriptionText:"${friendly} color temperature was set to ${newVals[5]}°K"]]],
-            rgb: [type: "Generic Component RGB",                        event: [[name: "switch", value: newVals[0], type: origin, descriptionText:"${friendly} was turned ${newVals[0]} [${origin}]"],[name: "level", value: newVals[1], type: origin, descriptionText:"${friendly} level was set to ${newVals[1]}"],[name: "colorMode", value: newVals[2], descriptionText:"${friendly} color mode was set to ${newVals[2]}"],[name: "hue", value: newVals[3], descriptionText:"${friendly} hue was set to ${newVals[3]}"],[name: "saturation", value: newVals[4], descriptionText:"${friendly} saturation was set to ${newVals[4]}"]]],
+            rgbwe: [type: "Generic Component RGBW Light Effects",       event: [[name: "switch", value: newVals[0], type: origin, descriptionText:"${friendly} was turned ${newVals[0]} [${origin}]"],[name: "level", value: newVals[1], type: origin, descriptionText:"${friendly} level was set to ${newVals[1]}"],[name: "colorName", value: newVals[2], descriptionText:"${friendly} color name was set to ${newVals[2]}"],[name: "hue", value: newVals[3], descriptionText:"${friendly} hue was set to ${newVals[3]}"],[name: "saturation", value: newVals[4], descriptionText:"${friendly} saturation was set to ${newVals[4]}"],[name: "colorTemperature", value: newVals[5], descriptionText:"${friendly} color temperature was set to ${newVals[5] ?: 'emulated'}°K"],[name: "lightEffects", value: newVals[6]],[name: "effectName", value: newVals[7] ?: "none", descriptionText:"${friendly} effect was set to ${newVals[7] ?: 'none'}"]]],
+            rgbw: [type: "Generic Component RGBW",                      event: [[name: "switch", value: newVals[0], type: origin, descriptionText:"${friendly} was turned ${newVals[0]} [${origin}]"],[name: "level", value: newVals[1], type: origin, descriptionText:"${friendly} level was set to ${newVals[1]}"],[name: "colorName", value: newVals[2], descriptionText:"${friendly} color name was set to ${newVals[2]}"],[name: "hue", value: newVals[3], descriptionText:"${friendly} hue was set to ${newVals[3]}"],[name: "saturation", value: newVals[4], descriptionText:"${friendly} saturation was set to ${newVals[4]}"],[name: "colorTemperature", value: newVals[5], descriptionText:"${friendly} color temperature was set to ${newVals[5]}°K"]]],
+            rgb: [type: "Generic Component RGB",                        event: [[name: "switch", value: newVals[0], type: origin, descriptionText:"${friendly} was turned ${newVals[0]} [${origin}]"],[name: "level", value: newVals[1], type: origin, descriptionText:"${friendly} level was set to ${newVals[1]}"],[name: "colorName", value: newVals[2], descriptionText:"${friendly} color name was set to ${newVals[2]}"],[name: "hue", value: newVals[3], descriptionText:"${friendly} hue was set to ${newVals[3]}"],[name: "saturation", value: newVals[4], descriptionText:"${friendly} saturation was set to ${newVals[4]}"]]],
             ct: [type: "Generic Component CT",                          event: [[name: "switch", value: newVals[0], type: origin, descriptionText:"${friendly} was turned ${newVals[0]} [${origin}]"],[name: "level", value: newVals[1], type: origin, descriptionText:"${friendly} level was set to ${newVals[1]}"],[name: "colorName", value: newVals[2], descriptionText:"${friendly} color name was set to ${newVals[2]}"],[name: "colorTemperature", value: newVals[3], descriptionText:"${friendly} color temperature was set to ${newVals[3]}°K"]]],
             dimmer: [type: "Generic Component Dimmer",                  event: [[name: "switch", value: newVals[0], type: origin, descriptionText:"${friendly} was turned ${newVals[0]} [${origin}]"],[name: "level", value: newVals[1], type: origin, descriptionText:"${friendly} level was set to ${newVals[1]} [${origin}]"]]],
         ]
@@ -675,6 +676,7 @@ def componentSetLevel(ch, level, transition=1) {
 
 def componentSetColor(ch, color, transition=1) {
     if (logEnable) log.info("received setColor request from ${ch.label}")
+    ch.sendEvent(name:"colorMode", value: "RGB")
     convertedHue = Math.round(color.hue * 360/100)
     data = [brightness_pct: "${color.level}", hs_color: ["${convertedHue}", "${color.saturation}"], transition: "${transition}"]
     executeCommand(ch, "turn_on", data)
@@ -682,6 +684,7 @@ def componentSetColor(ch, color, transition=1) {
 
 def componentSetColorTemperature(ch, colortemperature, level, transition=1) {
     if (logEnable) log.info("received setColorTemperature request from ${ch.label}")
+    ch.sendEvent(name:"colorTemperature", value: colortemperature); ch.sendEvent(name:"colorMode", value: "CT") //set CT requested for device missing the capability and returning nothing
     if (!level) level = ch.currentValue("level")
     if (!transition) transition = 0
     data = [brightness_pct: "${level}", color_temp_kelvin: "${colortemperature}", transition: "${transition}"]
@@ -690,6 +693,7 @@ def componentSetColorTemperature(ch, colortemperature, level, transition=1) {
 
 def componentSetHue(ch, hue, transition=1) {
     if (logEnable) log.info("received setHue request from ${ch.label}")
+    ch.sendEvent(name:"colorMode", value: "RGB")
     convertedHue = Math.round(hue * 360/100)
     data = [brightness_pct: "${ch.currentValue("level")}", hs_color: ["${convertedHue}", "${ch.currentValue("saturation")}"], transition: "${transition}"]
     executeCommand(ch, "turn_on", data)
@@ -697,6 +701,7 @@ def componentSetHue(ch, hue, transition=1) {
 
 def componentSetSaturation(ch, saturation, transition=1) {
     if (logEnable) log.info("received setSaturation request from ${ch.label}")
+    ch.sendEvent(name:"colorMode", value: "RGB")
     convertedHue = Math.round(ch.currentValue("hue") * 360/100)
     data = [brightness_pct: "${ch.currentValue("level")}", hs_color: ["${convertedHue}", "${saturation}"], transition: "${transition}"]
     executeCommand(ch, "turn_on", data)
@@ -704,6 +709,7 @@ def componentSetSaturation(ch, saturation, transition=1) {
 
 def componentSetEffect(ch, effectNumber) {
     if (logEnable) log.info("received setEffect request from ${ch.label}")
+    ch.sendEvent(name:"colorMode", value: "RGB")
     effects = new groovy.json.JsonSlurper().parseText(ch.currentValue("lightEffects"))
     data = [effect: effects[effectNumber.toInteger()]]
     executeCommand(ch, "turn_on", data)
@@ -1123,7 +1129,7 @@ void componentSpeak(ch, message, engine) {
     if (logEnable) log.info("received speak message from ${ch.label}")
     // special handling because of extra data requirement
     entity = ch?.getDeviceNetworkId().split("-")[1]
-    messUpd =  JsonOutput.toJson([id: state.id, type: "call_service", domain: "tts", service: "speak", target: [entity_id: engine], service_data: [media_player_entity_id: "media_player.${entity}", message: message]])
+    messUpd =  JsonOutput.toJson([id: state.id, type: "call_service", domain: "tts", service: "speak", target: [entity_id: engine], service_data: [media_player_entity_id: entity, message: message]])
     state.id = state.id + 1
     if (logEnable) log.debug("messUpd = ${messUpd}")
     interfaces.webSocket.sendMessage("${messUpd}")

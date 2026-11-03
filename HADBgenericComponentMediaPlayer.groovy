@@ -41,7 +41,7 @@ metadata
 
         command "playTrack", [[ name: "trackUri*", type: "STRING", description: "Media Content" ], [ name: "mediaType*", type: "ENUM", constraints: [ "music", "tvshow", "movie", "video", "episode", "channel", "playlist", "image", "url", "game", "app" ], description: "Media Type" ]]
         command "shuffle", [[ name: "shuffleValue*", type: "ENUM", defaultValue: "false", constraints: [ "true", "false" ], description: "Shuffle ?" ]]
-        command "repeat", [[ name: "repeatValue*", type: "ENUM", defaultValue: "false", constraints: [ "true", "false" ], description: "Repeat ?" ]]
+        command "repeat", [[ name: "repeatValue*", type: "ENUM", defaultValue: "false", constraints: ["off", "all", "one"], description: "Repeat ?" ]]
         command "playTextAndRestore", [[ name: "ttp", type: "STRING", description: "text to play"], [name: "vol", type: "NUMBER", description: "volume"]]
     }
     preferences {
@@ -49,8 +49,8 @@ metadata
         input name: "engine", type:"string", title: "HA TTS engine", required: true, defaultValue: "tts.google_translate_en_com"
     }
     attribute "healthStatus", "enum", ["offline", "online"]
-    attribute "shuffle", "enum", ["true", "false"]
-    attribute "repeat", "enum", ["true", "false"]
+    attribute "shuffle", "bool"
+    attribute "repeat", "enum", ["off", "all", "one"]
     attribute "mediaType", "string"
     attribute "duration", "number"
     attribute "position", "number"

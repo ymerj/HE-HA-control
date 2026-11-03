@@ -1072,7 +1072,7 @@ void componentNextTrack(ch) {
 
 void componentShuffle(ch, value) {
     if (logEnable) log.info("received shuffle from ${ch.label}")
-    executeCommand(ch, "set_suffle", [suffle: value])
+    executeCommand(ch, "set_shuffle", [shuffle: value])
 }
 
 void componentRepeat(ch, value) {

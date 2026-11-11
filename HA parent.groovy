@@ -112,6 +112,8 @@
 * 2.29   2026-08-13 Yves Mercier       Add support for lawn_mower entity.
 * 2.30   2026-08-20 Amithalp		   Fix button wrong value type causing replaceAll method error in control_panel
 * 2.31   2026-10-26 Yves mercier	   Add TTS to media player entity, minor adjustments to light entity
+* 2.32   2026-11-11 Yves Mercier	   Fix mixup for shuffle and repeat in media player
+*                   MichaelB		   Fix fan skipping case speed 0% as off                   
 */
 
 import groovy.json.JsonSlurper
@@ -255,7 +257,7 @@ def parse(String description) {
                         }
                     }
                 def percentage = newState?.attributes?.percentage
-                if (percentage)
+                if (percentage != null)
                     {
                     switch (percentage.toInteger())
                         {
@@ -268,6 +270,7 @@ def parse(String description) {
                         default: if (logEnable) log.info("Invalid fan percentage received - ${percentage}")
                         }
                     }
+				if (newVals[0] == "off") speed = "off"
                 newVals += speed
                 newVals += percentage
                 mapping = translateDevices(domain, newVals, friendly, origin)

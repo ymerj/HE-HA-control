@@ -23,6 +23,7 @@ Change history:
 2.15 - Yves Mercier - Separate indexed source list from supported inputs
 2.16 - Yves Mercier - compensate for restrictions imposed by ezdashboard
 2.31 - Yves Mercier - Add TTS
+2.32 - Yves mercier - Fix mixup for shuffle and repeat in media player, add 
 
 */
 
